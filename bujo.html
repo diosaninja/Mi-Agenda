@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f7f6f2">
+<title>Bullet Journal · Mi Agenda</title>
+<style>
+  :root{
+    --bg:#f7f6f2; --paper:#fffefb; --ink:#2b2b2b; --muted:#8c8a84; --line:#e4e2db;
+    --accent:#3a5a8c; --soft:#efede6;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overflow:hidden;touch-action:manipulation}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+  /* Barra superior */
+  #bar{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;
+    background:var(--bg);border-bottom:1px solid var(--line);z-index:5}
+  .row{display:flex;align-items:center;gap:10px}
+  #back{font-size:15px;color:var(--accent);text-decoration:none;white-space:nowrap;padding:6px 4px}
+  #tabs{display:flex;gap:4px;overflow-x:auto;flex:1;scrollbar-width:none;padding:2px 0}
+  #tabs::-webkit-scrollbar{display:none}
+  .tab{padding:7px 12px;border-radius:999px;font-size:14px;color:var(--muted);white-space:nowrap}
+  .tab.on{background:var(--ink);color:#fff}
+  #nav{justify-content:center;margin-top:6px;gap:14px}
+  #nav button{font-size:20px;width:38px;height:32px;border-radius:8px;color:var(--muted)}
+  #nav button:active{background:var(--soft)}
+  #navlabel{min-width:220px;text-align:center;font-size:15px;letter-spacing:.5px}
+  #nav.hidden button{visibility:hidden}
+
+  /* Página */
+  #stage{position:fixed;left:0;right:0;display:flex;align-items:center;justify-content:center}
+  #page{position:relative;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 30px rgba(0,0,0,.06);border-radius:6px;overflow:hidden}
+  #page svg,#page canvas{position:absolute;inset:0;width:100%;height:100%}
+  #page canvas{touch-action:none}
+
+  /* Herramientas */
+  #tools{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 10px);
+    background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 8px;display:flex;align-items:center;gap:4px;
+    box-shadow:0 6px 24px rgba(0,0,0,.08);z-index:5;max-width:calc(100vw - 16px);overflow-x:auto}
+  .tool{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+  .tool.on{background:var(--soft)}
+  .sep{width:1px;height:26px;background:var(--line);margin:0 4px;flex:none}
+  .sw{width:26px;height:26px;border-radius:50%;margin:0 3px;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);flex:none}
+  .sw.on{box-shadow:0 0 0 2px var(--ink)}
+  .wd{width:36px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex:none}
+  .wd span{display:block;background:var(--ink);border-radius:9px;width:18px}
+  .wd.on{background:var(--soft)}
+
+  /* Menú */
+  #menu{position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom) + 70px);background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:6px;display:none;z-index:6;min-width:240px}
+  #menu.open{display:block}
+  #menu button,#menu label{display:flex;width:100%;text-align:left;padding:11px 12px;border-radius:10px;font-size:15px;align-items:center;justify-content:space-between;gap:10px}
+  #menu button:active,#menu label:active{background:var(--soft)}
+  #menu .danger{color:#b5523b}
+  #toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(43,43,43,.9);color:#fff;
+    padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <div class="row">
+    <a id="back" href="index.html">‹ Mi Agenda</a>
+    <div id="tabs"></div>
+  </div>
+  <div class="row" id="nav">
+    <button id="prev" aria-label="Anterior">‹</button>
+    <div id="navlabel"></div>
+    <button id="next" aria-label="Siguiente">›</button>
+  </div>
+</div>
+
+<div id="stage">
+  <div id="page">
+    <svg id="tpl" viewBox="0 0 1000 1400" preserveAspectRatio="none"></svg>
+    <canvas id="base"></canvas>
+    <canvas id="live"></canvas>
+  </div>
+</div>
+
+<div id="tools">
+  <button class="tool on" data-tool="pen" title="Pluma">✒︎</button>
+  <button class="tool" data-tool="hl" title="Marcador">🖍</button>
+  <button class="tool" data-tool="eraser" title="Borrador">⌫</button>
+  <div class="sep"></div>
+  <div id="swatches" style="display:flex"></div>
+  <div class="sep"></div>
+  <button class="wd" data-w="1.4"><span style="height:2px"></span></button>
+  <button class="wd on" data-w="2.4"><span style="height:4px"></span></button>
+  <button class="wd" data-w="4"><span style="height:7px"></span></button>
+  <div class="sep"></div>
+  <button class="tool" id="undo" title="Deshacer">↶</button>
+  <button class="tool" id="redo" title="Rehacer">↷</button>
+  <button class="tool" id="more" title="Más">⋯</button>
+</div>
+
+<div id="menu">
+  <label>Solo Apple Pencil <input type="checkbox" id="penonly" checked></label>
+  <button id="exp">Exportar copia de seguridad</button>
+  <button id="impbtn">Importar copia de seguridad</button>
+  <button id="clear" class="danger">Borrar esta página</button>
+  <input type="file" id="imp" accept="application/json,.json" hidden>
+</div>
+<div id="toast"></div>
+
+<script>
+(() => {
+"use strict";
+const W = 1000, H = 1400, M = 60;
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const LETRAS = ["L","M","X","J","V","S","D"];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const pad = n => String(n).padStart(2,"0");
+const wd = d => (d.getDay() + 6) % 7;               // 0 = lunes
+const daysIn = (y,m) => new Date(y, m+1, 0).getDate();
+const monday = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - wd(x)); return x; };
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = new Date();
+
+/* ---------- Secciones ---------- */
+const SECTIONS = [
+  {id:"indice",  name:"Índice"},
+  {id:"leyenda", name:"Leyenda"},
+  {id:"future",  name:"Future log"},
+  {id:"mes",     name:"Mes"},
+  {id:"semana",  name:"Semana"},
+  {id:"habitos", name:"Hábitos"},
+  {id:"animo",   name:"Ánimo"},
+  {id:"sueno",   name:"Sueño"},
+  {id:"gastos",  name:"Gastos"},
+  {id:"japones", name:"Japonés"},
+  {id:"vocab",   name:"Vocabulario"},
+];
+
+let state = { sec: "indice", anchor: new Date(today.getFullYear(), today.getMonth(), today.getDate()) };
+try { const s = JSON.parse(localStorage.getItem("bujo-state") || "null"); if (s && SECTIONS.some(x=>x.id===s.sec)) state.sec = s.sec; } catch(e){}
+
+function pageKey(){
+  const a = state.anchor, y = a.getFullYear(), m = pad(a.getMonth()+1);
+  switch(state.sec){
+    case "future": return `future-${y}-${a.getMonth()<6?1:2}`;
+    case "mes": case "habitos": case "sueno": case "gastos": case "japones": case "vocab": return `${state.sec}-${y}-${m}`;
+    case "semana": return `semana-${iso(monday(a))}`;
+    case "animo": return `animo-${y}`;
+    default: return state.sec;
+  }
+}
+function navInfo(){
+  const a = state.anchor, y = a.getFullYear(), mn = cap(MESES[a.getMonth()]);
+  switch(state.sec){
+    case "future": return {label:`${y} · ${a.getMonth()<6?"enero – junio":"julio – diciembre"}`, step:"half"};
+    case "mes": case "habitos": case "sueno": case "gastos": case "japones": case "vocab": return {label:`${mn} ${y}`, step:"month"};
+    case "semana": { const s = monday(a), e = new Date(s); e.setDate(s.getDate()+6);
+      return {label:`${s.getDate()} ${MESES[s.getMonth()].slice(0,3)} – ${e.getDate()} ${MESES[e.getMonth()].slice(0,3)} ${e.getFullYear()}`, step:"week"}; }
+    case "animo": return {label:String(y), step:"year"};
+    default: return {label:"", step:null};
+  }
+}
+function move(dir){
+  const {step} = navInfo(); if (!step) return;
+  const a = state.anchor;
+  if (step === "week") a.setDate(a.getDate() + 7*dir);
+  else { const add = {month:1, half:6, year:12}[step]; state.anchor = new Date(a.getFullYear(), a.getMonth() + add*dir, 1); }
+  render();
+}
+
+/* ---------- Plantillas (SVG) ---------- */
+const STYLE = `<defs><pattern id="dots" width="25" height="25" patternUnits="userSpaceOnUse"><circle cx="12.5" cy="12.5" r="1.3" fill="#cfcdc6"/></pattern>
+<style>.t{font:300 38px -apple-system,'Helvetica Neue',sans-serif;letter-spacing:1px;fill:#2b2b2b}
+.s{font:400 15px -apple-system,'Helvetica Neue',sans-serif;letter-spacing:3px;fill:#8c8a84;text-transform:uppercase}
+.l{font:500 13px -apple-system,'Helvetica Neue',sans-serif;letter-spacing:2.5px;fill:#8c8a84}
+.n{font:400 15px -apple-system,'Helvetica Neue',sans-serif;fill:#5c5a55}
+.sm{font:400 11px -apple-system,'Helvetica Neue',sans-serif;fill:#8c8a84}
+.b{font:400 19px -apple-system,'Helvetica Neue',sans-serif;fill:#2b2b2b}
+.hr{stroke:#2b2b2b;stroke-width:1}.ln{stroke:#e4e2db;stroke-width:1}.lnd{stroke:#d4d2ca;stroke-width:1}
+.box{fill:none;stroke:#dedcd4;stroke-width:1}.we{fill:#f3f2ec}</style></defs>`;
+const header = (t, s) => `<text x="${M}" y="108" class="t">${t}</text><text x="${W-M}" y="108" text-anchor="end" class="s">${s}</text><line x1="${M}" y1="130" x2="${W-M}" y2="130" class="hr"/>`;
+const dots = (x,y,w,h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#dots)"/>`;
+const label = (x,y,t) => `<text x="${x}" y="${y}" class="l">${t.toUpperCase()}</text>`;
+
+function tplIndice(){
+  const y = state.anchor.getFullYear(), m = state.anchor.getMonth(), mn = cap(MESES[m]);
+  const entries = [
+    ["Leyenda", {sec:"leyenda"}],
+    [`Future log ${y} · enero – junio`, {sec:"future", d:new Date(y,0,1)}],
+    [`Future log ${y} · julio – diciembre`, {sec:"future", d:new Date(y,6,1)}],
+    [`Mes · ${mn} ${y}`, {sec:"mes"}],
+    ["Semana actual", {sec:"semana", d:new Date(today)}],
+    [`Hábitos · ${mn}`, {sec:"habitos"}],
+    [`Año en píxeles · ${y}`, {sec:"animo"}],
+    [`Sueño · ${mn}`, {sec:"sueno"}],
+    [`Gastos · ${mn}`, {sec:"gastos"}],
+    [`Japonés · racha y kanji · ${mn}`, {sec:"japones"}],
+    [`Vocabulario · ${mn}`, {sec:"vocab"}],
+  ];
+  let s = header("Índice", `Bullet journal ${y}`), links = [];
+  entries.forEach(([t, go], i) => {
+    const yy = 190 + i*50;
+    s += `<text x="${M}" y="${yy}" class="b">${t}</text><line x1="${M}" y1="${yy+14}" x2="${W-M}" y2="${yy+14}" class="ln"/><text x="${W-M}" y="${yy}" text-anchor="end" class="b" fill="#8c8a84">›</text>`;
+    links.push({x:M, y:yy-30, w:W-2*M, h:46, go});
+  });
+  s += label(M, 800, "Mis notas") + dots(M, 815, W-2*M, H-M-815);
+  return {svg:s, links};
+}
+
+function tplLeyenda(){
+  const items = [["•","Tarea"],["✕","Tarea hecha"],[">","Migrada al mes siguiente"],["<","Programada en el future log"],
+    ["○","Evento"],["–","Nota"],["★","Prioridad"],["!","Idea o inspiración"],["","Cancelada"]];
+  let s = header("Leyenda", "Mis símbolos") + label(M, 180, "Símbolos");
+  items.forEach(([sym, t], i) => {
+    const y = 225 + i*50;
+    if (sym) s += `<text x="${M+20}" y="${y}" text-anchor="middle" class="b">${sym}</text><text x="${M+60}" y="${y}" class="b">${t}</text>`;
+    else s += `<text x="${M+60}" y="${y}" class="b">${t}</text><line x1="${M+56}" y1="${y-6}" x2="${M+152}" y2="${y-6}" stroke="#2b2b2b" stroke-width="1.4"/><text x="${M+20}" y="${y}" text-anchor="middle" class="b">—</text>`;
+    s += `<line x1="${M}" y1="${y+16}" x2="${W-M}" y2="${y+16}" class="ln"/>`;
+  });
+  s += label(M, 720, "Mis colores");
+  for (let i = 0; i < 6; i++){
+    const y = 750 + i*52;
+    s += `<rect x="${M}" y="${y}" width="30" height="30" rx="6" class="box"/><line x1="${M+50}" y1="${y+28}" x2="${W/2-20}" y2="${y+28}" class="ln"/>`;
+    s += `<rect x="${W/2+10}" y="${y}" width="30" height="30" rx="6" class="box"/><line x1="${W/2+60}" y1="${y+28}" x2="${W-M}" y2="${y+28}" class="ln"/>`;
+  }
+  s += label(M, 1095, "Mis propios símbolos") + dots(M, 1110, W-2*M, H-M-1110);
+  return {svg:s};
+}
+
+function tplFuture(){
+  const y = state.anchor.getFullYear(), start = state.anchor.getMonth() < 6 ? 0 : 6;
+  let s = header("Future log", `${y} · ${start ? "jul – dic" : "ene – jun"}`);
+  const gap = 30, colW = (W-2*M-gap)/2, top = 160, rowH = (H-M-top-2*gap)/3;
+  for (let i = 0; i < 6; i++){
+    const x = M + (i%2)*(colW+gap), yy = top + Math.floor(i/2)*(rowH+gap);
+    s += `<rect x="${x}" y="${yy}" width="${colW}" height="${rowH}" rx="10" class="box"/>`;
+    s += `<text x="${x+18}" y="${yy+36}" class="b">${cap(MESES[start+i])}</text><line x1="${x+18}" y1="${yy+50}" x2="${x+colW-18}" y2="${yy+50}" class="ln"/>`;
+    s += dots(x+10, yy+60, colW-20, rowH-70);
+  }
+  return {svg:s};
+}
+
+function tplMes(){
+  const a = state.anchor, y = a.getFullYear(), m = a.getMonth(), n = daysIn(y,m);
+  let s = header(cap(MESES[m]), String(y));
+  const top = 160, colW = 330, rowH = (H-M-top)/n;
+  for (let d = 1; d <= n; d++){
+    const dt = new Date(y,m,d), w = wd(dt), yy = top + (d-1)*rowH;
+    if (w >= 5) s += `<rect x="${M}" y="${yy}" width="${colW}" height="${rowH}" class="we"/>`;
+    s += `<text x="${M+14}" y="${yy+rowH*0.66}" class="sm">${LETRAS[w]}</text><text x="${M+56}" y="${yy+rowH*0.68}" text-anchor="end" class="n">${d}</text>`;
+    s += `<line x1="${M}" y1="${yy+rowH}" x2="${M+colW}" y2="${yy+rowH}" class="ln"/>`;
+    if (iso(dt) === iso(today)) s += `<circle cx="${M+colW-14}" cy="${yy+rowH/2}" r="4" fill="#3a5a8c"/>`;
+  }
+  s += `<line x1="${M+68}" y1="${top}" x2="${M+68}" y2="${H-M}" class="ln"/>`;
+  const rx = M + colW + 40, rw = W - M - rx;
+  s += label(rx, 180, "Metas del mes") + dots(rx, 195, rw, 375);
+  s += label(rx, 610, "Tareas") + dots(rx, 625, rw, 445);
+  s += label(rx, 1110, "Notas") + dots(rx, 1125, rw, H-M-1125);
+  return {svg:s};
+}
+
+function tplSemana(){
+  const s0 = monday(state.anchor), mAnchor = state.anchor.getMonth();
+  const e = new Date(s0); e.setDate(s0.getDate()+6);
+  let s = header("Semana", `${s0.getDate()} – ${e.getDate()} ${MESES[e.getMonth()]}`);
+  const gap = 24, colW = (W-2*M-gap)/2, top = 160, rowH = (H-M-top-3*gap)/4;
+  for (let i = 0; i < 8; i++){
+    const x = M + (i%2)*(colW+gap), yy = top + Math.floor(i/2)*(rowH+gap);
+    let title;
+    if (i < 7){ const d = new Date(s0); d.setDate(s0.getDate()+i); title = `${DIAS[i]} ${d.getDate()}`;
+      if (iso(d) === iso(today)) s += `<circle cx="${x+colW-12}" cy="${yy+18}" r="4" fill="#3a5a8c"/>`; }
+    else title = "Prioridades";
+    s += `<text x="${x}" y="${yy+24}" class="b">${title}</text><line x1="${x}" y1="${yy+38}" x2="${x+colW}" y2="${yy+38}" class="${i<5?"lnd":"lnd"}"/>`;
+    s += dots(x, yy+46, colW, rowH-46);
+  }
+  return {svg:s};
+}
+
+function tplHabitos(){
+  const a = state.anchor, y = a.getFullYear(), m = a.getMonth(), n = daysIn(y,m);
+  let s = header("Hábitos", `${MESES[m]} ${y}`);
+  const nameW = 230, gx = M + nameW, cw = (W-M-gx)/n, top = 215, rows = 14, rh = 42;
+  s += `<text x="${M}" y="190" class="l">HÁBITO</text>`;
+  for (let d = 1; d <= n; d++){
+    const w = wd(new Date(y,m,d)), x = gx + (d-1)*cw;
+    if (w >= 5) s += `<rect x="${x}" y="${top}" width="${cw}" height="${rows*rh}" class="we"/>`;
+    s += `<text x="${x+cw/2}" y="172" text-anchor="middle" class="sm">${LETRAS[w]}</text><text x="${x+cw/2}" y="200" text-anchor="middle" class="sm" fill="#5c5a55">${d}</text>`;
+  }
+  for (let r = 0; r <= rows; r++) s += `<line x1="${M}" y1="${top+r*rh}" x2="${W-M}" y2="${top+r*rh}" class="ln"/>`;
+  for (let d = 0; d <= n; d++) s += `<line x1="${gx+d*cw}" y1="${top}" x2="${gx+d*cw}" y2="${top+rows*rh}" class="ln"/>`;
+  const by = top + rows*rh + 60;
+  s += label(M, by, "Reflexión del mes") + dots(M, by+15, W-2*M, H-M-by-15);
+  return {svg:s};
+}
+
+function tplAnimo(){
+  const y = state.anchor.getFullYear();
+  let s = header("Año en píxeles", String(y));
+  const x0 = M + 40, cw = (W-M-x0)/12, top = 200, ch = 30;
+  const ini = ["E","F","M","A","M","J","J","A","S","O","N","D"];
+  for (let m = 0; m < 12; m++) s += `<text x="${x0+m*cw+cw/2}" y="182" text-anchor="middle" class="sm" fill="#5c5a55">${ini[m]}</text>`;
+  for (let d = 1; d <= 31; d++){
+    const yy = top + (d-1)*ch;
+    s += `<text x="${x0-12}" y="${yy+ch*0.68}" text-anchor="end" class="sm">${d}</text>`;
+    for (let m = 0; m < 12; m++){
+      const x = x0 + m*cw, ok = d <= daysIn(y,m);
+      s += `<rect x="${x+2}" y="${yy+2}" width="${cw-4}" height="${ch-4}" rx="4" ${ok ? 'class="box"' : 'fill="#efede6"'}/>`;
+    }
+  }
+  const ly = top + 31*ch + 50;
+  s += label(M, ly, "Leyenda de colores");
+  for (let i = 0; i < 6; i++){
+    const x = M + (i%3)*((W-2*M)/3), yy = ly + 25 + Math.floor(i/3)*52;
+    s += `<rect x="${x}" y="${yy}" width="30" height="30" rx="6" class="box"/><line x1="${x+44}" y1="${yy+28}" x2="${x+(W-2*M)/3-24}" y2="${yy+28}" class="ln"/>`;
+  }
+  return {svg:s};
+}
+
+function tplSueno(){
+  const a = state.anchor, y = a.getFullYear(), m = a.getMonth(), n = daysIn(y,m);
+  let s = header("Sueño", `${MESES[m]} ${y}`);
+  const hours = [21,22,23,0,1,2,3,4,5,6,7,8,9];
+  const x0 = M + 60, hw = 90, cw = (W-M-hw-x0)/12, top = 205, rh = (H-M-top-110)/n;
+  hours.forEach((h,i) => s += `<text x="${x0+i*cw}" y="190" text-anchor="middle" class="sm" fill="#5c5a55">${h}</text>`);
+  s += `<text x="${W-M-hw/2}" y="190" text-anchor="middle" class="l">HORAS</text>`;
+  for (let d = 1; d <= n; d++){
+    const w = wd(new Date(y,m,d)), yy = top + (d-1)*rh;
+    if (w >= 5) s += `<rect x="${M}" y="${yy}" width="${W-2*M}" height="${rh}" class="we"/>`;
+    s += `<text x="${M+8}" y="${yy+rh*0.68}" class="sm">${LETRAS[w]}</text><text x="${M+48}" y="${yy+rh*0.68}" text-anchor="end" class="n" style="font-size:13px">${d}</text>`;
+  }
+  for (let d = 0; d <= n; d++) s += `<line x1="${M}" y1="${top+d*rh}" x2="${W-M}" y2="${top+d*rh}" class="ln"/>`;
+  for (let i = 0; i <= 12; i++) s += `<line x1="${x0+i*cw}" y1="${top}" x2="${x0+i*cw}" y2="${top+n*rh}" class="${i===3?"lnd":"ln"}"/>`;
+  s += `<line x1="${W-M}" y1="${top}" x2="${W-M}" y2="${top+n*rh}" class="ln"/>`;
+  const by = top + n*rh + 60;
+  s += `<text x="${M}" y="${by}" class="l">PROMEDIO</text><line x1="${M+110}" y1="${by+4}" x2="${M+330}" y2="${by+4}" class="ln"/>`;
+  s += `<text x="${M+380}" y="${by}" class="l">NOTAS</text><line x1="${M+460}" y1="${by+4}" x2="${W-M}" y2="${by+4}" class="ln"/>`;
+  return {svg:s};
+}
+
+function tplGastos(){
+  const a = state.anchor, y = a.getFullYear(), m = a.getMonth();
+  let s = header("Gastos", `${MESES[m]} ${y}`);
+  const gap = 20, bw = (W-2*M-2*gap)/3;
+  ["Presupuesto","Total gastado","Ahorro"].forEach((t,i) => {
+    const x = M + i*(bw+gap);
+    s += `<rect x="${x}" y="160" width="${bw}" height="96" rx="10" class="box"/><text x="${x+16}" y="188" class="l">${t.toUpperCase()}</text>`;
+  });
+  const cols = [[M,"DÍA"],[M+80,"CONCEPTO"],[W-M-370,"CATEGORÍA"],[W-M-150,"IMPORTE"]];
+  const top = 320, rh = 40, rows = Math.floor((H-M-top)/rh);
+  cols.forEach(([x,t]) => s += `<text x="${x+8}" y="${top-12}" class="l">${t}</text>`);
+  for (let r = 0; r <= rows; r++) s += `<line x1="${M}" y1="${top+r*rh}" x2="${W-M}" y2="${top+r*rh}" class="${r===0?"lnd":"ln"}"/>`;
+  cols.slice(1).forEach(([x]) => s += `<line x1="${x}" y1="${top}" x2="${x}" y2="${top+rows*rh}" class="ln"/>`);
+  return {svg:s};
+}
+
+function tplJapones(){
+  const a = state.anchor, y = a.getFullYear(), m = a.getMonth(), n = daysIn(y,m);
+  let s = header("Japonés", `日本語 · ${MESES[m]} ${y}`);
+  s += label(M, 180, "Racha de estudio") + `<text x="${W-M}" y="180" text-anchor="end" class="sm">colorea el día · anota los minutos</text>`;
+  const cw = (W-2*M)/7, ch = 52, top = 222, off = wd(new Date(y,m,1)), rows = Math.ceil((off+n)/7);
+  LETRAS.forEach((l,i) => s += `<text x="${M+i*cw+cw/2}" y="210" text-anchor="middle" class="sm">${l}</text>`);
+  for (let d = 1; d <= n; d++){
+    const i = off + d - 1, x = M + (i%7)*cw, yy = top + Math.floor(i/7)*ch, dt = new Date(y,m,d);
+    s += `<rect x="${x+3}" y="${yy+3}" width="${cw-6}" height="${ch-6}" rx="8" class="box"${i%7>=5?' style="fill:#f7f6f1"':''}/>`;
+    s += `<text x="${x+12}" y="${yy+20}" class="sm" fill="#5c5a55">${d}</text>`;
+    if (iso(dt) === iso(today)) s += `<circle cx="${x+cw-16}" cy="${yy+16}" r="4" fill="#3a5a8c"/>`;
+  }
+  const by = top + 6*ch + 36;   // posición fija: el bloque de kanji no se mueve entre meses
+  s += label(M, by, "Objetivo del mes") + `<line x1="${M+180}" y1="${by+4}" x2="${W-M}" y2="${by+4}" class="ln"/>`;
+  const KANJI = 15, COLS = 5, KROWS = Math.ceil(KANJI/COLS), gap = 18, linesH = 80;
+  const ky = by + 50, avail = H - M - (ky + 20);
+  const kw = Math.min((W-2*M-(COLS-1)*gap)/COLS, (avail - (KROWS-1)*gap)/KROWS - linesH), kh = kw + linesH;
+  const cellW = (W-2*M-(COLS-1)*gap)/COLS;
+  s += label(M, ky, "Kanji del mes") + `<text x="${W-M}" y="${ky}" text-anchor="end" class="sm">${KANJI} kanji</text>`;
+  for (let i = 0; i < KANJI; i++){
+    const cx = M + (i%COLS)*(cellW+gap), x = cx + (cellW-kw)/2, yy = ky + 20 + Math.floor(i/COLS)*(kh+gap);
+    s += `<rect x="${x}" y="${yy}" width="${kw}" height="${kw}" rx="6" class="box"/>`;
+    s += `<text x="${x+7}" y="${yy+15}" class="sm" fill="#b8b6ae">${i+1}</text>`;
+    s += `<line x1="${x+kw/2}" y1="${yy+6}" x2="${x+kw/2}" y2="${yy+kw-6}" stroke="#e4e2db" stroke-dasharray="4 5"/>`;
+    s += `<line x1="${x+6}" y1="${yy+kw/2}" x2="${x+kw-6}" y2="${yy+kw/2}" stroke="#e4e2db" stroke-dasharray="4 5"/>`;
+    ["on","kun","significado"].forEach((t,j) => { const ly = yy + kw + 24 + j*24;
+      s += `<text x="${cx}" y="${ly-4}" class="sm">${t}</text><line x1="${cx}" y1="${ly}" x2="${cx+cellW}" y2="${ly}" class="ln"/>`; });
+  }
+  return {svg:s};
+}
+
+function tplVocab(){
+  const a = state.anchor, y = a.getFullYear(), m = a.getMonth();
+  let s = header("Vocabulario", `語彙 · ${MESES[m]} ${y}`);
+  const cols = [[M,"PALABRA"],[M+230,"LECTURA"],[M+450,"SIGNIFICADO"],[W-M-56,"✓"]];
+  const top = 200, rh = 44, rows = 19;
+  cols.forEach(([x,t]) => s += `<text x="${x+8}" y="${top-12}" class="l">${t}</text>`);
+  for (let r = 0; r <= rows; r++) s += `<line x1="${M}" y1="${top+r*rh}" x2="${W-M}" y2="${top+r*rh}" class="${r===0?"lnd":"ln"}"/>`;
+  cols.slice(1).forEach(([x]) => s += `<line x1="${x}" y1="${top}" x2="${x}" y2="${top+rows*rh}" class="ln"/>`);
+  const by = top + rows*rh + 60;
+  s += label(M, by, "Dudas para resolver") + dots(M, by+15, W-2*M, H-M-by-15);
+  return {svg:s};
+}
+
+const TEMPLATES = {japones:tplJapones, vocab:tplVocab,indice:tplIndice, leyenda:tplLeyenda, future:tplFuture, mes:tplMes, semana:tplSemana,
+  habitos:tplHabitos, animo:tplAnimo, sueno:tplSueno, gastos:tplGastos};
+
+/* ---------- Almacenamiento (IndexedDB) ---------- */
+let db = null; const memStore = new Map();
+function openDB(){
+  return new Promise(res => {
+    try {
+      const r = indexedDB.open("bujo-mi-agenda", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("pages");
+      r.onsuccess = () => { db = r.result; res(); };
+      r.onerror = () => { toast("No se pudo abrir el almacenamiento: los trazos no se guardarán"); res(); };
+    } catch(e){ toast("No se pudo abrir el almacenamiento"); res(); }
+  });
+}
+function dbGet(k){ return new Promise(res => { if(!db) return res(memStore.get(k)); try{ const r = db.transaction("pages").objectStore("pages").get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>res(undefined);}catch(e){res(undefined);} }); }
+function dbPut(k,v){ return new Promise(res => { if(!db){ memStore.set(k,v); return res(); } try{ const t = db.transaction("pages","readwrite"); t.objectStore("pages").put(v,k); t.oncomplete=()=>res(); t.onerror=()=>{ toast("Error al guardar"); res(); }; }catch(e){ toast("Error al guardar"); res(); } }); }
+function dbAll(){ return new Promise(res => { const out = {}; if(!db){ memStore.forEach((v,k)=>out[k]=v); return res(out); }
+  const r = db.transaction("pages").objectStore("pages").openCursor();
+  r.onsuccess = () => { const c = r.result; if (c){ out[c.key] = c.value; c.continue(); } else res(out); }; r.onerror = () => res(out); }); }
+
+/* ---------- Dibujo ---------- */
+const page = document.getElementById("page"), tpl = document.getElementById("tpl");
+const base = document.getElementById("base"), live = document.getElementById("live");
+const bctx = base.getContext("2d"), lctx = live.getContext("2d");
+let scale = 1, dpr = 1, strokes = [], curKey = null, links = [];
+const undoStacks = new Map(), redoStacks = new Map();
+let tool = "pen", color = "#2b2b2b", penW = 2.4;
+const COLORS = ["#2b2b2b","#8a8a8a","#3a5a8c","#b5523b","#5f7d5a","#c9a227"];
+const HL_COLORS = ["#f2d74e","#a8c8e8","#f0b8a8","#b8d8a8","#d8c8e8","#e8e2c8"];
+
+function layout(){
+  const top = document.getElementById("bar").offsetHeight, bottom = document.getElementById("tools").offsetHeight + 20;
+  const stage = document.getElementById("stage");
+  stage.style.top = top + "px"; stage.style.bottom = bottom + "px";
+  const aw = innerWidth - 24, ah = innerHeight - top - bottom - 16;
+  scale = Math.min(aw / W, ah / H); dpr = window.devicePixelRatio || 1;
+  page.style.width = W*scale + "px"; page.style.height = H*scale + "px";
+  [base, live].forEach(c => { c.width = Math.round(W*scale*dpr); c.height = Math.round(H*scale*dpr); });
+  redraw();
+}
+function setT(ctx){ ctx.setTransform(scale*dpr,0,0,scale*dpr,0,0); }
+
+function drawStroke(ctx, s){
+  const p = s.p, n = p.length/3;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = s.c; ctx.fillStyle = s.c;
+  if (s.t === "hl"){
+    ctx.globalAlpha = 0.45; ctx.globalCompositeOperation = "multiply"; ctx.lineWidth = s.w;
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+    for (let i = 1; i < n; i++) ctx.lineTo(p[i*3], p[i*3+1]);
+    if (n === 1) ctx.lineTo(p[0]+0.1, p[1]);
+    ctx.stroke(); ctx.restore(); return;
+  }
+  const wf = pr => s.w * (0.35 + 0.95 * Math.max(0.1, Math.min(1, pr)));
+  if (n === 1){ ctx.beginPath(); ctx.arc(p[0], p[1], wf(p[2])/2, 0, Math.PI*2); ctx.fill(); ctx.restore(); return; }
+  let px = p[0], py = p[1];
+  for (let i = 1; i < n; i++){
+    const x = p[i*3], y = p[i*3+1];
+    const nx = i < n-1 ? (x + p[(i+1)*3]) / 2 : x, ny = i < n-1 ? (y + p[(i+1)*3+1]) / 2 : y;
+    ctx.lineWidth = wf((p[i*3+2] + p[(i-1)*3+2]) / 2);
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.quadraticCurveTo(x, y, nx, ny); ctx.stroke();
+    px = nx; py = ny;
+  }
+  ctx.restore();
+}
+function redraw(){
+  bctx.setTransform(1,0,0,1,0,0); bctx.clearRect(0,0,base.width,base.height); setT(bctx);
+  strokes.forEach(s => drawStroke(bctx, s));
+  lctx.setTransform(1,0,0,1,0,0); lctx.clearRect(0,0,live.width,live.height);
+}
+const save = () => dbPut(curKey, strokes);
+function pushUndo(){ const u = undoStacks.get(curKey) || []; u.push(strokes.slice()); if (u.length > 60) u.shift(); undoStacks.set(curKey, u); redoStacks.set(curKey, []); }
+
+function toLogical(e){ const r = page.getBoundingClientRect(); return {x:(e.clientX - r.left)/scale, y:(e.clientY - r.top)/scale}; }
+const penOnlyEl = document.getElementById("penonly");
+try { if (localStorage.getItem("bujo-penonly") === "0") penOnlyEl.checked = false; } catch(e){}
+penOnlyEl.onchange = () => { try{ localStorage.setItem("bujo-penonly", penOnlyEl.checked ? "1" : "0"); }catch(e){} };
+const canDraw = e => e.pointerType === "pen" || e.pointerType === "mouse" || !penOnlyEl.checked;
+
+let cur = null, erasing = false, erased = false, touch = null;
+function eraseAt(pt){
+  const r = 14, before = strokes.length;
+  strokes = strokes.filter(s => { for (let i = 0; i < s.p.length; i += 3){ const dx = s.p[i]-pt.x, dy = s.p[i+1]-pt.y; if (dx*dx + dy*dy < r*r) return false; } return true; });
+  if (strokes.length !== before){ erased = true; redraw(); }
+}
+live.addEventListener("pointerdown", e => {
+  closeMenu();
+  if (!canDraw(e)){ touch = {x:e.clientX, y:e.clientY, id:e.pointerId}; return; }
+  e.preventDefault(); live.setPointerCapture(e.pointerId);
+  const pt = toLogical(e);
+  if (tool === "eraser"){ pushUndo(); erasing = true; erased = false; eraseAt(pt); return; }
+  const hl = tool === "hl";
+  cur = {t: hl ? "hl" : "pen", c: hl ? HL_COLORS[COLORS.indexOf(color)] || HL_COLORS[0] : color, w: hl ? 18 : penW,
+         p:[+pt.x.toFixed(1), +pt.y.toFixed(1), e.pointerType === "pen" ? e.pressure : 0.5]};
+});
+live.addEventListener("pointermove", e => {
+  if (erasing){ (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]).forEach(ev => eraseAt(toLogical(ev))); return; }
+  if (!cur) return;
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  for (const ev of evs){
+    const pt = toLogical(ev), L = cur.p.length;
+    const dx = pt.x - cur.p[L-3], dy = pt.y - cur.p[L-2];
+    if (dx*dx + dy*dy < 0.6) continue;
+    cur.p.push(+pt.x.toFixed(1), +pt.y.toFixed(1), ev.pointerType === "pen" ? ev.pressure : 0.5);
+  }
+  lctx.setTransform(1,0,0,1,0,0); lctx.clearRect(0,0,live.width,live.height); setT(lctx); drawStroke(lctx, cur);
+});
+function endStroke(e){
+  if (touch && e.pointerId === touch.id){
+    const dx = e.clientX - touch.x, dy = e.clientY - touch.y; touch = null;
+    if (Math.abs(dx) > 80 && Math.abs(dy) < 70){ move(dx < 0 ? 1 : -1); return; }
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10){
+      const pt = toLogical(e), l = links.find(l => pt.x >= l.x && pt.x <= l.x+l.w && pt.y >= l.y && pt.y <= l.y+l.h);
+      if (l) go(l.go);
+    }
+    return;
+  }
+  if (erasing){ erasing = false; if (erased) save(); else (undoStacks.get(curKey) || []).pop(); return; }
+  if (!cur) return;
+  pushUndo(); strokes.push(cur); cur = null; redraw(); save();
+}
+live.addEventListener("pointerup", endStroke);
+live.addEventListener("pointercancel", endStroke);
+
+/* ---------- Interfaz ---------- */
+const tabsEl = document.getElementById("tabs");
+SECTIONS.forEach(s => { const b = document.createElement("button"); b.className = "tab"; b.textContent = s.name; b.dataset.sec = s.id; b.onclick = () => go({sec:s.id}); tabsEl.appendChild(b); });
+function go(g){ if (g.d) state.anchor = new Date(g.d); state.sec = g.sec; render(); }
+
+async function render(){
+  try { localStorage.setItem("bujo-state", JSON.stringify({sec:state.sec})); } catch(e){}
+  document.querySelectorAll(".tab").forEach(b => { b.classList.toggle("on", b.dataset.sec === state.sec); if (b.dataset.sec === state.sec) b.scrollIntoView({inline:"nearest", block:"nearest"}); });
+  const ni = navInfo();
+  document.getElementById("navlabel").textContent = ni.label || "Mi bullet journal";
+  document.getElementById("nav").classList.toggle("hidden", !ni.step);
+  const t = TEMPLATES[state.sec]();
+  tpl.innerHTML = STYLE + t.svg; links = t.links || [];
+  const key = pageKey(); curKey = key; cur = null;
+  const data = await dbGet(key);
+  if (curKey !== key) return;
+  strokes = Array.isArray(data) ? data : [];
+  layout();
+}
+
+document.querySelectorAll("[data-tool]").forEach(b => b.onclick = () => {
+  tool = b.dataset.tool; document.querySelectorAll("[data-tool]").forEach(x => x.classList.toggle("on", x === b));
+});
+const sws = document.getElementById("swatches");
+COLORS.forEach((c,i) => { const b = document.createElement("button"); b.className = "sw" + (i===0?" on":""); b.style.background = c;
+  b.onclick = () => { color = c; sws.querySelectorAll(".sw").forEach(x => x.classList.toggle("on", x === b)); if (tool === "eraser") document.querySelector('[data-tool="pen"]').click(); };
+  sws.appendChild(b); });
+document.querySelectorAll(".wd").forEach(b => b.onclick = () => { penW = +b.dataset.w; document.querySelectorAll(".wd").forEach(x => x.classList.toggle("on", x === b)); });
+
+document.getElementById("undo").onclick = () => { const u = undoStacks.get(curKey); if (!u || !u.length) return;
+  const r = redoStacks.get(curKey) || []; r.push(strokes); redoStacks.set(curKey, r); strokes = u.pop(); redraw(); save(); };
+document.getElementById("redo").onclick = () => { const r = redoStacks.get(curKey); if (!r || !r.length) return;
+  const u = undoStacks.get(curKey) || []; u.push(strokes); undoStacks.set(curKey, u); strokes = r.pop(); redraw(); save(); };
+document.getElementById("prev").onclick = () => move(-1);
+document.getElementById("next").onclick = () => move(1);
+
+const menu = document.getElementById("menu");
+const closeMenu = () => menu.classList.remove("open");
+document.getElementById("more").onclick = e => { e.stopPropagation(); menu.classList.toggle("open"); };
+document.getElementById("clear").onclick = () => { closeMenu(); if (!strokes.length) return;
+  if (confirm("¿Borrar todo lo escrito en esta página? Puedes deshacerlo con ↶.")){ pushUndo(); strokes = []; redraw(); save(); } };
+document.getElementById("exp").onclick = async () => { closeMenu();
+  const all = await dbAll(); const blob = new Blob([JSON.stringify({app:"bujo-mi-agenda", v:1, pages:all})], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `bullet-journal-copia-${iso(new Date())}.json`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast("Copia exportada"); };
+const imp = document.getElementById("imp");
+document.getElementById("impbtn").onclick = () => { closeMenu(); imp.click(); };
+imp.onchange = async () => { const f = imp.files[0]; if (!f) return;
+  try { const j = JSON.parse(await f.text()); if (!j.pages) throw 0;
+    if (!confirm("Esto sustituirá las páginas que coincidan con las de la copia. ¿Continuar?")) return;
+    for (const k in j.pages) await dbPut(k, j.pages[k]); toast("Copia importada"); render();
+  } catch(e){ toast("Ese archivo no es una copia válida"); } imp.value = ""; };
+
+let tt; function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2200); }
+addEventListener("resize", () => { clearTimeout(window._rz); window._rz = setTimeout(layout, 120); });
+document.addEventListener("pointerdown", e => { if (!menu.contains(e.target) && e.target.id !== "more") closeMenu(); });
+document.addEventListener("gesturestart", e => e.preventDefault());
+
+openDB().then(render);
+})();
+</script>
+</body>
+</html>
