@@ -130,7 +130,7 @@ textarea{min-height:90px;resize:vertical}
 .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
 
 /* ---------- zona de trabajo ---------- */
-.ws{flex:1;overflow:auto;padding:26px 24px 60px;-webkit-overflow-scrolling:touch}
+.ws{flex:1;overflow:auto;touch-action:pan-x pan-y;padding:26px 24px 60px;-webkit-overflow-scrolling:touch}
 .page{position:relative;margin:0 auto;aspect-ratio:1240/1754;border-radius:3px;overflow:hidden;background:#fff;
   box-shadow:0 1px 2px rgba(0,0,0,.08),0 18px 36px -14px rgba(60,40,20,.35)}
 .page canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -771,7 +771,24 @@ function redrawInk(){
 }
 
 /* ---- puntero ---- */
-let curSt=null,pan=null;
+let curSt=null,pan=null,pinch=null;const touches=new Map();
+function startPinch(){
+  const [a,b]=[...touches.values()];const r=$('#page').getBoundingClientRect();
+  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:state.settings.zoom,fx:(mx-r.left)/r.width,fy:(my-r.top)/r.height};
+}
+function movePinch(){
+  const [a,b]=[...touches.values()];const ws=$('#ws'),pg=$('#page');
+  const d=Math.hypot(a.x-b.x,a.y-b.y);const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  state.settings.zoom=clamp(pinch.z0*d/pinch.d0,0.5,4);applyZoom();
+  const r=pg.getBoundingClientRect();
+  ws.scrollLeft+=(r.left+pinch.fx*r.width)-mx;
+  ws.scrollTop+=(r.top+pinch.fy*r.height)-my;
+}
+function cancelStroke(){
+  if(!curSt)return;const wasEraser=curSt.t==='eraser';curSt=null;
+  liveCtx.clearRect(0,0,W,H);if(wasEraser)redrawInk();
+}
 function toXY(e){const r=live.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
 function addPoint(e){
   const[x,y]=toXY(e);let p=e.pointerType==='pen'?e.pressure:0.5;if(!p||p<0.05)p=e.pointerType==='pen'?0.15:0.5;
@@ -784,6 +801,11 @@ function addPoint(e){
 }
 live.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'&&e.button!==0)return;
+  if(e.pointerType==='touch'){
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{live.setPointerCapture(e.pointerId)}catch(_){}
+    if(touches.size>=2){if(curSt&&curSt.isTouch)cancelStroke();pan=null;startPinch();return}
+  }
   closePop();
   if(window.innerWidth<=900&&document.body.classList.contains('panel-open')){document.body.classList.remove('panel-open');return}
   if(state.settings.penOnly&&e.pointerType==='touch'){
@@ -792,13 +814,15 @@ live.addEventListener('pointerdown',e=>{
   e.preventDefault();
   try{live.setPointerCapture(e.pointerId)}catch(_){}
   const t=state.settings.tool;
-  curSt={t,c:state.settings.color,s:state.settings.sizes[t],p:[],id:e.pointerId};
+  curSt={t,c:state.settings.color,s:state.settings.sizes[t],p:[],id:e.pointerId,isTouch:e.pointerType==='touch'};
   if(t==='nib')curSt.a=state.settings.nibAngle;
   live.style.opacity=(t==='pencil'||t==='marker')?TOOLS[t].alpha:1;
   live.style.mixBlendMode=t==='marker'?'multiply':'normal';
   addPoint(e);
 });
 live.addEventListener('pointermove',e=>{
+  if(e.pointerType==='touch'&&touches.has(e.pointerId)){const t=touches.get(e.pointerId);t.x=e.clientX;t.y=e.clientY;
+    if(pinch){if(touches.size>=2)movePinch();return}}
   if(pan&&e.pointerId===pan.id){const ws=$('#ws');ws.scrollLeft=pan.sl-(e.clientX-pan.x);ws.scrollTop=pan.st-(e.clientY-pan.y);return}
   if(!curSt||e.pointerId!==curSt.id)return;
   e.preventDefault();
@@ -806,9 +830,11 @@ live.addEventListener('pointermove',e=>{
   for(const ev of (evs.length?evs:[e]))addPoint(ev);
 });
 function endStroke(e){
+  if(e.pointerType==='touch'){touches.delete(e.pointerId);
+    if(pinch){if(touches.size<2){pinch=null;touch('state')}return}}
   if(pan&&e.pointerId===pan.id){pan=null;return}
   if(!curSt||e.pointerId!==curSt.id)return;
-  const st=curSt;curSt=null;delete st.id;
+  const st=curSt;curSt=null;delete st.id;delete st.isTouch;
   if(st.t==='eraser'){inkCtx.save();inkCtx.globalCompositeOperation='destination-out';drawTail(inkCtx,st);inkCtx.restore()}
   liveCtx.clearRect(0,0,W,H);
   if(st.t!=='eraser')renderStroke(inkCtx,st);
