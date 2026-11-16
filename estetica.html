@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Estética">
+<meta name="theme-color" content="#f7f1ee">
+<title>Estética Personal</title>
+<style>
+  :root{
+    --bg:#f7f1ee; --card:#fffdfb; --ink:#3a2e2b; --muted:#8c7b76; --line:#eadfda;
+    --rose:#b9767a; --rose-soft:#f3e2e1;
+    --pelu:#b9767a; --pelu-soft:#f5e4e3;
+    --unas:#9b7bb0; --unas-soft:#eee6f3;
+    --barb:#6f8a87; --barb-soft:#e3ecea;
+    --radius:14px; --shadow:0 1px 2px rgba(58,46,43,.06),0 4px 14px rgba(58,46,43,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%}
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:normal;margin:0}
+  a{color:var(--rose)}
+  .wrap{max-width:920px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 16px}
+  header h1{font-size:1.7rem;letter-spacing:.3px}
+  header small{display:block;color:var(--muted);font-size:.85rem;margin-top:2px}
+  .back{text-decoration:none;font-size:.9rem;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);white-space:nowrap}
+
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,253,251,.96);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);
+    display:flex;justify-content:center;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  nav.tabs button{flex:1;max-width:150px;border:0;background:none;padding:8px 4px;border-radius:10px;
+    font:inherit;font-size:.78rem;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+  nav.tabs button span{font-size:1.25rem;line-height:1}
+  nav.tabs button.on{color:var(--rose);background:var(--rose-soft)}
+
+  section.view{display:none}
+  section.view.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+  .card h2{font-size:1.25rem;margin-bottom:12px}
+  .grid{display:grid;gap:12px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:620px){.g2,.g3{grid-template-columns:1fr}}
+  label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:var(--muted)}
+  input,select,textarea{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:44px}
+  textarea{min-height:80px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--rose-soft);border-color:var(--rose)}
+
+  .cats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .cat{border:2px solid var(--line);background:#fff;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;font:inherit;color:var(--ink)}
+  .cat b{display:block;font-size:1.6rem;margin-bottom:2px;font-weight:normal}
+  .cat.on[data-c="peluqueria"]{border-color:var(--pelu);background:var(--pelu-soft)}
+  .cat.on[data-c="unas"]{border-color:var(--unas);background:var(--unas-soft)}
+  .cat.on[data-c="barberia"]{border-color:var(--barb);background:var(--barb-soft)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;cursor:pointer;font-size:.92rem;user-select:none;-webkit-user-select:none}
+  .chip input{display:none}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tag{display:inline-block;font-size:.78rem;padding:3px 10px;border-radius:999px;background:var(--rose-soft);color:var(--ink)}
+  .tag.peluqueria{background:var(--pelu-soft)} .tag.unas{background:var(--unas-soft)} .tag.barberia{background:var(--barb-soft)}
+
+  .btn{font:inherit;border:0;border-radius:10px;padding:11px 18px;cursor:pointer;min-height:44px;background:var(--ink);color:#fff}
+  .btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn.danger{background:#fff;color:#a2474b;border:1px solid #e9c9ca}
+  .btn.small{padding:7px 12px;min-height:36px;font-size:.85rem}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row.end{justify-content:flex-end}
+  .muted{color:var(--muted)}
+  .hint{font-size:.82rem;color:var(--muted);margin-top:6px}
+
+  .filters{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:10px}
+  @media (max-width:620px){.filters{grid-template-columns:1fr 1fr}.filters .full{grid-column:1/-1}}
+  .month-head{display:flex;justify-content:space-between;align-items:baseline;margin:20px 4px 8px;font-family:Georgia,serif}
+  .month-head h3{font-size:1.15rem}
+  .entry{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--rose);border-radius:12px;padding:14px;margin-bottom:10px}
+  .entry.peluqueria{border-left-color:var(--pelu)} .entry.unas{border-left-color:var(--unas)} .entry.barberia{border-left-color:var(--barb)}
+  .entry .day{text-align:center;min-width:48px}
+  .entry .day b{display:block;font-family:Georgia,serif;font-size:1.6rem;font-weight:normal;line-height:1}
+  .entry .day small{color:var(--muted);font-size:.75rem;text-transform:uppercase}
+  .entry .body{flex:1;min-width:0}
+  .entry .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .entry .price{font-family:Georgia,serif;font-size:1.2rem;white-space:nowrap}
+  .entry .meta{font-size:.88rem;color:var(--muted);margin:4px 0}
+  .entry .notes{font-size:.9rem;margin-top:6px;white-space:pre-wrap}
+  .entry .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media (max-width:620px){.stats{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stat small{color:var(--muted);font-size:.8rem;display:block}
+  .stat b{font-family:Georgia,serif;font-weight:normal;font-size:1.5rem}
+  .bars{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:170px;padding-top:10px}
+  .bar{display:flex;flex-direction:column;justify-content:flex-end;height:100%;cursor:pointer}
+  .bar .stack{display:flex;flex-direction:column-reverse;border-radius:6px 6px 2px 2px;overflow:hidden;min-height:2px;background:var(--line)}
+  .bar .stack i{display:block}
+  .bar small{text-align:center;font-size:.7rem;color:var(--muted);margin-top:4px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  th,td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:normal;font-size:.8rem}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+
+  .link-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .link-item:last-child{border-bottom:0}
+  .link-item .ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:var(--rose-soft);flex:none}
+  .link-item .tx{flex:1;min-width:0}
+  .link-item .tx b{display:block;font-weight:600}
+  .link-item .tx small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .empty{text-align:center;color:var(--muted);padding:30px 10px}
+  .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);opacity:0;
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.9rem;transition:.25s;z-index:50;pointer-events:none}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .editing-banner{display:none;background:var(--rose-soft);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.9rem}
+  .editing-banner.on{display:flex;justify-content:space-between;align-items:center;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Estética Personal</h1>
+      <small id="subtitle">Peluquería · Uñas · Barbería</small>
+    </div>
+    <a class="back" href="index.html">← Mi Agenda</a>
+  </header>
+
+  <!-- ============ NUEVO REGISTRO ============ -->
+  <section class="view on" id="v-nuevo">
+    <div class="card">
+      <div class="editing-banner" id="editBanner">
+        <span>✏️ Editando un registro</span>
+        <button class="btn sec small" type="button" id="cancelEdit">Cancelar</button>
+      </div>
+      <h2 id="formTitle">Nuevo registro</h2>
+      <form id="form" autocomplete="off">
+        <div class="cats" id="cats">
+          <button type="button" class="cat on" data-c="peluqueria"><b>💇‍♀️</b>Peluquería</button>
+          <button type="button" class="cat" data-c="unas"><b>💅</b>Uñas</button>
+          <button type="button" class="cat" data-c="barberia"><b>💈</b>Barbería</button>
+        </div>
+
+        <p class="muted" style="margin:16px 0 8px;font-size:.85rem">Servicios realizados</p>
+        <div class="chips" id="servicios"></div>
+        <div class="row" style="margin-top:10px">
+          <input id="otroServicio" placeholder="Añadir otro servicio (opcional)" style="flex:1;min-width:200px">
+          <button class="btn sec small" type="button" id="addOtro">Añadir</button>
+        </div>
+
+        <div class="grid g3" style="margin-top:16px">
+          <label class="f">Fecha
+            <input type="date" id="fecha" required>
+          </label>
+          <label class="f">Precio (€)
+            <input type="number" id="precio" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required>
+          </label>
+          <label class="f">Próxima cita (opcional)
+            <input type="date" id="proxima">
+          </label>
+        </div>
+
+        <div class="grid g2" style="margin-top:12px">
+          <label class="f">Establecimiento
+            <input id="lugar" list="dlLugares" placeholder="Nombre del salón">
+          </label>
+          <label class="f">Profesional
+            <input id="profesional" list="dlProfes" placeholder="Quién te atendió">
+          </label>
+        </div>
+
+        <label class="f" style="margin-top:12px">Página web / reserva (opcional)
+          <input type="text" inputmode="url" autocapitalize="off" id="enlace" list="dlEnlaces" placeholder="https://">
+        </label>
+
+        <label class="f" style="margin-top:12px">Notas (color, referencia del tinte, largo, forma de uñas…)
+          <textarea id="notas" placeholder="Ej.: Tinte 7.1 rubio ceniza, mechas balayage, puntas 2 cm"></textarea>
+        </label>
+
+        <div class="row end" style="margin-top:16px">
+          <button class="btn sec" type="button" id="btnReset">Limpiar</button>
+          <button class="btn" type="submit" id="btnGuardar">Guardar registro</button>
+        </div>
+      </form>
+    </div>
+    <datalist id="dlLugares"></datalist>
+    <datalist id="dlProfes"></datalist>
+    <datalist id="dlEnlaces"></datalist>
+  </section>
+
+  <!-- ============ HISTORIAL ============ -->
+  <section class="view" id="v-historial">
+    <div class="card">
+      <h2>Historial</h2>
+      <div class="filters">
+        <label class="f">Mes
+          <input type="month" id="fMes">
+        </label>
+        <label class="f">Categoría
+          <select id="fCat">
+            <option value="">Todas</option>
+            <option value="peluqueria">Peluquería</option>
+            <option value="unas">Uñas</option>
+            <option value="barberia">Barbería</option>
+          </select>
+        </label>
+        <label class="f full">Buscar
+          <input type="search" id="fTexto" placeholder="Servicio, salón, notas…">
+        </label>
+      </div>
+      <div class="row" style="margin-top:10px;justify-content:space-between">
+        <span class="muted" id="fResumen"></span>
+        <button class="btn sec small" type="button" id="fLimpiar">Quitar filtros</button>
+      </div>
+    </div>
+    <div id="lista"></div>
+  </section>
+
+  <!-- ============ RESUMEN ============ -->
+  <section class="view" id="v-resumen">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">Resumen</h2>
+        <select id="rAnio" style="width:auto"></select>
+      </div>
+    </div>
+    <div class="stats" id="rStats"></div>
+    <div class="card" style="margin-top:16px">
+      <h2>Gasto por mes</h2>
+      <div class="bars" id="rBars"></div>
+      <div class="legend">
+        <span><i style="background:var(--pelu)"></i>Peluquería</span>
+        <span><i style="background:var(--unas)"></i>Uñas</span>
+        <span><i style="background:var(--barb)"></i>Barbería</span>
+      </div>
+      <p class="hint">Toca un mes para verlo en el historial.</p>
+    </div>
+    <div class="card">
+      <h2>Por categoría</h2>
+      <table id="rTablaCat"></table>
+    </div>
+    <div class="card">
+      <h2>Servicios más frecuentes</h2>
+      <table id="rTablaServ"></table>
+    </div>
+    <div class="card">
+      <h2>Última visita y próximas citas</h2>
+      <table id="rUltimas"></table>
+    </div>
+  </section>
+
+  <!-- ============ ENLACES ============ -->
+  <section class="view" id="v-enlaces">
+    <div class="card">
+      <h2>Mis páginas web</h2>
+      <p class="muted" style="margin-top:-6px;font-size:.9rem">Salones, reservas online, tiendas de productos, inspiración…</p>
+      <form id="linkForm" class="grid" style="grid-template-columns:1fr 1.4fr auto;align-items:end;margin-top:8px" autocomplete="off">
+        <label class="f">Nombre
+          <input id="lNombre" placeholder="Ej.: Salón Aura" required>
+        </label>
+        <label class="f">Dirección web
+          <input type="text" inputmode="url" autocapitalize="off" id="lUrl" placeholder="https://" required>
+        </label>
+        <button class="btn" type="submit">Añadir</button>
+      </form>
+      <label class="f" style="margin-top:10px;max-width:260px">Categoría
+        <select id="lCat">
+          <option value="general">General</option>
+          <option value="peluqueria">Peluquería</option>
+          <option value="unas">Uñas</option>
+          <option value="barberia">Barbería</option>
+        </select>
+      </label>
+    </div>
+    <div class="card" id="linkList"></div>
+  </section>
+
+  <!-- ============ COPIAS ============ -->
+  <section class="view" id="v-copias">
+    <div class="card">
+      <h2>Copias de seguridad</h2>
+      <p style="margin-top:0">Los datos se guardan <b>en este dispositivo</b> (en el navegador). El iPad y el Mac no se sincronizan solos: para pasar los datos de uno a otro, exporta aquí e importa en el otro.</p>
+      <div class="row">
+        <button class="btn" type="button" id="exportJson">⬇︎ Exportar copia (.json)</button>
+        <button class="btn sec" type="button" id="exportCsv">⬇︎ Exportar tabla (.csv)</button>
+        <label class="btn sec" style="display:inline-flex;align-items:center">⬆︎ Importar copia
+          <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+        </label>
+      </div>
+      <p class="hint">Importar <b>combina</b> la copia con lo que ya tienes (no borra nada y no duplica registros).</p>
+      <p class="hint" id="infoDatos"></p>
+    </div>
+    <div class="card">
+      <h2>Zona delicada</h2>
+      <p class="muted" style="margin-top:0">Borra todos los registros y enlaces de este dispositivo. Exporta una copia antes.</p>
+      <button class="btn danger" type="button" id="borrarTodo">Borrar todos los datos</button>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button class="on" data-v="nuevo"><span>＋</span>Nuevo</button>
+  <button data-v="historial"><span>☰</span>Historial</button>
+  <button data-v="resumen"><span>📊</span>Resumen</button>
+  <button data-v="enlaces"><span>🔗</span>Enlaces</button>
+  <button data-v="copias"><span>⛁</span>Copias</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Configuración ---------- */
+  const CATS = {
+    peluqueria:{nombre:"Peluquería", icono:"💇‍♀️", color:"var(--pelu)",
+      servicios:["Corte","Tinte","Mechas","Lavado y secado"]},
+    unas:{nombre:"Uñas", icono:"💅", color:"var(--unas)",
+      servicios:["Manicura","Pedicura","Semipermanente","Gel","Acrílicas","Retirada","Decoración"]},
+    barberia:{nombre:"Barbería", icono:"💈", color:"var(--barb)",
+      servicios:["Corte","Barba","Lavado"]}
+  };
+  const KEY = "estetica_v1";
+  const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const eur = new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"});
+
+  /* ---------- Datos ---------- */
+  let db = {registros:[], enlaces:[], extras:{}};
+  function cargar(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(raw){
+        const d = JSON.parse(raw);
+        db.registros = Array.isArray(d.registros)?d.registros:[];
+        db.enlaces = Array.isArray(d.enlaces)?d.enlaces:[];
+        db.extras = d.extras && typeof d.extras==="object"?d.extras:{};
+      }
+    }catch(e){ toast("No se pudieron leer los datos guardados"); }
+  }
+  function guardar(){
+    try{ localStorage.setItem(KEY, JSON.stringify(db)); }
+    catch(e){ toast("⚠️ No se pudo guardar. Exporta una copia."); }
+  }
+  const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+  /* ---------- Utilidades ---------- */
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const hoyISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+  const parseISO = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+  const fechaLarga = s => parseISO(s).toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const mesLargo = ym => { const [y,m]=ym.split("-").map(Number); const t=new Date(y,m-1,1).toLocaleDateString("es-ES",{month:"long",year:"numeric"}); return t.charAt(0).toUpperCase()+t.slice(1); };
+  const diasEntre = (a,b) => Math.round((parseISO(b)-parseISO(a))/86400000);
+  const haceTxt = n => n===0?"hoy":n===1?"ayer":"hace "+n+" días";
+  const enTxt = n => n===0?"hoy":n===1?"mañana":"en "+n+" días";
+  const urlSegura = u => { try{ const x=new URL(u); return /^https?:$/.test(x.protocol)?x.href:""; }catch(e){ return ""; } };
+  function normalizarUrl(u){ u=(u||"").trim(); if(!u) return ""; if(!/^https?:\/\//i.test(u)) u="https://"+u; return urlSegura(u); }
+  function dominio(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return u; } }
+  let toastT;
+  function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),2200); }
+  function descargar(nombre, contenido, tipo){
+    const blob = new Blob([contenido],{type:tipo});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  }
+
+  /* ---------- Navegación ---------- */
+  function ir(v){
+    document.querySelectorAll("section.view").forEach(s=>s.classList.toggle("on", s.id==="v-"+v));
+    document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
+    if(v==="historial") pintarHistorial();
+    if(v==="resumen") pintarResumen();
+    if(v==="enlaces") pintarEnlaces();
+    if(v==="copias") pintarInfo();
+    window.scrollTo(0,0);
+  }
+  $("#tabs").addEventListener("click", e=>{ const b=e.target.closest("button"); if(b) ir(b.dataset.v); });
+
+  /* ---------- Formulario ---------- */
+  let catActual = "peluqueria";
+  let seleccion = new Set();
+  let editandoId = null;
+
+  function serviciosDe(cat){
+    const extra = db.extras[cat] || [];
+    return [...CATS[cat].servicios, ...extra.filter(s=>!CATS[cat].servicios.includes(s))];
+  }
+  function pintarServicios(){
+    const cont = $("#servicios");
+    const lista = serviciosDe(catActual);
+    seleccion.forEach(s=>{ if(!lista.includes(s)) lista.push(s); });
+    cont.innerHTML = lista.map(s=>`<label class="chip ${seleccion.has(s)?"on":""}" data-s="${esc(s)}">${esc(s)}</label>`).join("");
+  }
+  $("#servicios").addEventListener("click", e=>{
+    const c = e.target.closest(".chip"); if(!c) return;
+    const s = c.dataset.s;
+    seleccion.has(s)?seleccion.delete(s):seleccion.add(s);
+    c.classList.toggle("on");
+  });
+  function elegirCat(cat){
+    if(cat!==catActual) seleccion.clear();
+    catActual = cat;
+    document.querySelectorAll("#cats .cat").forEach(b=>b.classList.toggle("on", b.dataset.c===cat));
+    pintarServicios();
+  }
+  $("#cats").addEventListener("click", e=>{ const b=e.target.closest(".cat"); if(b) elegirCat(b.dataset.c); });
+
+  $("#addOtro").addEventListener("click", ()=>{
+    const v = $("#otroServicio").value.trim(); if(!v) return;
+    db.extras[catActual] = db.extras[catActual] || [];
+    if(!serviciosDe(catActual).includes(v)) db.extras[catActual].push(v);
+    seleccion.add(v); guardar();
+    $("#otroServicio").value=""; pintarServicios();
+  });
+  $("#otroServicio").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#addOtro").click(); } });
+
+  function rellenarSugerencias(){
+    const uniq = arr => [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+    $("#dlLugares").innerHTML = uniq(db.registros.map(r=>r.lugar)).map(v=>`<option value="${esc(v)}">`).join("");
+    $("#dlProfes").innerHTML = uniq(db.registros.map(r=>r.profesional)).map(v=>`<option value="${esc(v)}">`).join("");
+    $("#dlEnlaces").innerHTML = db.enlaces.map(l=>`<option value="${esc(l.url)}">${esc(l.nombre)}</option>`).join("");
+  }
+
+  function resetForm(){
+    $("#form").reset();
+    $("#fecha").value = hoyISO();
+    seleccion.clear(); editandoId=null;
+    $("#editBanner").classList.remove("on");
+    $("#formTitle").textContent="Nuevo registro";
+    $("#btnGuardar").textContent="Guardar registro";
+    elegirCat(catActual);
+  }
+  $("#btnReset").addEventListener("click", resetForm);
+  $("#cancelEdit").addEventListener("click", resetForm);
+
+  // Al cambiar el lugar, proponer su web si ya se usó antes
+  $("#lugar").addEventListener("change", ()=>{
+    if($("#enlace").value) return;
+    const prev = db.registros.find(r=>r.lugar===$("#lugar").value && r.enlace);
+    if(prev) $("#enlace").value = prev.enlace;
+  });
+
+  $("#form").addEventListener("submit", e=>{
+    e.preventDefault();
+    if(seleccion.size===0){ toast("Elige al menos un servicio"); return; }
+    const precio = parseFloat(String($("#precio").value).replace(",","."));
+    if(isNaN(precio)||precio<0){ toast("Revisa el precio"); return; }
+    const enlaceRaw = $("#enlace").value.trim();
+    const enlace = normalizarUrl(enlaceRaw);
+    if(enlaceRaw && !enlace){ toast("La dirección web no es válida"); return; }
+    const reg = {
+      id: editandoId || uid(),
+      fecha: $("#fecha").value,
+      cat: catActual,
+      servicios: [...seleccion],
+      precio: Math.round(precio*100)/100,
+      lugar: $("#lugar").value.trim(),
+      profesional: $("#profesional").value.trim(),
+      enlace,
+      notas: $("#notas").value.trim(),
+      proxima: $("#proxima").value || ""
+    };
+    if(editandoId){
+      const i = db.registros.findIndex(r=>r.id===editandoId);
+      if(i>-1) db.registros[i]=reg;
+    } else db.registros.push(reg);
+    guardar(); rellenarSugerencias();
+    const eraEdicion = !!editandoId;
+    toast(eraEdicion?"Registro actualizado ✓":"Registro guardado ✓");
+    if(reg.proxima && !eraEdicion){
+      setTimeout(()=>{ if(confirm("¿Quieres añadir la próxima cita ("+fechaLarga(reg.proxima)+") al calendario?")) descargarICS(reg); },300);
+    }
+    resetForm();
+    if(eraEdicion) ir("historial");
+  });
+
+  function editar(id){
+    const r = db.registros.find(x=>x.id===id); if(!r) return;
+    ir("nuevo");
+    catActual = r.cat; seleccion = new Set(r.servicios);
+    document.querySelectorAll("#cats .cat").forEach(b=>b.classList.toggle("on", b.dataset.c===r.cat));
+    pintarServicios();
+    $("#fecha").value=r.fecha; $("#precio").value=r.precio; $("#proxima").value=r.proxima||"";
+    $("#lugar").value=r.lugar||""; $("#profesional").value=r.profesional||"";
+    $("#enlace").value=r.enlace||""; $("#notas").value=r.notas||"";
+    editandoId=id;
+    $("#editBanner").classList.add("on");
+    $("#formTitle").textContent="Editar registro";
+    $("#btnGuardar").textContent="Guardar cambios";
+  }
+  function duplicar(id){
+    const r = db.registros.find(x=>x.id===id); if(!r) return;
+    editar(id); editandoId=null;
+    $("#fecha").value=hoyISO(); $("#proxima").value="";
+    $("#editBanner").classList.remove("on");
+    $("#formTitle").textContent="Repetir servicio";
+    $("#btnGuardar").textContent="Guardar registro";
+    toast("Datos copiados: revisa fecha y precio");
+  }
+  function borrar(id){
+    if(!confirm("¿Borrar este registro?")) return;
+    db.registros = db.registros.filter(r=>r.id!==id);
+    guardar(); pintarHistorial(); toast("Registro borrado");
+  }
+
+  /* ---------- Calendario (.ics) ---------- */
+  function descargarICS(r){
+    const d = r.proxima.replace(/-/g,"");
+    const fin = parseISO(r.proxima); fin.setDate(fin.getDate()+1);
+    const d2 = fin.getFullYear()+String(fin.getMonth()+1).padStart(2,"0")+String(fin.getDate()).padStart(2,"0");
+    const icsEsc = s => String(s||"").replace(/\\/g,"\\\\").replace(/[,;]/g,m=>"\\"+m).replace(/\n/g,"\\n");
+    const titulo = CATS[r.cat].icono+" "+CATS[r.cat].nombre+(r.lugar?" · "+r.lugar:"");
+    const desc = "Servicios: "+r.servicios.join(", ")+(r.enlace?"\n"+r.enlace:"");
+    const stamp = new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
+    const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Estetica Personal//ES","CALSCALE:GREGORIAN","BEGIN:VEVENT",
+      "UID:"+r.id+"-cita@estetica","DTSTAMP:"+stamp,"DTSTART;VALUE=DATE:"+d,"DTEND;VALUE=DATE:"+d2,
+      "SUMMARY:"+icsEsc(titulo),"DESCRIPTION:"+icsEsc(desc),
+      r.enlace?"URL:"+r.enlace:null,
+      "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(titulo),"END:VALARM",
+      "END:VEVENT","END:VCALENDAR"].filter(Boolean).join("\r\n");
+    descargar("cita-"+r.proxima+".ics", ics, "text/calendar");
+  }
+
+  /* ---------- Historial ---------- */
+  function filtrados(){
+    const mes=$("#fMes").value, cat=$("#fCat").value, txt=$("#fTexto").value.trim().toLowerCase();
+    return db.registros.filter(r=>{
+      if(mes && !r.fecha.startsWith(mes)) return false;
+      if(cat && r.cat!==cat) return false;
+      if(txt){
+        const h=[r.lugar,r.profesional,r.notas,r.servicios.join(" "),CATS[r.cat].nombre].join(" ").toLowerCase();
+        if(!h.includes(txt)) return false;
+      }
+      return true;
+    }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  }
+  function pintarHistorial(){
+    const lista = filtrados();
+    const total = lista.reduce((s,r)=>s+r.precio,0);
+    $("#fResumen").textContent = lista.length+" registro"+(lista.length===1?"":"s")+" · "+eur.format(total);
+    if(!lista.length){
+      $("#lista").innerHTML = `<div class="card empty">${db.registros.length?"No hay registros con estos filtros.":"Aún no hay registros. Empieza en «Nuevo»."}</div>`;
+      return;
+    }
+    const grupos = {};
+    lista.forEach(r=>{ const k=r.fecha.slice(0,7); (grupos[k]=grupos[k]||[]).push(r); });
+    $("#lista").innerHTML = Object.keys(grupos).sort().reverse().map(k=>{
+      const g=grupos[k], sub=g.reduce((s,r)=>s+r.precio,0);
+      return `<div class="month-head"><h3>${esc(mesLargo(k))}</h3><span class="muted">${eur.format(sub)}</span></div>`+
+        g.map(r=>{
+          const d=parseISO(r.fecha);
+          const url=urlSegura(r.enlace);
+          return `<div class="entry ${r.cat}">
+            <div class="day"><b>${d.getDate()}</b><small>${MESES[d.getMonth()]}</small></div>
+            <div class="body">
+              <div class="top">
+                <div><span class="tag ${r.cat}">${CATS[r.cat].icono} ${CATS[r.cat].nombre}</span></div>
+                <div class="price">${eur.format(r.precio)}</div>
+              </div>
+              <div style="margin-top:6px;font-weight:600">${r.servicios.map(esc).join(" · ")}</div>
+              <div class="meta">${esc(fechaLarga(r.fecha))}${r.lugar?" · "+esc(r.lugar):""}${r.profesional?" · con "+esc(r.profesional):""}</div>
+              ${r.proxima?`<div class="meta">📅 Próxima cita: ${esc(fechaLarga(r.proxima))}</div>`:""}
+              ${r.notas?`<div class="notes">${esc(r.notas)}</div>`:""}
+              <div class="acts">
+                ${url?`<a class="btn sec small" href="${esc(url)}" target="_blank" rel="noopener">🔗 ${esc(dominio(url))}</a>`:""}
+                ${r.proxima?`<button class="btn sec small" data-a="ics" data-id="${r.id}">📅 Al calendario</button>`:""}
+                <button class="btn sec small" data-a="dup" data-id="${r.id}">↻ Repetir</button>
+                <button class="btn sec small" data-a="edit" data-id="${r.id}">✏️ Editar</button>
+                <button class="btn danger small" data-a="del" data-id="${r.id}">Borrar</button>
+              </div>
+            </div>
+          </div>`;
+        }).join("");
+    }).join("");
+  }
+  $("#lista").addEventListener("click", e=>{
+    const b=e.target.closest("button[data-a]"); if(!b) return;
+    const id=b.dataset.id;
+    if(b.dataset.a==="edit") editar(id);
+    else if(b.dataset.a==="del") borrar(id);
+    else if(b.dataset.a==="dup") duplicar(id);
+    else if(b.dataset.a==="ics"){ const r=db.registros.find(x=>x.id===id); if(r) descargarICS(r); }
+  });
+  ["#fMes","#fCat","#fTexto"].forEach(s=>$(s).addEventListener("input", pintarHistorial));
+  $("#fLimpiar").addEventListener("click", ()=>{ $("#fMes").value=""; $("#fCat").value=""; $("#fTexto").value=""; pintarHistorial(); });
+
+  /* ---------- Resumen ---------- */
+  function pintarResumen(){
+    const sel=$("#rAnio");
+    const anios=[...new Set(db.registros.map(r=>r.fecha.slice(0,4)))];
+    const actual=String(new Date().getFullYear());
+    if(!anios.includes(actual)) anios.push(actual);
+    anios.sort().reverse();
+    const prev=sel.value||actual;
+    sel.innerHTML=anios.map(a=>`<option ${a===prev?"selected":""}>${a}</option>`).join("");
+    const anio=sel.value;
+    const regs=db.registros.filter(r=>r.fecha.startsWith(anio));
+    const total=regs.reduce((s,r)=>s+r.precio,0);
+    const esteMes=hoyISO().slice(0,7);
+    const totalMes=db.registros.filter(r=>r.fecha.startsWith(esteMes)).reduce((s,r)=>s+r.precio,0);
+    $("#rStats").innerHTML=[
+      ["Gasto en "+anio, eur.format(total)],
+      ["Visitas en "+anio, regs.length],
+      ["Media por visita", eur.format(regs.length?total/regs.length:0)],
+      ["Este mes", eur.format(totalMes)]
+    ].map(([l,v])=>`<div class="stat"><small>${esc(l)}</small><b>${esc(v)}</b></div>`).join("");
+
+    // barras
+    const porMes=Array.from({length:12},()=>({peluqueria:0,unas:0,barberia:0}));
+    regs.forEach(r=>{ porMes[parseISO(r.fecha).getMonth()][r.cat]+=r.precio; });
+    const max=Math.max(1,...porMes.map(m=>m.peluqueria+m.unas+m.barberia));
+    $("#rBars").innerHTML=porMes.map((m,i)=>{
+      const t=m.peluqueria+m.unas+m.barberia;
+      const seg=["peluqueria","unas","barberia"].map(c=>m[c]?`<i style="height:${(m[c]/max*140).toFixed(1)}px;background:${CATS[c].color}"></i>`:"").join("");
+      return `<div class="bar" data-m="${anio}-${String(i+1).padStart(2,"0")}" title="${MESES[i]}: ${eur.format(t)}">
+        <div class="stack">${seg}</div><small>${MESES[i]}</small></div>`;
+    }).join("");
+
+    // por categoría
+    const filasCat=Object.keys(CATS).map(c=>{
+      const rs=regs.filter(r=>r.cat===c), t=rs.reduce((s,r)=>s+r.precio,0);
+      return `<tr><td>${CATS[c].icono} ${CATS[c].nombre}</td><td class="n">${rs.length}</td><td class="n">${eur.format(t)}</td><td class="n">${eur.format(rs.length?t/rs.length:0)}</td><td class="n">${total?Math.round(t/total*100):0}%</td></tr>`;
+    }).join("");
+    $("#rTablaCat").innerHTML=`<tr><th>Categoría</th><th class="n">Visitas</th><th class="n">Total</th><th class="n">Media</th><th class="n">%</th></tr>${filasCat}
+      <tr><td><b>Total</b></td><td class="n"><b>${regs.length}</b></td><td class="n"><b>${eur.format(total)}</b></td><td></td><td></td></tr>`;
+
+    // servicios
+    const cuenta={};
+    regs.forEach(r=>r.servicios.forEach(s=>{ const k=CATS[r.cat].nombre+" · "+s; cuenta[k]=(cuenta[k]||0)+1; }));
+    const top=Object.entries(cuenta).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    $("#rTablaServ").innerHTML=top.length?`<tr><th>Servicio</th><th class="n">Veces</th></tr>`+top.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v}</td></tr>`).join(""):`<tr><td class="muted">Sin datos en ${esc(anio)}</td></tr>`;
+
+    // última visita y próximas
+    const hoy=hoyISO();
+    const filasU=Object.keys(CATS).map(c=>{
+      const rs=db.registros.filter(r=>r.cat===c).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      const ult=rs.find(r=>r.fecha<=hoy);
+      const prox=db.registros.filter(r=>r.cat===c&&r.proxima&&r.proxima>=hoy).map(r=>r.proxima).sort()[0];
+      return `<tr><td>${CATS[c].icono} ${CATS[c].nombre}</td>
+        <td>${ult?esc(parseISO(ult.fecha).toLocaleDateString("es-ES"))+` <span class="muted">(${haceTxt(diasEntre(ult.fecha,hoy))})</span>`:'<span class="muted">—</span>'}</td>
+        <td>${prox?esc(parseISO(prox).toLocaleDateString("es-ES"))+` <span class="muted">(${enTxt(diasEntre(hoy,prox))})</span>`:'<span class="muted">—</span>'}</td></tr>`;
+    }).join("");
+    $("#rUltimas").innerHTML=`<tr><th>Categoría</th><th>Última visita</th><th>Próxima cita</th></tr>${filasU}`;
+  }
+  $("#rAnio").addEventListener("change", pintarResumen);
+  $("#rBars").addEventListener("click", e=>{
+    const b=e.target.closest(".bar"); if(!b) return;
+    $("#fMes").value=b.dataset.m; $("#fCat").value=""; $("#fTexto").value="";
+    ir("historial");
+  });
+
+  /* ---------- Enlaces ---------- */
+  function pintarEnlaces(){
+    const box=$("#linkList");
+    if(!db.enlaces.length){ box.innerHTML=`<div class="empty">Todavía no has guardado páginas web.</div>`; return; }
+    const orden=["peluqueria","unas","barberia","general"];
+    const ord=[...db.enlaces].sort((a,b)=>orden.indexOf(a.cat)-orden.indexOf(b.cat)||a.nombre.localeCompare(b.nombre,"es"));
+    box.innerHTML=ord.map(l=>{
+      const url=urlSegura(l.url), ic=CATS[l.cat]?CATS[l.cat].icono:"🌐";
+      return `<div class="link-item">
+        <div class="ic">${ic}</div>
+        <div class="tx"><b>${esc(l.nombre)}</b><small>${esc(dominio(url))}</small></div>
+        ${url?`<a class="btn small" href="${esc(url)}" target="_blank" rel="noopener">Abrir</a>`:""}
+        <button class="btn danger small" data-del="${l.id}">✕</button>
+      </div>`;
+    }).join("");
+  }
+  $("#linkForm").addEventListener("submit", e=>{
+    e.preventDefault();
+    const url=normalizarUrl($("#lUrl").value);
+    if(!url){ toast("La dirección web no es válida"); return; }
+    db.enlaces.push({id:uid(), nombre:$("#lNombre").value.trim(), url, cat:$("#lCat").value});
+    guardar(); rellenarSugerencias(); pintarEnlaces();
+    $("#lNombre").value=""; $("#lUrl").value=""; toast("Enlace guardado ✓");
+  });
+  $("#linkList").addEventListener("click", e=>{
+    const b=e.target.closest("button[data-del]"); if(!b) return;
+    if(!confirm("¿Quitar este enlace?")) return;
+    db.enlaces=db.enlaces.filter(l=>l.id!==b.dataset.del);
+    guardar(); rellenarSugerencias(); pintarEnlaces();
+  });
+
+  /* ---------- Copias ---------- */
+  function pintarInfo(){
+    $("#infoDatos").textContent=`En este dispositivo: ${db.registros.length} registros y ${db.enlaces.length} enlaces.`;
+  }
+  $("#exportJson").addEventListener("click", ()=>{
+    descargar("estetica-copia-"+hoyISO()+".json", JSON.stringify({app:"estetica",version:1,exportado:new Date().toISOString(),...db},null,2), "application/json");
+  });
+  $("#exportCsv").addEventListener("click", ()=>{
+    const c=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+    const filas=[["Fecha","Categoría","Servicios","Precio","Establecimiento","Profesional","Web","Próxima cita","Notas"]];
+    [...db.registros].sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(r=>filas.push([
+      r.fecha,CATS[r.cat].nombre,r.servicios.join(", "),String(r.precio).replace(".",","),r.lugar,r.profesional,r.enlace,r.proxima,r.notas]));
+    descargar("estetica-"+hoyISO()+".csv", "﻿"+filas.map(f=>f.map(c).join(";")).join("\r\n"), "text/csv");
+  });
+  $("#importFile").addEventListener("change", e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{
+      try{
+        const d=JSON.parse(rd.result);
+        if(!Array.isArray(d.registros)) throw new Error();
+        const ids=new Set(db.registros.map(r=>r.id));
+        let n=0;
+        d.registros.forEach(r=>{
+          if(r && r.id && !ids.has(r.id) && CATS[r.cat] && /^\d{4}-\d{2}-\d{2}$/.test(r.fecha)){
+            db.registros.push({id:r.id,fecha:r.fecha,cat:r.cat,servicios:Array.isArray(r.servicios)?r.servicios.map(String):[],
+              precio:Number(r.precio)||0,lugar:String(r.lugar||""),profesional:String(r.profesional||""),
+              enlace:urlSegura(r.enlace||""),notas:String(r.notas||""),proxima:/^\d{4}-\d{2}-\d{2}$/.test(r.proxima||"")?r.proxima:""});
+            n++;
+          }
+        });
+        const lids=new Set(db.enlaces.map(l=>l.url));
+        (Array.isArray(d.enlaces)?d.enlaces:[]).forEach(l=>{
+          const u=urlSegura(l&&l.url); if(u && !lids.has(u)){ db.enlaces.push({id:l.id||uid(),nombre:String(l.nombre||dominio(u)),url:u,cat:l.cat||"general"}); lids.add(u); }
+        });
+        if(d.extras && typeof d.extras==="object") Object.keys(CATS).forEach(c=>{
+          const a=Array.isArray(d.extras[c])?d.extras[c]:[];
+          db.extras[c]=[...new Set([...(db.extras[c]||[]),...a.map(String)])];
+        });
+        guardar(); rellenarSugerencias(); pintarInfo(); pintarServicios();
+        toast(n+" registro"+(n===1?"":"s")+" importado"+(n===1?"":"s")+" ✓");
+      }catch(err){ toast("Ese archivo no es una copia válida"); }
+      e.target.value="";
+    };
+    rd.readAsText(f);
+  });
+  $("#borrarTodo").addEventListener("click", ()=>{
+    if(!confirm("¿Seguro que quieres borrar TODOS los datos de este dispositivo?")) return;
+    if(!confirm("Última confirmación: esta acción no se puede deshacer.")) return;
+    db={registros:[],enlaces:[],extras:{}}; guardar(); rellenarSugerencias(); pintarInfo(); pintarServicios();
+    toast("Datos borrados");
+  });
+
+  /* ---------- Inicio ---------- */
+  cargar();
+  rellenarSugerencias();
+  resetForm();
+})();
+</script>
+</body>
+</html>
