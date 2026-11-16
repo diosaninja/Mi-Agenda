@@ -298,7 +298,8 @@ const PRESETS={
   nums:{n:'Números 0–9',name:'Números',set:{rows:20,cols:1,blankRow:true}},
   hira:{n:'Hiragana あ',name:'Hiragana',set:{rows:23,cols:2,blankRow:false,font:'Klee One',size:.72},paper:'genko'},
   kata:{n:'Katakana ア',name:'Katakana',set:{rows:23,cols:2,blankRow:false,font:'Klee One',size:.72},paper:'genko'},
-  custom:{n:'Mi propio texto (palabras, frases, kanji…)',name:'Mi texto',set:{rows:20,cols:1}}
+  custom:{n:'Mi propio texto (palabras, frases, kanji…)',name:'Mi texto',set:{rows:20,cols:1}},
+  para:{n:'Texto para repasar (frases y párrafos)',name:'Texto para repasar',set:{rows:18,cols:1,blankRow:true,size:.6}}
 };
 const PAPERS=[
   {id:'dots',n:'Puntos'},{id:'grid',n:'Cuadrícula'},{id:'lines',n:'Rayas'},
@@ -528,9 +529,37 @@ async function importFonts(files){
    Plantilla y papel
    ========================================================= */
 function getItems(t){
-  const a=baseItems(t);if(!t.shuffle)return a;
+  const a=baseItems(t);if(!t.shuffle||t.preset==='para')return a;
   let sd=(t.seed||1)*9301+49297;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
   for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;
+}
+const measureCtx=document.createElement('canvas').getContext('2d');
+function wrapPara(t){
+  const sh=state.sheets.find(x=>x.tpl===t)||cur();if(!sh)return[];
+  const g=geom(sh);const maxW=g.colW-g.rowH*0.2;const out=[];
+  const paras=(t.text||'').replace(/\r/g,'').split('\n');
+  if(sh.paper.type==='genko'){
+    const n=Math.max(1,Math.floor(g.colW/g.rowH));
+    paras.forEach(p=>{const ch=[...p.trim()];if(!ch.length){out.push('');return}
+      for(let i=0;i<ch.length;i+=n)out.push(ch.slice(i,i+n).join(''))});
+  }else{
+    measureCtx.font=`${g.fs}px ${fontStack(t.font)}`;const mw=x=>measureCtx.measureText(x).width;
+    paras.forEach(p=>{
+      p=p.trim();if(!p){out.push('');return}
+      const units=p.match(/[\u3000-\u30ff\u3400-\u9fff\uff00-\uffef][、。，．・：；？！ゃゅょっぁぃぅぇぉゎャュョッァィゥェォヮヵヶー」』）〉》】ゝゞヽヾ]*|[^\s\u3000-\u30ff\u3400-\u9fff\uff00-\uffef]+\s*|\s+/g)||[];
+      let line='';
+      for(let u of units){
+        if(mw((line+u).trimEnd())<=maxW){line+=u;continue}
+        if(line.trim())out.push(line.trimEnd());
+        line='';
+        while(mw(u.trimEnd())>maxW&&u.length>1){let k=u.length;while(k>1&&mw(u.slice(0,k))>maxW)k--;out.push(u.slice(0,k));u=u.slice(k)}
+        line=u.trimStart();
+      }
+      if(line.trim())out.push(line.trimEnd());
+    });
+  }
+  while(out.length&&!out[out.length-1])out.pop();
+  return out;
 }
 function baseItems(t){
   switch(t.preset){
@@ -540,6 +569,7 @@ function baseItems(t){
     case 'nums':return'0123456789'.split('');
     case 'hira':return HIRA.slice();
     case 'kata':return KATA.slice();
+    case 'para':return wrapPara(t);
     default:
       if(t.mode==='chars')return[...(t.text||'').replace(/\s/g,'')];
       return(t.text||'').split('\n').map(x=>x.trim()).filter(Boolean);
@@ -547,7 +577,7 @@ function baseItems(t){
 }
 function geom(s){
   const t=s.tpl;const rows=clamp(Math.round(t.rows),4,40);const rowH=(H-M.t-M.b)/rows;
-  const cols=t.cols>1?2:1;const colGap=cols>1?44:0;const colW=(W-M.l-M.r-colGap*(cols-1))/cols;
+  const cols=t.cols>1&&t.preset!=='para'?2:1;const colGap=cols>1?44:0;const colW=(W-M.l-M.r-colGap*(cols-1))/cols;
   return{rows,rowH,cols,colGap,colW,fs:rowH*t.size,slots:t.blankRow?Math.ceil(rows/2):rows}
 }
 const colX=(g,c)=>M.l+c*(g.colW+g.colGap);
@@ -672,6 +702,14 @@ function drawTemplate(ctx,s,items){
   list.forEach((it,idx)=>{
     const c=Math.floor(idx/g.slots),j=idx%g.slots,r=t.blankRow?j*2:j;
     const cx=colX(g,c),cEnd=cx+g.colW;
+    if(t.preset==='para'){
+      if(!it)return;
+      if(s.paper.type==='genko'){ctx.textAlign='center';ctx.textBaseline='middle';
+        const cy=M.t+r*g.rowH+g.rowH/2+g.fs*0.03;
+        [...it].forEach((ch,k)=>{if(ch.trim())glyph(ch,cx+k*g.rowH+g.rowH/2,cy,'trace')});
+      }else{ctx.textAlign='left';ctx.textBaseline='alphabetic';glyph(it,cx+g.rowH*0.1,baseY(g,r),'trace')}
+      return;
+    }
     if(s.paper.type==='genko'){
       const n=Math.floor(g.colW/g.rowH);ctx.textAlign='center';ctx.textBaseline='middle';
       const cy=M.t+r*g.rowH+g.rowH/2+g.fs*0.03;
@@ -943,21 +981,23 @@ function tabTpl(){
   return `
   <h4>Contenido</h4>
   <div class="fld"><select data-t="preset">${Object.entries(PRESETS).map(([k,v])=>`<option value="${k}"${k===t.preset?' selected':''}>${v.n}</option>`).join('')}</select></div>
+  ${t.preset==='para'?`<div class="fld"><textarea data-t="text" style="min-height:140px" placeholder="Escribe o pega aquí tu texto. Por ejemplo:&#10;El que lee mucho y anda mucho, ve mucho y sabe mucho.&#10;&#10;おはようございます。">${esc(t.text)}</textarea></div>
+  <p class="note" style="margin-top:-6px">El texto se reparte solo en líneas y aparece en gris para repasarlo. Un salto de línea empieza un renglón nuevo; una línea vacía deja un renglón en blanco.</p>`:''}
   ${t.preset==='custom'?`<div class="fld"><textarea data-t="text" placeholder="Escribe aquí. Ejemplo:&#10;Hola&#10;ありがとう&#10;日本語">${esc(t.text)}</textarea></div>
   <div class="fld">${seg('mode',[{v:'lines',n:'Una fila por línea'},{v:'chars',n:'Una fila por letra'}],t.mode)}</div>`:''}
-  <label class="chk"><input type="checkbox" data-t="shuffle"${t.shuffle?' checked':''}> Mezclar el orden (ideal para el modo examen)</label>
-  ${t.shuffle?`<button class="link" data-act="reshuffle" style="margin:-8px 0 6px">↻ Mezclar otra vez</button>`:''}
+  ${t.preset==='para'?'':`<label class="chk"><input type="checkbox" data-t="shuffle"${t.shuffle?' checked':''}> Mezclar el orden (ideal para el modo examen)</label>
+  ${t.shuffle?`<button class="link" data-act="reshuffle" style="margin:-8px 0 6px">↻ Mezclar otra vez</button>`:''}`}
   <h4>Tipografía</h4>
   <div class="fld"><select data-t="font">${fontOptions(t.font)}</select>
   <div class="fontprev" id="fontPrev" style="font-family:${esc(fontStack(t.font))}">Aa Bb Ññ 123 あア字</div>
   <button class="link" data-act="gofonts">+ Importar mi tipografía</button></div>
   <h4>Distribución</h4>
   ${rng('rows','Filas por hoja',6,36,1,t.rows,FMT.rows)}
-  <div class="fld"><label class="l">Columnas</label>${seg('cols',[{v:1,n:'1 columna'},{v:2,n:'2 columnas'}],t.cols)}</div>
+  ${t.preset==='para'?'':`<div class="fld"><label class="l">Columnas</label>${seg('cols',[{v:1,n:'1 columna'},{v:2,n:'2 columnas'}],t.cols)}</div>`}
   ${rng('size','Tamaño de la letra',.35,.92,.01,t.size,FMT.size)}
-  <label class="chk"><input type="checkbox" data-t="blankRow"${t.blankRow?' checked':''}> Dejar una fila libre debajo de cada modelo para escribir sin calco</label>
+  <label class="chk"><input type="checkbox" data-t="blankRow"${t.blankRow?' checked':''}> ${t.preset==='para'?'Dejar una fila libre debajo de cada línea para copiarla sin calco':'Dejar una fila libre debajo de cada modelo para escribir sin calco'}</label>
   <h4>Calco</h4>
-  ${rng('repeats','Copias para calcar',0,12,1,t.repeats,FMT.repeats)}
+  ${t.preset==='para'?'':rng('repeats','Copias para calcar',0,12,1,t.repeats,FMT.repeats)}
   ${rng('opacity','Intensidad del calco',.08,.6,.01,t.opacity,FMT.opacity)}
   <div class="fld"><label class="l">Estilo del calco</label>${seg('style',[{v:'gris',n:'Gris'},{v:'punteado',n:'Punteado'},{v:'contorno',n:'Contorno'}],t.style)}</div>
   ${getItems(t).some(c=>KANA[c])?`<label class="chk"><input type="checkbox" data-t="strokeOrder"${t.strokeOrder?' checked':''}> Letra modelo con orden de trazos (números y flechas)</label>`:''}
