@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mandalas">
+<title>Mandalas · Mi Agenda</title>
+<style>
+:root{--bg:#faf6f1;--paper:#fff;--ink:#3b3330;--muted:#8a807a;--line:#e8e1d9;--acc:#d9776a;--acc2:#f6e0db;--ok:#6a9a7b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;-webkit-user-select:none;user-select:none}
+header{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;background:var(--paper);border-bottom:1px solid var(--line)}
+header a{color:var(--acc);text-decoration:none;font-size:15px;white-space:nowrap}
+header h1{flex:1;margin:0;font:600 21px Georgia,"Times New Roman",serif;text-align:center;letter-spacing:.5px}
+.chip{background:var(--acc2);color:#a2493d;border-radius:20px;padding:4px 10px;font-size:14px;font-weight:600;white-space:nowrap}
+nav{display:flex;background:var(--paper);border-bottom:1px solid var(--line)}
+nav button{flex:1;border:0;background:none;padding:10px 4px;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;font-family:inherit}
+nav button.on{color:var(--acc);border-color:var(--acc);font-weight:600}
+main{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;display:none;flex-direction:column}
+.view.on{display:flex}
+.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(env(safe-area-inset-bottom) + 24px);flex:1}
+.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--paper);border-bottom:1px solid var(--line)}
+.grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 10px;font-size:15px;color:var(--ink);font-family:inherit;line-height:1.1;min-height:34px}
+.btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.sz i{display:inline-block;border-radius:50%;background:currentColor;vertical-align:middle}
+.dot{width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);padding:0}
+.dot.on{box-shadow:0 0 0 2px var(--acc)}
+.ttl{font:600 16px Georgia,serif;margin:0 4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sep{width:1px;height:26px;background:var(--line);margin:0 2px}
+select{border:1px solid var(--line);border-radius:10px;padding:7px 8px;font-size:15px;background:#fff;color:var(--ink);font-family:inherit;min-height:34px}
+.op{display:flex;align-items:center;gap:4px;font-size:14px}
+.op input{width:90px}
+.stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px;position:relative}
+.layers{position:relative;box-shadow:0 2px 14px rgba(60,40,30,.10);background:#fff;border-radius:4px}
+.layers canvas{position:absolute;left:0;top:0;touch-action:none;-webkit-touch-callout:none}
+/* lecciones */
+.stats{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:18px}
+.stats .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.big{font:600 22px Georgia,serif}
+.prog{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:10px 0}
+.prog i{display:block;height:100%;background:var(--acc);border-radius:6px}
+.week{display:flex;gap:6px}
+.week span{width:28px;text-align:center;font-size:11px;color:var(--muted)}
+.week b{display:block;width:22px;height:22px;margin:3px auto 0;border-radius:50%;border:2px solid var(--line)}
+.week b.y{background:var(--acc);border-color:var(--acc)}
+h2{font:600 17px Georgia,serif;margin:18px 2px 10px;color:#7a5148}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 8px 10px;text-align:center;position:relative;cursor:pointer}
+.card canvas{width:150px;height:80px;max-width:100%}
+.card .n{font-size:14px;font-weight:600}
+.card .k{font-size:11px;color:var(--muted)}
+.card.done{border-color:#bfd6c6;background:#f6fbf7}
+.card .chk{position:absolute;top:6px;right:8px;color:var(--ok);font-weight:700}
+/* galería */
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.th{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;cursor:pointer}
+.th img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#fff}
+.th .cap{padding:6px 8px;font-size:12px}
+.th .cap small{display:block;color:var(--muted)}
+.th .x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(0,0,0,.15);font-size:14px}
+.empty{color:var(--muted);text-align:center;padding:40px 20px;line-height:1.5}
+.tip{font-size:13px;color:var(--muted);margin:10px 2px 14px;line-height:1.45}
+/* modales */
+.modal{position:fixed;inset:0;background:rgba(40,30,28,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.on{display:flex}
+.box{background:#fff;border-radius:18px;padding:16px;max-width:600px;width:100%;max-height:94vh;overflow:auto;text-align:center}
+.box h3{margin:0 0 10px;font:600 18px Georgia,serif}
+.box canvas{display:block;margin:0 auto;border-radius:6px}
+.box .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+#stepsInfo{margin-top:10px;font-size:15px;color:#7a5148;min-height:20px}
+#viewImg{max-width:100%;max-height:70vh;border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.1)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:15px;opacity:0;transition:.25s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:600px){.ttl{max-width:110px}.btn{padding:6px 8px;font-size:14px}.dot{width:24px;height:24px}}
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html">‹ Mi Agenda</a>
+  <h1>Mandalas</h1>
+  <span class="chip" id="streakChip">🔥 0</span>
+</header>
+<nav id="nav">
+  <button data-v="lessons" class="on">Lecciones</button>
+  <button data-v="gen">Generador</button>
+  <button data-v="gallery">Mis láminas</button>
+  <button data-v="fichas">Mis fichas</button>
+</nav>
+<main>
+  <section class="view on" id="v-lessons"><div class="scroll" id="lessonsList"></div></section>
+
+  <section class="view" id="v-sheet">
+    <div class="bar">
+      <button class="btn" id="sBack">‹</button>
+      <span class="ttl" id="sTitle"></span>
+      <button class="btn pri" id="sPlay">▶ Paso a paso</button>
+      <label class="op" id="sOpWrap">👁 <input type="range" id="sOp" min="10" max="100" value="45"></label>
+      <span class="sep"></span>
+      <div class="grp" id="sTools"></div>
+      <span class="sep"></span>
+      <button class="btn" id="sSave">💾 Guardar</button>
+      <button class="btn ok" id="sDone">✓ Completar</button>
+    </div>
+    <div class="stage"><div class="layers" id="sheetLayers"></div></div>
+  </section>
+
+  <section class="view" id="v-gen">
+    <div class="bar">
+      <select id="gSym">
+        <option value="4">4 ejes</option><option value="6">6 ejes</option><option value="8" selected>8 ejes</option>
+        <option value="12">12 ejes</option><option value="16">16 ejes</option><option value="24">24 ejes</option>
+      </select>
+      <button class="btn on" id="gMir">🪞 Espejo</button>
+      <button class="btn on" id="gGuide">◎ Guías</button>
+      <span class="sep"></span>
+      <div class="grp" id="gTools"></div>
+      <span class="sep"></span>
+      <button class="btn" id="gSave">💾 Guardar</button>
+      <button class="btn" id="gFicha">📄 A fichas</button>
+    </div>
+    <div class="stage"><div class="layers" id="genLayers"></div></div>
+  </section>
+
+  <section class="view" id="v-gallery"><div class="scroll">
+    <div class="tip">Aquí se guardan las láminas que repasas y los mandalas que creas.</div>
+    <div class="thumbs" id="galleryGrid"></div>
+  </div></section>
+
+  <section class="view" id="v-fichas"><div class="scroll">
+    <button class="btn pri" id="fUp">➕ Subir ficha</button>
+    <input type="file" id="fInput" accept="image/*" hidden>
+    <div class="tip">Sube una foto o captura de una ficha (por ejemplo, las de dibumandala) y repásala con el Apple Pencil encima. Puedes ajustar la transparencia con 👁. Si la ficha es PDF, haz una captura de la página y súbela.</div>
+    <div class="thumbs" id="fichasGrid"></div>
+  </div></section>
+</main>
+
+<div class="modal" id="mSteps"><div class="box">
+  <h3 id="stepsTitle"></h3>
+  <canvas id="stepsCanvas"></canvas>
+  <div id="stepsInfo"></div>
+  <div class="acts">
+    <button class="btn" id="stReplay">↻ Repetir</button>
+    <button class="btn" id="stSpeed">🐢 Lento</button>
+    <button class="btn pri" id="stClose">✏️ A practicar</button>
+  </div>
+</div></div>
+
+<div class="modal" id="mView"><div class="box">
+  <h3 id="viewTitle"></h3>
+  <img id="viewImg" alt="">
+  <div class="acts">
+    <button class="btn" id="vShare">⬆︎ Compartir / guardar</button>
+    <button class="btn" id="vFicha">📄 Usar como ficha</button>
+    <button class="btn" id="vDel">🗑 Borrar</button>
+    <button class="btn pri" id="vClose">Cerrar</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const U=40, PI=Math.PI, ACC='#d9776a';
+const COLORS=['#3b3330','#d9776a','#4a6fa5','#6a9a7b','#9b6bb3','#c99a2e'];
+
+/* ---------- geometría ---------- */
+function L(x1,y1,x2,y2,n=16){const p=[];for(let i=0;i<=n;i++){const t=i/n;p.push([x1+(x2-x1)*t,y1+(y2-y1)*t])}return p}
+function A(cx,cy,r,a0,a1,n=56){const p=[];for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;p.push([cx+r*Math.cos(a),cy+r*Math.sin(a)])}return p}
+function C(p0,p1,p2,p3,n=44){const p=[];for(let i=0;i<=n;i++){const t=i/n,m=1-t;p.push([m*m*m*p0[0]+3*m*m*t*p1[0]+3*m*t*t*p2[0]+t*t*t*p3[0],m*m*m*p0[1]+3*m*m*t*p1[1]+3*m*t*t*p2[1]+t*t*t*p3[1]])}return p}
+function sym(half,w){const m=half.map(([x,y])=>[w-x,y]).reverse();return half.concat(m.slice(1))}
+function join(...ss){let r=ss[0];for(let i=1;i<ss.length;i++)r=r.concat(ss[i].slice(1));return r}
+function spiral(cx,cy,R,turns,n=220){const p=[],T=turns*2*PI;for(let i=0;i<=n;i++){const t=T*i/n,r=R*t/T;p.push([cx+r*Math.cos(t),cy+r*Math.sin(t)])}return p}
+function wave(w,y0,amp,n=70){const p=[];for(let i=0;i<=n;i++){const x=w*i/n;p.push([x,y0-amp*Math.sin(2*PI*x/w)])}return p}
+const petal=u=>sym(C([u,3*u],[0,2.4*u],[0,.9*u],[u,0]),2*u);
+const cupula=u=>sym(C([0,3*u],[.1*u,1.6*u],[1.7*u,1.3*u],[2*u,0]),4*u);
+
+/* ---------- lecciones ---------- */
+const LEVELS=[
+ {name:'Nivel 1 · Arcos y cúpulas',lessons:[
+  {id:'arco',name:'Arco simple',w:4,h:2,s:u=>[A(2*u,2*u,2*u,PI,2*PI)]},
+  {id:'arco2',name:'Arco doble',w:4,h:2,s:u=>[A(2*u,2*u,2*u,PI,2*PI),A(2*u,2*u,1.3*u,PI,2*PI)],b:(u,W)=>[L(0,2*u,W,2*u,40)]},
+  {id:'cupula',name:'Cúpula',w:4,h:3,s:u=>[cupula(u)]},
+  {id:'cupula2',name:'Cúpula doble',w:4,h:3,s:u=>[cupula(u),sym(C([.6*u,3*u],[.7*u,2*u],[1.8*u,1.8*u],[2*u,.9*u]),4*u)]},
+  {id:'bulbo',name:'Cúpula bulbosa',w:2,h:3,bh:.4,s:u=>[sym(C([0,3*u],[.5*u,2.3*u],[.2*u,1.2*u],[u,0]),2*u)],b:(u,W)=>[L(0,3*u,W,3*u,40),L(0,3.4*u,W,3.4*u,40)]},
+  {id:'arcocen',name:'Arcos con cenefa',w:2,h:2.5,bh:1,s:u=>[sym(C([0,2.5*u],[0,u],[.8*u,.4*u],[u,0]),2*u),sym(C([.35*u,2.5*u],[.35*u,1.4*u],[.85*u,u],[u,.7*u]),2*u),A(u,3.15*u,.25*u,-PI/2,1.5*PI,32)],b:(u,W)=>[L(0,2.5*u,W,2.5*u,40),L(0,2.8*u,W,2.8*u,40),L(0,3.5*u,W,3.5*u,40)]}
+ ]},
+ {name:'Nivel 2 · Pétalos y hojas',lessons:[
+  {id:'petalo',name:'Pétalo',w:2,h:3,s:u=>[petal(u)]},
+  {id:'petalo2',name:'Pétalo doble',w:2,h:3,s:u=>[petal(u),sym(C([u,2.55*u],[.45*u,2.1*u],[.45*u,1.1*u],[u,.6*u]),2*u)]},
+  {id:'gota',name:'Gota',w:2,h:3,s:u=>[sym(C([u,0],[.5*u,1.1*u],[.05*u,3*u],[u,3*u]),2*u)]},
+  {id:'hoja',name:'Hoja con nervio',w:2,h:3,s:u=>[petal(u),L(u,2.9*u,u,.3*u),L(u,2.2*u,.5*u,1.7*u,8),L(u,2.2*u,1.5*u,1.7*u,8),L(u,1.5*u,.55*u,u,8),L(u,1.5*u,1.45*u,u,8)]}
+ ]},
+ {name:'Nivel 3 · Círculos y espirales',lessons:[
+  {id:'circulo',name:'Círculo',w:3,h:3,s:u=>[A(1.5*u,1.5*u,1.2*u,-PI/2,1.5*PI,64)]},
+  {id:'conc',name:'Círculos concéntricos',w:3,h:3,s:u=>[1.3,.85,.4].map(r=>A(1.5*u,1.5*u,r*u,-PI/2,1.5*PI,64))},
+  {id:'espiral',name:'Espiral',w:3,h:3,s:u=>[spiral(1.5*u,1.5*u,1.35*u,3)]},
+  {id:'sol',name:'Sol',w:3,h:3,s:u=>{const r=[A(1.5*u,1.5*u,.6*u,-PI/2,1.5*PI,48)];for(let k=0;k<8;k++){const a=k*PI/4-PI/2;r.push(L(1.5*u+.85*u*Math.cos(a),1.5*u+.85*u*Math.sin(a),1.5*u+1.35*u*Math.cos(a),1.5*u+1.35*u*Math.sin(a),6))}return r}}
+ ]},
+ {name:'Nivel 4 · Cenefas y bordes',lessons:[
+  {id:'zigzag',name:'Zigzag',w:2,h:2,s:u=>[join(L(0,1.8*u,u,.2*u),L(u,.2*u,2*u,1.8*u))],b:(u,W)=>[L(0,0,W,0,40),L(0,2*u,W,2*u,40)]},
+  {id:'ondas',name:'Ondas',w:4,h:2.6,s:u=>[wave(4*u,u,.8*u),wave(4*u,1.8*u,.8*u)]},
+  {id:'feston',name:'Festón',w:2,h:1,s:u=>[A(u,0,u,0,PI,40),A(u,0,.5*u,0,PI,30)],b:(u,W)=>[L(0,0,W,0,40)]},
+  {id:'puntos',name:'Cenefa de puntos',w:1.5,h:1.2,s:u=>[A(.75*u,.6*u,.35*u,-PI/2,1.5*PI,32)],b:(u,W)=>[L(0,0,W,0,40),L(0,1.2*u,W,1.2*u,40)]}
+ ]}
+];
+const ALL=LEVELS.flatMap(l=>l.lessons);
+const BYID=Object.fromEntries(ALL.map(m=>[m.id,m]));
+
+function strokeLen(s){let l=0;for(let i=1;i<s.length;i++)l+=Math.hypot(s[i][0]-s[i-1][0],s[i][1]-s[i-1][1]);return l}
+function poly(ctx,pts,dx,dy){ctx.moveTo(pts[0][0]+dx,pts[0][1]+dy);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0]+dx,pts[i][1]+dy)}
+function drawGrid(ctx,W,H,u=U,col='#ede7e0'){ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<=W+.1;x+=u){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=0;y<=H+.1;y+=u){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();ctx.restore()}
+
+function lessonLayout(m,H=1414){
+  const cols=Math.max(1,Math.floor(21/m.w));
+  const startX=2*U+Math.floor((21-cols*m.w)/2)*U;
+  const rowH=(m.h+(m.bh||0)+2)*U, y0=2*U;
+  const rows=Math.max(3,Math.floor((H-y0-U+2*U)/rowH));
+  return {cols,startX,rowH,y0,rows,W:cols*m.w*U};
+}
+function drawLessonGuide(ctx,m,LW=1000,LH=1414){
+  drawGrid(ctx,LW,LH);
+  const lay=lessonLayout(m,LH), st=m.s(U);
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  for(let r=0;r<lay.rows;r++){
+    const last=r===lay.rows-1, y=lay.y0+r*lay.rowH;
+    ctx.strokeStyle=r===0?'#a39a94':'#d6cfc8';
+    ctx.lineWidth=r===0?2.6:2.2;
+    ctx.setLineDash(last?[7,7]:[]);
+    ctx.beginPath();
+    const n=last?1:lay.cols;
+    for(let c=0;c<n;c++)st.forEach(s=>poly(ctx,s,lay.startX+c*m.w*U,y));
+    if(m.b)m.b(U,last?m.w*U:lay.W).forEach(s=>poly(ctx,s,lay.startX,y));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawMini(cv,m){
+  const dpr=2,cw=150,ch=80;cv.width=cw*dpr;cv.height=ch*dpr;
+  const ctx=cv.getContext('2d');
+  const reps=m.w<=2?3:2, W=reps*m.w*U, H=(m.h+(m.bh||0))*U, pad=10;
+  const sc=Math.min((cw-2*pad)/W,(ch-2*pad)/H);
+  ctx.setTransform(dpr*sc,0,0,dpr*sc,dpr*(cw-W*sc)/2,dpr*(ch-H*sc)/2);
+  ctx.strokeStyle='#8f6a62';ctx.lineWidth=1.7/sc;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();
+  const st=m.s(U);for(let c=0;c<reps;c++)st.forEach(s=>poly(ctx,s,c*m.w*U,0));
+  if(m.b)m.b(U,W).forEach(s=>poly(ctx,s,0,0));
+  ctx.stroke();
+}
+
+/* ---------- Pad de dibujo ---------- */
+class Pad{
+  constructor(wrap){
+    this.wrap=wrap;
+    this.gc=document.createElement('canvas');this.ic=document.createElement('canvas');
+    wrap.append(this.gc,this.ic);
+    this.g=this.gc.getContext('2d');this.i=this.ic.getContext('2d');
+    this.strokes=[];this.color=COLORS[0];this.size=4;this.tool='pen';
+    this.LW=1000;this.LH=1414;this.scale=1;this.dpr=1;this.penSeen=false;
+    this.guideFn=null;this.symFn=null;this.onChange=null;this.cur=null;
+    const c=this.ic;
+    c.addEventListener('pointerdown',e=>this.down(e));
+    c.addEventListener('pointermove',e=>this.move(e));
+    c.addEventListener('pointerup',e=>this.up(e));
+    c.addEventListener('pointercancel',e=>this.up(e));
+    c.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+  }
+  setSize(w,h){this.LW=w;this.LH=h;this.fit()}
+  fit(){
+    const st=this.wrap.parentElement;const aw=st.clientWidth-16,ah=st.clientHeight-16;
+    if(aw<=0||ah<=0)return;
+    this.scale=Math.min(aw/this.LW,ah/this.LH);
+    const cw=Math.round(this.LW*this.scale),ch=Math.round(this.LH*this.scale);
+    this.dpr=Math.min(window.devicePixelRatio||1,2.5);
+    this.wrap.style.width=cw+'px';this.wrap.style.height=ch+'px';
+    for(const cv of [this.gc,this.ic]){cv.width=Math.round(cw*this.dpr);cv.height=Math.round(ch*this.dpr);cv.style.width=cw+'px';cv.style.height=ch+'px'}
+    const k=this.dpr*this.scale;
+    this.g.setTransform(k,0,0,k,0,0);this.i.setTransform(k,0,0,k,0,0);
+    this.renderGuide();this.renderInk();
+  }
+  renderGuide(){const g=this.g;g.fillStyle='#fff';g.fillRect(0,0,this.LW,this.LH);if(this.guideFn)this.guideFn(g,this)}
+  renderInk(){this.i.clearRect(0,0,this.LW,this.LH);for(const s of this.strokes)this.range(this.i,s,1,s.p.length,true)}
+  transforms(s){
+    if(!s.sym)return [null];
+    const r=[];for(let k=0;k<s.sym.n;k++){r.push({a:2*PI*k/s.sym.n,m:false});if(s.sym.m)r.push({a:2*PI*k/s.sym.n,m:true})}
+    return r;
+  }
+  range(ctx,s,a,b,fin){
+    const p=s.p,n=p.length;if(!n)return;
+    for(const t of this.transforms(s)){
+      ctx.save();
+      if(t){ctx.translate(s.sym.cx,s.sym.cy);ctx.rotate(t.a);if(t.m)ctx.scale(-1,1);ctx.translate(-s.sym.cx,-s.sym.cy)}
+      ctx.globalCompositeOperation=s.e?'destination-out':'source-over';
+      ctx.strokeStyle=s.c;ctx.fillStyle=s.c;ctx.lineCap='round';ctx.lineJoin='round';
+      for(let i=Math.max(1,a);i<b;i++){
+        ctx.lineWidth=p[i-1][2];ctx.beginPath();
+        if(i===1){ctx.moveTo(p[0][0],p[0][1]);ctx.lineTo((p[0][0]+p[1][0])/2,(p[0][1]+p[1][1])/2)}
+        else{ctx.moveTo((p[i-2][0]+p[i-1][0])/2,(p[i-2][1]+p[i-1][1])/2);ctx.quadraticCurveTo(p[i-1][0],p[i-1][1],(p[i-1][0]+p[i][0])/2,(p[i-1][1]+p[i][1])/2)}
+        ctx.stroke();
+      }
+      if(fin){
+        if(n===1){ctx.beginPath();ctx.arc(p[0][0],p[0][1],p[0][2]/2,0,2*PI);ctx.fill()}
+        else{ctx.lineWidth=p[n-1][2];ctx.beginPath();ctx.moveTo((p[n-2][0]+p[n-1][0])/2,(p[n-2][1]+p[n-1][1])/2);ctx.lineTo(p[n-1][0],p[n-1][1]);ctx.stroke()}
+      }
+      ctx.restore();
+    }
+  }
+  pt(e,s){
+    const r=this.ic.getBoundingClientRect();
+    const x=(e.clientX-r.left)/this.scale,y=(e.clientY-r.top)/this.scale;
+    const pr=e.pointerType==='pen'?(e.pressure||.5):.5;
+    const w=s.w*(e.pointerType==='pen'?(.35+pr*1.3):1);
+    const l=s.p[s.p.length-1];
+    if(l&&Math.hypot(l[0]-x,l[1]-y)<.6)return;
+    s.p.push([Math.round(x*10)/10,Math.round(y*10)/10,Math.round(w*10)/10]);
+  }
+  down(e){
+    if(e.pointerType==='pen')this.penSeen=true;
+    if(this.penSeen&&e.pointerType==='touch')return;
+    if(this.cur)return;
+    e.preventDefault();
+    try{this.ic.setPointerCapture(e.pointerId)}catch(_){}
+    this.pid=e.pointerId;
+    const er=this.tool==='eraser';
+    const s={c:this.color,w:this.size*(er?4:1),e:er,p:[],sym:this.symFn?this.symFn():null};
+    this.cur=s;this.strokes.push(s);this.pt(e,s);
+  }
+  move(e){
+    const s=this.cur;if(!s||e.pointerId!==this.pid)return;
+    e.preventDefault();
+    const n0=s.p.length;
+    const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+    for(const ev of (evs.length?evs:[e]))this.pt(ev,s);
+    this.range(this.i,s,n0,s.p.length,false);
+  }
+  up(e){
+    const s=this.cur;if(!s||e.pointerId!==this.pid)return;
+    this.range(this.i,s,s.p.length,s.p.length,true);
+    this.cur=null;this.changed();
+  }
+  undo(){if(this.strokes.length){this.strokes.pop();this.renderInk();this.changed()}}
+  clear(){this.strokes=[];this.renderInk();this.changed()}
+  changed(){if(this.onChange)this.onChange()}
+  exportImage(){
+    this.exporting=true;
+    const c=document.createElement('canvas');c.width=this.LW;c.height=this.LH;
+    const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);
+    if(this.guideFn)this.guideFn(g,this);
+    const ic=document.createElement('canvas');ic.width=this.LW;ic.height=this.LH;
+    const ig=ic.getContext('2d');for(const s of this.strokes)this.range(ig,s,1,s.p.length,true);
+    g.drawImage(ic,0,0);
+    this.exporting=false;
+    return c.toDataURL('image/jpeg',.88);
+  }
+}
+function buildTools(el,pad,sizes){
+  el.innerHTML='';
+  const mk=(html,cls,fn)=>{const b=document.createElement('button');b.className=cls;b.innerHTML=html;b.onclick=fn;el.appendChild(b);return b};
+  const setTool=t=>{pad.tool=t;pen.classList.toggle('on',t==='pen');er.classList.toggle('on',t==='eraser')};
+  const pen=mk('✏️','btn on',()=>setTool('pen'));
+  const er=mk('🧽','btn',()=>setTool('eraser'));
+  const sz=sizes.map((s,i)=>{const d=5+i*5;const b=mk(`<i style="width:${d}px;height:${d}px"></i>`,'btn sz'+(i===1?' on':''),()=>{pad.size=s;sz.forEach(x=>x.classList.remove('on'));b.classList.add('on')});return b});
+  pad.size=sizes[1];
+  const cols=COLORS.map((c,i)=>{const b=mk('','dot'+(i===0?' on':''),()=>{pad.color=c;setTool('pen');cols.forEach(x=>x.classList.remove('on'));b.classList.add('on')});b.style.background=c;return b});
+  mk('↶','btn',()=>pad.undo());
+  mk('🗑','btn',()=>{if(pad.strokes.length&&confirm('¿Borrar todo lo que has dibujado?'))pad.clear()});
+}
+
+/* ---------- almacenamiento ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(_){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}},del(k){try{localStorage.removeItem(k)}catch(_){}}};
+let DB=null;
+function idb(){return DB?Promise.resolve(DB):new Promise((res,rej)=>{const r=indexedDB.open('mandalas',1);r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('laminas',{keyPath:'id'});d.createObjectStore('fichas',{keyPath:'id'})};r.onsuccess=()=>{DB=r.result;res(DB)};r.onerror=()=>rej(r.error)})}
+async function dbAll(st){const d=await idb();return new Promise((res,rej)=>{const q=d.transaction(st).objectStore(st).getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error)})}
+async function dbPut(st,o){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction(st,'readwrite');t.objectStore(st).put(o);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
+async function dbDel(st,id){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction(st,'readwrite');t.objectStore(st).delete(id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
+const loadImg=src=>new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=src});
+async function makeThumb(data,max=320){const im=await loadImg(data);const k=Math.min(1,max/im.width);const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.8)}
+async function saveLamina(title,img,type){
+  const thumb=await makeThumb(img);
+  await dbPut('laminas',{id:String(Date.now()),title,img,thumb,type,date:Date.now()});
+  markDay();
+}
+
+/* ---------- racha y progreso ---------- */
+const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function days(){return new Set(LS.get('mand_days',[]))}
+function markDay(){const s=days();s.add(dkey(new Date()));LS.set('mand_days',[...s]);updateChip()}
+function streak(){const s=days();const d=new Date();if(!s.has(dkey(d)))d.setDate(d.getDate()-1);let n=0;while(s.has(dkey(d))){n++;d.setDate(d.getDate()-1)}return n}
+function updateChip(){$('#streakChip').textContent='🔥 '+streak()}
+const getDone=()=>LS.get('mand_done',[]);
+function markDone(id){const d=getDone();if(!d.includes(id)){d.push(id);LS.set('mand_done',d)}}
+
+/* ---------- utilidades ---------- */
+let toastT;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2400)}
+const fmtDate=ms=>new Date(ms).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+function debounceSave(pad,keyFn){let t;return()=>{clearTimeout(t);t=setTimeout(()=>{const k=keyFn();if(k)LS.set(k,pad.strokes)},350)}}
+
+/* ---------- vistas ---------- */
+let active='lessons';
+function showView(v){
+  active=v;
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(v==='lessons')renderLessons();
+  if(v==='gallery')renderGallery();
+  if(v==='fichas')renderFichas();
+  if(v==='gen')requestAnimationFrame(()=>genPad.fit());
+  if(v==='sheet')requestAnimationFrame(()=>sheetPad.fit());
+}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.v));
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(active==='gen')genPad.fit();if(active==='sheet')sheetPad.fit()},150)});
+
+/* ---------- Lecciones ---------- */
+function renderLessons(){
+  const done=getDone(),st=streak(),ds=days();
+  const next=ALL.find(m=>!done.includes(m.id));
+  const L7=['D','L','M','X','J','V','S'];
+  let week='';for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);week+=`<span>${L7[d.getDay()]}<b class="${ds.has(dkey(d))?'y':''}"></b></span>`}
+  let h=`<div class="stats"><div class="row"><div><div class="big">🔥 ${st} ${st===1?'día':'días'} de racha</div><div class="k" style="color:var(--muted);font-size:13px">${done.length} de ${ALL.length} lecciones completadas</div></div><div class="week">${week}</div></div>
+  <div class="prog"><i style="width:${Math.round(done.length/ALL.length*100)}%"></i></div>
+  ${next?`<button class="btn pri" id="goNext">▶ Seguir: ${next.name}</button>`:`<b>🎉 ¡Has completado todas las lecciones! Puedes repetirlas cuando quieras.</b>`}</div>`;
+  LEVELS.forEach(l=>{
+    h+=`<h2>${l.name}</h2><div class="cards">`;
+    l.lessons.forEach((m,i)=>{const ok=done.includes(m.id);h+=`<div class="card${ok?' done':''}" data-id="${m.id}">${ok?'<span class="chk">✓</span>':''}<canvas class="mini" data-id="${m.id}"></canvas><div class="n">${m.name}</div><div class="k">Lección ${ALL.indexOf(m)+1}</div></div>`});
+    h+='</div>';
+  });
+  const el=$('#lessonsList');el.innerHTML=h;
+  el.querySelectorAll('canvas.mini').forEach(cv=>drawMini(cv,BYID[cv.dataset.id]));
+  el.querySelectorAll('.card').forEach(c=>c.onclick=()=>openLesson(BYID[c.dataset.id]));
+  const gn=$('#goNext');if(gn)gn.onclick=()=>openLesson(next);
+}
+
+/* ---------- Hoja (lección o ficha) ---------- */
+const sheetPad=new Pad($('#sheetLayers'));
+buildTools($('#sTools'),sheetPad,[2.5,4,7]);
+let cur=null,ficOp=.45;
+sheetPad.onChange=debounceSave(sheetPad,()=>cur&&cur.key);
+function openLesson(m){
+  cur={type:'lesson',m,key:'mand_d_'+m.id};
+  $('#sTitle').textContent=m.name;
+  $('#sPlay').style.display='';$('#sDone').style.display='';$('#sOpWrap').style.display='none';
+  sheetPad.guideFn=g=>drawLessonGuide(g,m,sheetPad.LW,sheetPad.LH);
+  sheetPad.strokes=LS.get(cur.key,[]);
+  sheetPad.LW=1000;sheetPad.LH=1414;
+  showView('sheet');
+}
+async function openFicha(f){
+  const img=await loadImg(f.img);
+  cur={type:'ficha',f,key:'mand_d_f'+f.id};
+  $('#sTitle').textContent=f.name;
+  $('#sPlay').style.display='none';$('#sDone').style.display='none';$('#sOpWrap').style.display='';
+  $('#sOp').value=Math.round(ficOp*100);
+  sheetPad.guideFn=g=>{g.save();g.globalAlpha=ficOp;g.drawImage(img,0,0,sheetPad.LW,sheetPad.LH);g.restore()};
+  sheetPad.strokes=LS.get(cur.key,[]);
+  sheetPad.LW=1000;sheetPad.LH=Math.round(1000*f.h/f.w);
+  showView('sheet');
+}
+$('#sOp').oninput=e=>{ficOp=e.target.value/100;sheetPad.renderGuide()};
+$('#sBack').onclick=()=>showView(cur&&cur.type==='ficha'?'fichas':'lessons');
+$('#sPlay').onclick=()=>cur&&cur.m&&playSteps(cur.m);
+$('#sSave').onclick=async()=>{
+  if(!cur)return;
+  if(!sheetPad.strokes.length){toast('Aún no has dibujado nada ✏️');return}
+  const title=cur.type==='lesson'?'Lección: '+cur.m.name:'Ficha: '+cur.f.name;
+  await saveLamina(title,sheetPad.exportImage(),cur.type);
+  toast('Guardada en Mis láminas 💾');
+};
+$('#sDone').onclick=async()=>{
+  if(!cur||cur.type!=='lesson')return;
+  if(!sheetPad.strokes.length){toast('Repasa la lámina antes de completarla ✏️');return}
+  await saveLamina('Lección: '+cur.m.name,sheetPad.exportImage(),'lesson');
+  markDone(cur.m.id);LS.del(cur.key);
+  const next=ALL.find(m=>!getDone().includes(m.id));
+  if(next&&confirm(`¡Lección completada! 🎉\n¿Pasamos a la siguiente: «${next.name}»?`))openLesson(next);
+  else{toast('¡Lección completada! 🎉');showView('lessons')}
+};
+
+/* ---------- Paso a paso ---------- */
+let stepRAF=0,stepSlow=false,stepM=null;
+function playSteps(m){stepM=m;$('#stepsTitle').textContent='Paso a paso · '+m.name;$('#mSteps').classList.add('on');requestAnimationFrame(startSteps)}
+function startSteps(){
+  cancelAnimationFrame(stepRAF);
+  const m=stepM,cv=$('#stepsCanvas');
+  const strokes=m.s(U).concat(m.b?m.b(U,m.w*U):[]);
+  const BW=(m.w+2)*U,BH=(m.h+(m.bh||0)+2)*U;
+  const maxW=Math.min(520,window.innerWidth-64),maxH=window.innerHeight*.5;
+  const sc=Math.min(maxW/BW,maxH/BH),W=BW*sc,H=BH*sc,dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');
+  const lens=strokes.map(strokeLen),speed=stepSlow?.1:.22,pause=450;
+  const durs=lens.map(l=>Math.max(250,l/speed)),n=strokes.length,t0=performance.now();
+  function partial(s,len){ctx.beginPath();ctx.moveTo(s[0][0],s[0][1]);let acc=0,end=s[0];for(let i=1;i<s.length;i++){const d=Math.hypot(s[i][0]-s[i-1][0],s[i][1]-s[i-1][1]);if(acc+d>=len){const f=d?(len-acc)/d:0;end=[s[i-1][0]+(s[i][0]-s[i-1][0])*f,s[i-1][1]+(s[i][1]-s[i-1][1])*f];ctx.lineTo(end[0],end[1]);break}acc+=d;ctx.lineTo(s[i][0],s[i][1]);end=s[i]}ctx.stroke();return end}
+  function label(k){const s=strokes[k][0],r=10/sc,x=s[0]-12/sc,y=s[1]-12/sc;ctx.fillStyle=ACC;ctx.beginPath();ctx.arc(x,y,r,0,2*PI);ctx.fill();ctx.fillStyle='#fff';ctx.font=`600 ${12/sc}px -apple-system,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(k+1,x,y+.5/sc)}
+  function frame(now){
+    ctx.setTransform(dpr*sc,0,0,dpr*sc,0,0);
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,BW,BH);drawGrid(ctx,BW,BH);
+    ctx.translate(U,U);ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.strokeStyle='#ddd5ce';ctx.lineWidth=3/sc;ctx.beginPath();strokes.forEach(s=>poly(ctx,s,0,0));ctx.stroke();
+    ctx.strokeStyle=ACC;ctx.lineWidth=4.5/sc;
+    let t=now-t0,i=0,tip=null;
+    for(i=0;i<n;i++){
+      if(t>=durs[i]+pause){ctx.beginPath();poly(ctx,strokes[i],0,0);ctx.stroke();t-=durs[i]+pause;continue}
+      tip=partial(strokes[i],lens[i]*Math.min(1,t/durs[i]));break;
+    }
+    for(let k=0;k<=Math.min(i,n-1);k++)label(k);
+    if(tip){ctx.fillStyle=ACC;ctx.beginPath();ctx.arc(tip[0],tip[1],6/sc,0,2*PI);ctx.fill()}
+    $('#stepsInfo').textContent=i<n?`Trazo ${i+1} de ${n}`:'¡Listo! Ahora repásalo en la lámina ✏️';
+    if(i<n)stepRAF=requestAnimationFrame(frame);
+  }
+  stepRAF=requestAnimationFrame(frame);
+}
+$('#stReplay').onclick=startSteps;
+$('#stSpeed').onclick=()=>{stepSlow=!stepSlow;$('#stSpeed').textContent=stepSlow?'🐇 Normal':'🐢 Lento';startSteps()};
+$('#stClose').onclick=()=>{cancelAnimationFrame(stepRAF);$('#mSteps').classList.remove('on')};
+
+/* ---------- Generador ---------- */
+const genPad=new Pad($('#genLayers'));
+genPad.LW=1000;genPad.LH=1000;
+buildTools($('#gTools'),genPad,[3,6,11]);
+let gSym=8,gMir=true,gGuide=true;
+genPad.symFn=()=>({n:gSym,m:gMir,cx:500,cy:500});
+genPad.guideFn=(g,pad)=>{
+  if(pad.exporting||!gGuide)return;
+  g.save();g.strokeStyle='#efe6df';g.lineWidth=1.5;
+  for(let r=50;r<=450;r+=50){g.beginPath();g.arc(500,500,r,0,2*PI);g.stroke()}
+  g.strokeStyle='#ead9d2';
+  for(let k=0;k<gSym;k++){const a=2*PI*k/gSym-PI/2;g.beginPath();g.moveTo(500,500);g.lineTo(500+480*Math.cos(a),500+480*Math.sin(a));g.stroke()}
+  if(gMir){g.setLineDash([4,8]);g.strokeStyle='#f1e6e1';for(let k=0;k<gSym;k++){const a=2*PI*(k+.5)/gSym-PI/2;g.beginPath();g.moveTo(500,500);g.lineTo(500+480*Math.cos(a),500+480*Math.sin(a));g.stroke()}}
+  g.restore();
+};
+genPad.strokes=LS.get('mand_gen',[]);
+genPad.onChange=debounceSave(genPad,()=>'mand_gen');
+$('#gSym').onchange=e=>{gSym=+e.target.value;genPad.renderGuide()};
+$('#gMir').onclick=e=>{gMir=!gMir;e.currentTarget.classList.toggle('on',gMir);genPad.renderGuide()};
+$('#gGuide').onclick=e=>{gGuide=!gGuide;e.currentTarget.classList.toggle('on',gGuide);genPad.renderGuide()};
+$('#gSave').onclick=async()=>{if(!genPad.strokes.length){toast('Dibuja algo primero ✏️');return}await saveLamina('Mandala · '+fmtDate(Date.now()),genPad.exportImage(),'gen');toast('Mandala guardado en Mis láminas 💾')};
+$('#gFicha').onclick=async()=>{if(!genPad.strokes.length){toast('Dibuja algo primero ✏️');return}await addFicha('Mandala '+fmtDate(Date.now()),genPad.exportImage(),1000,1000);toast('Añadido a Mis fichas para repasarlo 📄')};
+
+/* ---------- Mis láminas ---------- */
+let viewing=null;
+async function renderGallery(){
+  const list=(await dbAll('laminas')).sort((a,b)=>b.date-a.date);
+  const el=$('#galleryGrid');
+  if(!list.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Todavía no hay láminas.<br>Completa una lección o crea un mandala y pulsa 💾.</div>';return}
+  el.innerHTML=list.map(x=>`<div class="th" data-id="${x.id}"><img src="${x.thumb||x.img}" alt=""><div class="cap">${x.title}<small>${fmtDate(x.date)}</small></div></div>`).join('');
+  el.querySelectorAll('.th').forEach(t=>t.onclick=()=>{viewing=list.find(x=>x.id===t.dataset.id);$('#viewTitle').textContent=viewing.title;$('#viewImg').src=viewing.img;$('#mView').classList.add('on')});
+}
+async function shareImg(data,name){
+  try{const blob=await (await fetch(data)).blob();const file=new File([blob],name.replace(/[^\w\-áéíóúñ ]/gi,'')+'.jpg',{type:'image/jpeg'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}
+  catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=data;a.download=name+'.jpg';document.body.appendChild(a);a.click();a.remove();
+}
+$('#vShare').onclick=()=>viewing&&shareImg(viewing.img,viewing.title);
+$('#vFicha').onclick=async()=>{if(!viewing)return;const im=await loadImg(viewing.img);await addFicha(viewing.title,viewing.img,im.width,im.height);toast('Añadida a Mis fichas 📄')};
+$('#vDel').onclick=async()=>{if(viewing&&confirm('¿Borrar esta lámina?')){await dbDel('laminas',viewing.id);$('#mView').classList.remove('on');renderGallery()}};
+$('#vClose').onclick=()=>$('#mView').classList.remove('on');
+
+/* ---------- Mis fichas ---------- */
+async function addFicha(name,img,w,h){await dbPut('fichas',{id:String(Date.now()),name,img,thumb:await makeThumb(img),w,h,date:Date.now()})}
+async function renderFichas(){
+  const list=(await dbAll('fichas')).sort((a,b)=>b.date-a.date);
+  const el=$('#fichasGrid');
+  if(!list.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Aún no has subido fichas.</div>';return}
+  el.innerHTML=list.map(x=>`<div class="th" data-id="${x.id}"><img src="${x.thumb||x.img}" alt=""><button class="x" data-del="${x.id}">✕</button><div class="cap">${x.name}<small>${fmtDate(x.date)}</small></div></div>`).join('');
+  el.querySelectorAll('.th').forEach(t=>t.onclick=e=>{
+    const del=e.target.closest('[data-del]');
+    if(del){e.stopPropagation();if(confirm('¿Borrar esta ficha?'))dbDel('fichas',del.dataset.del).then(()=>{LS.del('mand_d_f'+del.dataset.del);renderFichas()});return}
+    openFicha(list.find(x=>x.id===t.dataset.id));
+  });
+}
+$('#fUp').onclick=()=>$('#fInput').click();
+$('#fInput').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  if(f.type==='application/pdf'){toast('Para PDF, haz una captura de la página y súbela 📸');return}
+  try{
+    const url=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+    const im=await loadImg(url);const k=Math.min(1,1800/Math.max(im.width,im.height));
+    const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);
+    await addFicha(f.name.replace(/\.[^.]+$/,'')||'Ficha',c.toDataURL('image/jpeg',.88),c.width,c.height);
+    toast('Ficha añadida 📄');renderFichas();
+  }catch(_){toast('No se pudo abrir esa imagen')}
+};
+
+/* ---------- inicio ---------- */
+updateChip();
+renderLessons();
+</script>
+</body>
+</html>
