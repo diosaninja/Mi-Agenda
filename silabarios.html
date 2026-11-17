@@ -46,6 +46,16 @@ nav.tabs button.on{background:var(--accent-soft);color:var(--accent);font-weight
 .ajustes label{display:flex;align-items:center;gap:8px}
 .ajustes input[type=range]{width:100px;accent-color:var(--accent)}
 .sw input{width:18px;height:18px;accent-color:var(--accent)}
+.lapiz{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 8px}
+.lapiz button{border:0;background:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}
+.lapiz button.on{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.lapiz .gr i{display:block;border-radius:50%;background:var(--pen)}
+.lapiz .col i{display:block;width:22px;height:22px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+#grosores,#colores{display:flex;align-items:center;gap:2px}
+.lapiz{flex-wrap:wrap}
+.lapiz .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+.lapiz input[type=color]{width:30px;height:30px;border:0;padding:0;background:none;cursor:pointer}
+.lapiz .goma svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
 main{padding:16px 18px 40px}
 .view{display:none}.view.on{display:block}
@@ -101,8 +111,8 @@ section.sec h3 span{color:var(--soft);font-weight:400}
 
 /* ---------- Práctica ---------- */
 .pwrap{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
-.pq{position:relative;width:min(92vw,58vh);aspect-ratio:1;background:var(--card);border:2px solid var(--line2);border-radius:6px;overflow:hidden}
-@media (orientation:landscape) and (min-width:700px){.pq{width:min(56vw,calc(100vh - 230px))}}
+.pq{position:relative;width:min(92vw,58vh,var(--pqw,360px));aspect-ratio:1;background:var(--card);border:2px solid var(--line2);border-radius:6px;overflow:hidden}
+@media (orientation:landscape) and (min-width:700px){.pq{width:min(56vw,calc(100vh - 230px),var(--pqw,360px))}}
 .pq svg.gl text{font-size:5.5px}
 .pguide{position:absolute;inset:0;color:rgba(60,55,50,var(--gop));transition:color .25s}
 .pguide.oculta{color:transparent}.pguide.oculta text{display:none}
@@ -201,7 +211,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 
 <div class="ajustes" id="ajustes">
   <label>Guía gris <input type="range" id="gop" min="0.05" max="0.6" step="0.01"></label>
-  <label>Grosor <input type="range" id="grosor" min="2" max="12" step="0.5"></label>
+  <div class="lapiz" id="lapiz" title="Lápiz: grosor y color">
+    <span id="grosores"></span><span class="sep"></span><span id="colores"></span>
+    <input type="color" id="colorLibre" title="Otro color"><span class="sep"></span>
+    <button class="goma" id="goma" title="Goma"><svg viewBox="0 0 24 24"><path d="M8 20h12"/><path d="M4.6 13.6l8.2-8.2a2 2 0 0 1 2.8 0l3 3a2 2 0 0 1 0 2.8L12 18H8.9z"/></svg></button>
+  </div>
+  <label>Tamaño <select id="psize" style="padding:6px 8px;border-radius:9px;border:1px solid var(--line);background:var(--card);font:inherit"><option value="260">Pequeño</option><option value="360">Normal</option><option value="480">Mediano</option><option value="2000">Grande</option></select></label>
   <label class="sw"><input type="checkbox" id="nums"> Números de trazo</label>
   <label class="sw"><input type="checkbox" id="cuadricula"> Cruz guía</label>
   <label class="sw"><input type="checkbox" id="pencil"> Solo Apple Pencil</label>
@@ -430,7 +445,7 @@ const PAIRS={
 const KEY='silabarios-v1';
 const S={script:'h',view:'tabla',group:'basicos',pk:'あ',srow:0,wi:0,ai:0,
   learned:{h:[],k:[]},stats:{h:{},k:{}},days:[],q:{dir:'k2r',group:'basicos'},
-  set:{gop:.25,grosor:5,pencil:false,penSeen:false,cuadricula:true,memoria:false,nums:true}};
+  set:{gop:.25,grosor:5,pencil:false,penSeen:false,cuadricula:true,memoria:false,nums:true,color:'#243a5e',goma:false,psize:360}};
 try{const d=JSON.parse(localStorage.getItem(KEY)||'null');
   if(d){const set=Object.assign(S.set,d.set||{}),q=Object.assign(S.q,d.q||{});
     Object.assign(S,d,{set,q,learned:Object.assign({h:[],k:[]},d.learned),stats:Object.assign({h:{},k:{}},d.stats),days:d.days||[]});}}catch(e){}
@@ -500,16 +515,18 @@ class Pad{
     if(S.set.pencil&&e.pointerType==='touch')return;
     e.preventDefault();if(!this.w)this.fit();
     try{this.cv.setPointerCapture(e.pointerId)}catch(_){}
-    this.cur={id:e.pointerId,pts:[this.pt(e)]};this.strokes.push(this.cur);this.dot(this.cur.pts[0]);}
+    this.cur={id:e.pointerId,pts:[this.pt(e)],g:S.set.goma?Math.max(10,S.set.grosor*2.5):S.set.grosor,c:S.set.goma?'goma':S.set.color};this.strokes.push(this.cur);this.dot(this.cur.pts[0],this.cur);}
   move(e){if(!this.cur||e.pointerId!==this.cur.id)return;e.preventDefault();
     const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
-    for(const ev of(evs.length?evs:[e])){const p=this.pt(ev),a=this.cur.pts[this.cur.pts.length-1];this.cur.pts.push(p);this.seg(a,p);}}
+    for(const ev of(evs.length?evs:[e])){const p=this.pt(ev),a=this.cur.pts[this.cur.pts.length-1];this.cur.pts.push(p);this.seg(a,p,this.cur);}}
   up(e){if(this.cur&&e.pointerId===this.cur.id){this.cur=null;markToday();}}
-  style(){const c=this.ctx;c.strokeStyle=c.fillStyle='#243a5e';c.lineCap='round';c.lineJoin='round';}
-  seg(a,b){const c=this.ctx;this.style();c.lineWidth=this.widthFn()*(.35+(a.p+b.p)/2*1.1);
-    c.beginPath();c.moveTo(a.x*this.w,a.y*this.h);c.lineTo(b.x*this.w,b.y*this.h);c.stroke();}
-  dot(p){const c=this.ctx;this.style();c.beginPath();c.arc(p.x*this.w,p.y*this.h,this.widthFn()*(.35+p.p*1.1)/2,0,Math.PI*2);c.fill();}
-  redraw(){this.ctx.clearRect(0,0,this.w,this.h);for(const s of this.strokes){this.dot(s.pts[0]);for(let i=1;i<s.pts.length;i++)this.seg(s.pts[i-1],s.pts[i]);}}
+  style(st){const c=this.ctx;const g=st&&st.c==='goma';c.globalCompositeOperation=g?'destination-out':'source-over';
+    c.strokeStyle=c.fillStyle=g?'#000':((st&&st.c)||'#243a5e');c.lineCap='round';c.lineJoin='round';}
+  wid(st){return this.widthFn()*((st&&st.g)||S.set.grosor)/S.set.grosor;}
+  seg(a,b,st){const c=this.ctx;this.style(st);c.lineWidth=this.wid(st)*(st&&st.c==='goma'?1:(.35+(a.p+b.p)/2*1.1));
+    c.beginPath();c.moveTo(a.x*this.w,a.y*this.h);c.lineTo(b.x*this.w,b.y*this.h);c.stroke();c.globalCompositeOperation='source-over';}
+  dot(p,st){const c=this.ctx;this.style(st);c.beginPath();c.arc(p.x*this.w,p.y*this.h,this.wid(st)*(st&&st.c==='goma'?1:(.35+p.p*1.1))/2,0,Math.PI*2);c.fill();c.globalCompositeOperation='source-over';}
+  redraw(){this.ctx.clearRect(0,0,this.w,this.h);for(const s of this.strokes){this.dot(s.pts[0],s);for(let i=1;i<s.pts.length;i++)this.seg(s.pts[i-1],s.pts[i],s);}}
   undo(){this.strokes.pop();this.cur=null;this.redraw();}
   clear(){this.strokes=[];this.cur=null;this.redraw();}
 }
@@ -722,11 +739,29 @@ $('#qreset').onclick=()=>{if(confirm('¿Borrar las estadísticas del quiz de '+(
 function applySet(){
   const r=document.documentElement.style;r.setProperty('--gop',S.set.gop);r.setProperty('--sw',2+S.set.grosor*.8);
   document.body.classList.toggle('sin-cruz',!S.set.cuadricula);
-  $('#gop').value=S.set.gop;$('#grosor').value=S.set.grosor;$('#pencil').checked=S.set.pencil;
+  $('#gop').value=S.set.gop;renderLapiz();$('#pencil').checked=S.set.pencil;
+  r.setProperty('--pqw',S.set.psize+'px');$('#psize').value=String(S.set.psize);
   $('#cuadricula').checked=S.set.cuadricula;$('#nums').checked=S.set.nums;
 }
 $('#gop').oninput=e=>{S.set.gop=+e.target.value;applySet();save();};
-$('#grosor').oninput=e=>{S.set.grosor=+e.target.value;applySet();save();pad.redraw();[shoja,spal,spar].forEach(s=>s.pad.redraw());};
+const GROSORES=[2.5,4.5,7,10.5];
+const COLORES=['#243a5e','#2b2a28','#c8553d','#2f6f5e','#2b59c3','#7b4fa0','#d6578f','#c9971c'];
+function renderLapiz(){
+  const st=S.set;
+  $('#grosores').innerHTML=GROSORES.map(g=>`<button class="gr${!st.goma&&Math.abs(st.grosor-g)<.01?' on':''}" data-g="${g}" title="Grosor"><i style="width:${Math.round(g*1.6+2)}px;height:${Math.round(g*1.6+2)}px;background:${st.color}"></i></button>`).join('');
+  $('#colores').innerHTML=COLORES.map(c=>`<button class="col${!st.goma&&st.color===c?' on':''}" data-c="${c}" title="Color"><i style="background:${c}"></i></button>`).join('');
+  $('#colorLibre').value=st.color;$('#goma').classList.toggle('on',!!st.goma);
+}
+$('#lapiz').onclick=e=>{
+  const g=e.target.closest('[data-g]'),c=e.target.closest('[data-c]');
+  if(g){S.set.grosor=+g.dataset.g;S.set.goma=false}
+  else if(c){S.set.color=c.dataset.c;S.set.goma=false}
+  else if(e.target.closest('#goma')){S.set.goma=!S.set.goma}
+  else return;
+  renderLapiz();applySet();save();
+};
+$('#colorLibre').oninput=e=>{S.set.color=e.target.value;S.set.goma=false;renderLapiz();save();};
+$('#psize').onchange=e=>{S.set.psize=+e.target.value;applySet();save();};
 $('#pencil').onchange=e=>{S.set.pencil=e.target.checked;save();};
 $('#cuadricula').onchange=e=>{S.set.cuadricula=e.target.checked;applySet();save();};
 $('#nums').onchange=e=>{S.set.nums=e.target.checked;save();showView(S.view);};
