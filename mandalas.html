@@ -38,7 +38,7 @@ select{border:1px solid var(--line);border-radius:10px;padding:7px 8px;font-size
 .op{display:flex;align-items:center;gap:4px;font-size:14px}
 .op input{width:90px}
 .stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px;position:relative}
-.layers{position:relative;box-shadow:0 2px 14px rgba(60,40,30,.10);background:#fff;border-radius:4px}
+.layers{position:relative;transform-origin:0 0;will-change:transform;box-shadow:0 2px 14px rgba(60,40,30,.10);background:#fff;border-radius:4px}
 .layers canvas{position:absolute;left:0;top:0;touch-action:none;-webkit-touch-callout:none}
 /* lecciones */
 .stats{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:18px}
@@ -64,7 +64,7 @@ h2{font:600 17px Georgia,serif;margin:18px 2px 10px;color:#7a5148}
 .th img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#fff}
 .th .cap{padding:6px 8px;font-size:12px}
 .th .cap small{display:block;color:var(--muted)}
-.th .x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(0,0,0,.15);font-size:14px}
+.th .x{position:absolute;top:6px;right:6px;width:38px;height:38px;border-radius:50%;border:2px solid #fff;background:#d9534f;color:#fff;box-shadow:0 1px 5px rgba(0,0,0,.25);font-size:17px;padding:0}
 .empty{color:var(--muted);text-align:center;padding:40px 20px;line-height:1.5}
 .tip{font-size:13px;color:var(--muted);margin:10px 2px 14px;line-height:1.45}
 /* modales */
@@ -105,6 +105,7 @@ h2{font:600 17px Georgia,serif;margin:18px 2px 10px;color:#7a5148}
       <span class="sep"></span>
       <div class="grp" id="sTools"></div>
       <span class="sep"></span>
+      <button class="btn" id="sDelF">🗑 Borrar ficha</button>
       <button class="btn" id="sSave">💾 Guardar</button>
       <button class="btn ok" id="sDone">✓ Completar</button>
     </div>
@@ -161,6 +162,11 @@ h2{font:600 17px Georgia,serif;margin:18px 2px 10px;color:#7a5148}
     <button class="btn" id="vDel">🗑 Borrar</button>
     <button class="btn pri" id="vClose">Cerrar</button>
   </div>
+</div></div>
+
+<div class="modal" id="mAsk"><div class="box" style="max-width:380px">
+  <h3 id="askMsg"></h3>
+  <div class="acts"><button class="btn" id="askNo">Cancelar</button><button class="btn pri" id="askYes">Sí</button></div>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -265,6 +271,7 @@ class Pad{
     this.strokes=[];this.color=COLORS[0];this.size=4;this.tool='pen';
     this.LW=1000;this.LH=1414;this.scale=1;this.dpr=1;this.penSeen=false;
     this.guideFn=null;this.symFn=null;this.onChange=null;this.cur=null;
+    this.zoom=1;this.tx=0;this.ty=0;this.touches=new Map();this.gest=null;
     const c=this.ic;
     c.addEventListener('pointerdown',e=>this.down(e));
     c.addEventListener('pointermove',e=>this.move(e));
@@ -276,6 +283,7 @@ class Pad{
   fit(){
     const st=this.wrap.parentElement;const aw=st.clientWidth-16,ah=st.clientHeight-16;
     if(aw<=0||ah<=0)return;
+    this.resetView();
     this.scale=Math.min(aw/this.LW,ah/this.LH);
     const cw=Math.round(this.LW*this.scale),ch=Math.round(this.LH*this.scale);
     this.dpr=Math.min(window.devicePixelRatio||1,2.5);
@@ -284,6 +292,35 @@ class Pad{
     const k=this.dpr*this.scale;
     this.g.setTransform(k,0,0,k,0,0);this.i.setTransform(k,0,0,k,0,0);
     this.renderGuide();this.renderInk();
+  }
+  applyView(){this.wrap.style.transform=this.zoom===1&&!this.tx&&!this.ty?'':`translate(${this.tx}px,${this.ty}px) scale(${this.zoom})`}
+  resetView(){this.zoom=1;this.tx=0;this.ty=0;this.applyView()}
+  clampView(){
+    if(this.zoom<=1.001){this.resetView();return}
+    const w=this.wrap.offsetWidth,h=this.wrap.offsetHeight,m=60;
+    this.tx=Math.min(m,Math.max(w-w*this.zoom-m,this.tx));
+    this.ty=Math.min(m,Math.max(h-h*this.zoom-m,this.ty));
+    this.applyView();
+  }
+  zoomBy(f){
+    const c={x:this.wrap.offsetWidth/2,y:this.wrap.offsetHeight/2};
+    const px=(c.x-this.tx)/this.zoom,py=(c.y-this.ty)/this.zoom;
+    this.zoom=Math.min(4,Math.max(1,this.zoom*f));
+    this.tx=c.x-px*this.zoom;this.ty=c.y-py*this.zoom;this.clampView();
+  }
+  local(e){const r=this.wrap.parentElement.getBoundingClientRect();return {x:e.clientX-r.left-this.wrap.offsetLeft,y:e.clientY-r.top-this.wrap.offsetTop}}
+  startGest(){
+    const p=[...this.touches.values()];
+    const c={x:p.reduce((a,q)=>a+q.x,0)/p.length,y:p.reduce((a,q)=>a+q.y,0)/p.length};
+    this.gest={z0:this.zoom,tx0:this.tx,ty0:this.ty,c0:c,d0:p.length>1?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
+  }
+  updGest(){
+    const g=this.gest,p=[...this.touches.values()];
+    const c={x:p.reduce((a,q)=>a+q.x,0)/p.length,y:p.reduce((a,q)=>a+q.y,0)/p.length};
+    let z=g.z0;
+    if(p.length>1&&g.d0>0)z=Math.min(4,Math.max(1,g.z0*Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)/g.d0));
+    const px=(g.c0.x-g.tx0)/g.z0,py=(g.c0.y-g.ty0)/g.z0;
+    this.zoom=z;this.tx=c.x-px*z;this.ty=c.y-py*z;this.clampView();
   }
   renderGuide(){const g=this.g;g.fillStyle='#fff';g.fillRect(0,0,this.LW,this.LH);if(this.guideFn)this.guideFn(g,this)}
   renderInk(){this.i.clearRect(0,0,this.LW,this.LH);for(const s of this.strokes)this.range(this.i,s,1,s.p.length,true)}
@@ -314,7 +351,7 @@ class Pad{
   }
   pt(e,s){
     const r=this.ic.getBoundingClientRect();
-    const x=(e.clientX-r.left)/this.scale,y=(e.clientY-r.top)/this.scale;
+    const k=r.width/this.LW;const x=(e.clientX-r.left)/k,y=(e.clientY-r.top)/k;
     const pr=e.pointerType==='pen'?(e.pressure||.5):.5;
     const w=s.w*(e.pointerType==='pen'?(.35+pr*1.3):1);
     const l=s.p[s.p.length-1];
@@ -323,16 +360,28 @@ class Pad{
   }
   down(e){
     if(e.pointerType==='pen')this.penSeen=true;
-    if(this.penSeen&&e.pointerType==='touch')return;
-    if(this.cur)return;
     e.preventDefault();
+    if(e.pointerType==='touch'){
+      try{this.ic.setPointerCapture(e.pointerId)}catch(_){}
+      this.touches.set(e.pointerId,this.local(e));
+      if(this.touches.size>=2){
+        if(this.cur&&this.cur.touch){this.strokes.pop();this.cur=null;this.renderInk()}
+        this.startGest();return;
+      }
+      if(this.penSeen){this.startGest();return}
+    }
+    if(this.cur)return;
     try{this.ic.setPointerCapture(e.pointerId)}catch(_){}
     this.pid=e.pointerId;
     const er=this.tool==='eraser';
-    const s={c:this.color,w:this.size*(er?4:1),e:er,p:[],sym:this.symFn?this.symFn():null};
+    const s={c:this.color,w:this.size*(er?4:1),e:er,p:[],sym:this.symFn?this.symFn():null};if(e.pointerType==='touch')s.touch=true;
     this.cur=s;this.strokes.push(s);this.pt(e,s);
   }
   move(e){
+    if(this.touches.has(e.pointerId)){
+      this.touches.set(e.pointerId,this.local(e));
+      if(this.gest){e.preventDefault();this.updGest();return}
+    }
     const s=this.cur;if(!s||e.pointerId!==this.pid)return;
     e.preventDefault();
     const n0=s.p.length;
@@ -341,6 +390,13 @@ class Pad{
     this.range(this.i,s,n0,s.p.length,false);
   }
   up(e){
+    if(this.touches.has(e.pointerId)){
+      this.touches.delete(e.pointerId);
+      if(this.gest){
+        if(this.touches.size&&(this.penSeen||this.touches.size>=2))this.startGest();else this.gest=null;
+        return;
+      }
+    }
     const s=this.cur;if(!s||e.pointerId!==this.pid)return;
     this.range(this.i,s,s.p.length,s.p.length,true);
     this.cur=null;this.changed();
@@ -370,7 +426,10 @@ function buildTools(el,pad,sizes){
   pad.size=sizes[1];
   const cols=COLORS.map((c,i)=>{const b=mk('','dot'+(i===0?' on':''),()=>{pad.color=c;setTool('pen');cols.forEach(x=>x.classList.remove('on'));b.classList.add('on')});b.style.background=c;return b});
   mk('↶','btn',()=>pad.undo());
-  mk('🗑','btn',()=>{if(pad.strokes.length&&confirm('¿Borrar todo lo que has dibujado?'))pad.clear()});
+  mk('🗑','btn',async()=>{if(pad.strokes.length&&await ask('¿Borrar todo lo que has dibujado?'))pad.clear()});
+  mk('🔍＋','btn',()=>pad.zoomBy(1.5));
+  mk('🔍－','btn',()=>pad.zoomBy(1/1.5));
+  mk('1:1','btn',()=>pad.resetView());
 }
 
 /* ---------- almacenamiento ---------- */
@@ -400,6 +459,7 @@ function markDone(id){const d=getDone();if(!d.includes(id)){d.push(id);LS.set('m
 /* ---------- utilidades ---------- */
 let toastT;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2400)}
+function ask(msg,yes='Sí, borrar',no='Cancelar'){return new Promise(res=>{const m=$('#mAsk');$('#askMsg').textContent=msg;$('#askYes').textContent=yes;$('#askNo').textContent=no;m.classList.add('on');$('#askYes').onclick=()=>{m.classList.remove('on');res(true)};$('#askNo').onclick=()=>{m.classList.remove('on');res(false)}})}
 const fmtDate=ms=>new Date(ms).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
 function debounceSave(pad,keyFn){let t;return()=>{clearTimeout(t);t=setTimeout(()=>{const k=keyFn();if(k)LS.set(k,pad.strokes)},350)}}
 
@@ -446,7 +506,7 @@ sheetPad.onChange=debounceSave(sheetPad,()=>cur&&cur.key);
 function openLesson(m){
   cur={type:'lesson',m,key:'mand_d_'+m.id};
   $('#sTitle').textContent=m.name;
-  $('#sPlay').style.display='';$('#sDone').style.display='';$('#sOpWrap').style.display='none';
+  $('#sPlay').style.display='';$('#sDone').style.display='';$('#sOpWrap').style.display='none';$('#sDelF').style.display='none';
   sheetPad.guideFn=g=>drawLessonGuide(g,m,sheetPad.LW,sheetPad.LH);
   sheetPad.strokes=LS.get(cur.key,[]);
   sheetPad.LW=1000;sheetPad.LH=1414;
@@ -456,7 +516,7 @@ async function openFicha(f){
   const img=await loadImg(f.img);
   cur={type:'ficha',f,key:'mand_d_f'+f.id};
   $('#sTitle').textContent=f.name;
-  $('#sPlay').style.display='none';$('#sDone').style.display='none';$('#sOpWrap').style.display='';
+  $('#sPlay').style.display='none';$('#sDone').style.display='none';$('#sOpWrap').style.display='';$('#sDelF').style.display='';
   $('#sOp').value=Math.round(ficOp*100);
   sheetPad.guideFn=g=>{g.save();g.globalAlpha=ficOp;g.drawImage(img,0,0,sheetPad.LW,sheetPad.LH);g.restore()};
   sheetPad.strokes=LS.get(cur.key,[]);
@@ -479,7 +539,7 @@ $('#sDone').onclick=async()=>{
   await saveLamina('Lección: '+cur.m.name,sheetPad.exportImage(),'lesson');
   markDone(cur.m.id);LS.del(cur.key);
   const next=ALL.find(m=>!getDone().includes(m.id));
-  if(next&&confirm(`¡Lección completada! 🎉\n¿Pasamos a la siguiente: «${next.name}»?`))openLesson(next);
+  if(next&&await ask(`¡Lección completada! 🎉 ¿Pasamos a la siguiente: «${next.name}»?`,'Sí, vamos','Ahora no'))openLesson(next);
   else{toast('¡Lección completada! 🎉');showView('lessons')}
 };
 
@@ -561,7 +621,7 @@ async function shareImg(data,name){
 }
 $('#vShare').onclick=()=>viewing&&shareImg(viewing.img,viewing.title);
 $('#vFicha').onclick=async()=>{if(!viewing)return;const im=await loadImg(viewing.img);await addFicha(viewing.title,viewing.img,im.width,im.height);toast('Añadida a Mis fichas 📄')};
-$('#vDel').onclick=async()=>{if(viewing&&confirm('¿Borrar esta lámina?')){await dbDel('laminas',viewing.id);$('#mView').classList.remove('on');renderGallery()}};
+$('#vDel').onclick=async()=>{if(viewing&&await ask('¿Borrar esta lámina?')){await dbDel('laminas',viewing.id);$('#mView').classList.remove('on');renderGallery()}};
 $('#vClose').onclick=()=>$('#mView').classList.remove('on');
 
 /* ---------- Mis fichas ---------- */
@@ -570,13 +630,20 @@ async function renderFichas(){
   const list=(await dbAll('fichas')).sort((a,b)=>b.date-a.date);
   const el=$('#fichasGrid');
   if(!list.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">Aún no has subido fichas.</div>';return}
-  el.innerHTML=list.map(x=>`<div class="th" data-id="${x.id}"><img src="${x.thumb||x.img}" alt=""><button class="x" data-del="${x.id}">✕</button><div class="cap">${x.name}<small>${fmtDate(x.date)}</small></div></div>`).join('');
+  el.innerHTML=list.map(x=>`<div class="th" data-id="${x.id}"><img src="${x.thumb||x.img}" alt=""><button class="x" data-del="${x.id}" title="Borrar ficha">🗑</button><div class="cap">${x.name}<small>${fmtDate(x.date)}</small></div></div>`).join('');
   el.querySelectorAll('.th').forEach(t=>t.onclick=e=>{
     const del=e.target.closest('[data-del]');
-    if(del){e.stopPropagation();if(confirm('¿Borrar esta ficha?'))dbDel('fichas',del.dataset.del).then(()=>{LS.del('mand_d_f'+del.dataset.del);renderFichas()});return}
+    if(del){e.stopPropagation();delFicha(del.dataset.del);return}
     openFicha(list.find(x=>x.id===t.dataset.id));
   });
 }
+async function delFicha(id){
+  if(!await ask('¿Borrar esta ficha?'))return;
+  await dbDel('fichas',id);LS.del('mand_d_f'+id);
+  toast('Ficha borrada 🗑');
+  if(active==='sheet')showView('fichas');else renderFichas();
+}
+$('#sDelF').onclick=()=>cur&&cur.type==='ficha'&&delFicha(cur.f.id);
 $('#fUp').onclick=()=>$('#fInput').click();
 $('#fInput').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
