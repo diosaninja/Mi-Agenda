@@ -26,8 +26,7 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none}
 
 /* ---------- Cabecera ---------- */
 .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;padding:12px 22px;
-  padding-top:max(12px,env(safe-area-inset-top));background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  padding-top:max(12px,env(safe-area-inset-top));background:#fff;border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:12px;min-width:0;cursor:pointer}
 .brand .logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(145deg,var(--pu2),var(--pu));
   display:grid;place-items:center;color:#fff;flex:none;box-shadow:0 4px 12px rgba(91,62,150,.3)}
@@ -82,7 +81,7 @@ h1.big{font-family:var(--serif);font-weight:500;font-size:clamp(32px,5vw,50px);m
 .chips{display:flex;gap:10px}
 .chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:9px 14px;font-weight:800;display:flex;gap:7px;align-items:center;font-size:15px}
 .toolbar{position:sticky;top:76px;z-index:20;margin:16px 0 12px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
-  background:rgba(255,255,255,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  background:#fff}
 .tgroup{display:flex;gap:5px;align-items:center}
 .sep{width:1px;align-self:stretch;background:var(--line);margin:2px 2px}
 .tool{border:1px solid var(--line);background:#fff;border-radius:12px;min-width:52px;height:52px;padding:4px 8px;
@@ -613,34 +612,42 @@ const ictx = ink.getContext('2d'), lctx = live.getContext('2d');
 let R = 2, strokes = [], redo = [], cur = null;
 function sizeCanvas(){
   sheetH = sheet.offsetHeight;
-  R = Math.min(2.5, (window.devicePixelRatio||1)*1.25);
+  // resolución limitada para que el iPad vaya fluido (máx. ~5 millones de píxeles por lienzo)
+  R = Math.min(2, window.devicePixelRatio || 1);
+  const maxPx = 5e6; if(W*R*sheetH*R > maxPx) R = Math.sqrt(maxPx/(W*sheetH));
   [ink, live].forEach(c => { c.width = Math.round(W*R); c.height = Math.round(sheetH*R); });
   ictx.setTransform(R,0,0,R,0,0); lctx.setTransform(R,0,0,R,0,0);
+}
+const widthAt = (s, pr) => s.t==='pen' ? s.w*(.35 + .9*pr) : s.w;
+// Dibuja los tramos del trazo desde el índice «from» (para pintar solo lo nuevo mientras se escribe)
+function drawSegs(ctx, s, from){
+  const p = s.p, n = p.length; if(!n) return;
+  ctx.strokeStyle = s.c || '#000'; ctx.fillStyle = s.c || '#000';
+  if(from<=0){ ctx.beginPath(); ctx.arc(p[0][0], p[0][1], widthAt(s,p[0][2])/2, 0, 7); ctx.fill(); from = 1; }
+  for(let i=from;i<n;i++){
+    const a=p[i-1], b=p[i];
+    const sx = i===1 ? p[0][0] : (p[i-2][0]+a[0])/2, sy = i===1 ? p[0][1] : (p[i-2][1]+a[1])/2;
+    const ex = (a[0]+b[0])/2, ey = (a[1]+b[1])/2;
+    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.quadraticCurveTo(a[0],a[1],ex,ey);
+    ctx.lineWidth = widthAt(s, (a[2]+b[2])/2); ctx.stroke();
+  }
+}
+function drawTail(ctx, s){ const p=s.p, n=p.length; if(n<2) return; const a=p[n-2], b=p[n-1];
+  ctx.beginPath(); ctx.moveTo((a[0]+b[0])/2,(a[1]+b[1])/2); ctx.lineTo(b[0],b[1]); ctx.lineWidth=widthAt(s,b[2]); ctx.stroke(); }
+function drawStroke(ctx, s){
+  const p = s.p; if(!p.length) return;
+  ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round';
+  if(s.t==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='#000'; ctx.lineWidth=s.w; pathOf(ctx,p); ctx.stroke(); }
+  else if(s.t==='hl'){ ctx.globalAlpha=.38; ctx.globalCompositeOperation='multiply'; ctx.strokeStyle=s.c; ctx.lineWidth=s.w; pathOf(ctx,p); ctx.stroke(); }
+  else if(s.t==='marker'){ ctx.strokeStyle=s.c; ctx.lineWidth=s.w; pathOf(ctx,p); ctx.stroke(); }
+  else { drawSegs(ctx, s, 0); drawTail(ctx, s); }
+  ctx.restore();
 }
 function pathOf(ctx, pts){
   ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
   if(pts.length===1){ ctx.lineTo(pts[0][0]+0.01, pts[0][1]); return; }
   for(let i=1;i<pts.length-1;i++){ const mx=(pts[i][0]+pts[i+1][0])/2, my=(pts[i][1]+pts[i+1][1])/2; ctx.quadraticCurveTo(pts[i][0],pts[i][1],mx,my); }
   const l = pts[pts.length-1]; ctx.lineTo(l[0], l[1]);
-}
-function drawStroke(ctx, s){
-  const p = s.p; if(!p.length) return;
-  ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round';
-  if(s.t==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='#000'; ctx.lineWidth=s.w; pathOf(ctx,p); ctx.stroke(); }
-  else if(s.t==='hl'){ ctx.globalAlpha=.38; if(ctx===ictx) ctx.globalCompositeOperation='multiply'; ctx.lineCap='square'; ctx.strokeStyle=s.c; ctx.lineWidth=s.w; pathOf(ctx,p); ctx.stroke(); }
-  else if(s.t==='marker'){ ctx.strokeStyle=s.c; ctx.lineWidth=s.w; pathOf(ctx,p); ctx.stroke(); }
-  else { // boli con presión
-    ctx.strokeStyle = s.c; ctx.fillStyle = s.c;
-    if(p.length===1){ ctx.beginPath(); ctx.arc(p[0][0],p[0][1],s.w*(.35+.9*p[0][2])/2,0,7); ctx.fill(); }
-    let px=p[0][0], py=p[0][1];
-    for(let i=1;i<p.length;i++){
-      const a=p[i-1], b=p[i], mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
-      ctx.beginPath(); ctx.moveTo(px,py); ctx.quadraticCurveTo(a[0],a[1],mx,my);
-      ctx.lineWidth = s.w*(.35 + .9*((a[2]+b[2])/2)); ctx.stroke(); px=mx; py=my;
-    }
-    const l=p[p.length-1]; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(l[0],l[1]); ctx.lineWidth=s.w*(.35+.9*l[2]); ctx.stroke();
-  }
-  ctx.restore();
 }
 function redrawAll(){ ictx.save(); ictx.setTransform(1,0,0,1,0,0); ictx.clearRect(0,0,ink.width,ink.height); ictx.restore(); strokes.forEach(s => drawStroke(ictx, s)); updUndo(); }
 function clearLive(){ lctx.save(); lctx.setTransform(1,0,0,1,0,0); lctx.clearRect(0,0,live.width,live.height); lctx.restore(); }
@@ -654,31 +661,44 @@ function persist(){
     curSes.updated = new Date().toISOString(); curSes.style = style; saveSessions();
     store.set('strokes_'+curSes.sid, strokes);
     const t = today(); if(!days.includes(t)){ days.push(t); store.set('days', days); }
-  }, 400);
+  }, 900);
 }
-function sheetPoint(e){
-  const r = ink.getBoundingClientRect();
+let rectCache = null;
+function sheetPoint(e, r){
+  r = r || ink.getBoundingClientRect();
   let pr = e.pressure; if(e.pointerType!=='pen' || !pr) pr = .5;
-  return [ +((e.clientX - r.left)/scale).toFixed(1), +((e.clientY - r.top)/scale).toFixed(1), +pr.toFixed(2) ];
+  return [ Math.round((e.clientX - r.left)/scale*10)/10, Math.round((e.clientY - r.top)/scale*10)/10, Math.round(pr*100)/100 ];
+}
+let rafId = 0;
+function paintLive(){
+  rafId = 0; if(!cur) return;
+  lctx.save(); lctx.lineJoin='round'; lctx.lineCap='round';
+  if(cur.t==='eraser'){ lctx.restore();
+    ictx.save(); ictx.lineJoin='round'; ictx.lineCap='round'; ictx.globalCompositeOperation='destination-out'; ictx.strokeStyle='#000'; ictx.lineWidth=cur.w;
+    const from = Math.max(0, cur.drawn-1); pathOf(ictx, cur.p.slice(from)); ictx.stroke(); ictx.restore();
+  } else { drawSegs(lctx, cur, cur.drawn); lctx.restore(); }
+  cur.drawn = cur.p.length;
 }
 function startStroke(e){
-  const t = S.tool, pt = sheetPoint(e);
+  rectCache = ink.getBoundingClientRect();
+  const t = S.tool, pt = sheetPoint(e, rectCache);
   if(pt[0]<0 || pt[1]<0 || pt[0]>W || pt[1]>sheetH) return false;
-  cur = {t, w:S.sizes[t] ?? TOOLS[t].w, c: t==='eraser' ? null : (S.colors[t] || TOOLS[t].color), p:[pt], id:e.pointerId, type:e.pointerType};
-  if(t!=='eraser'){ clearLive(); drawStroke(lctx, cur); }
-  else drawStroke(ictx, cur);
+  cur = {t, w:S.sizes[t] ?? TOOLS[t].w, c: t==='eraser' ? null : (S.colors[t] || TOOLS[t].color), p:[pt], id:e.pointerId, type:e.pointerType, drawn:0};
+  live.style.opacity = t==='hl' ? .38 : 1;
+  paintLive();
   return true;
 }
 function moveStroke(e){
-  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-  (evs.length ? evs : [e]).forEach(ev => { const pt = sheetPoint(ev), l = cur.p[cur.p.length-1]; if(Math.hypot(pt[0]-l[0], pt[1]-l[1]) > .4) cur.p.push(pt); });
-  if(cur.t==='eraser'){ drawStroke(ictx, {t:'eraser', w:cur.w, p:cur.p.slice(-3)}); }
-  else { clearLive(); drawStroke(lctx, cur); }
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+  const list = evs && evs.length ? evs : [e];
+  for(const ev of list){ const pt = sheetPoint(ev, rectCache), l = cur.p[cur.p.length-1]; if(Math.abs(pt[0]-l[0]) + Math.abs(pt[1]-l[1]) > .6) cur.p.push(pt); }
+  if(!rafId) rafId = requestAnimationFrame(paintLive);
 }
 function endStroke(cancel){
   if(!cur) return;
+  if(rafId){ cancelAnimationFrame(rafId); rafId = 0; }
   clearLive();
-  if(cancel){ if(cur.t==='eraser'){ cur=null; redrawAll(); } cur=null; return; }
+  if(cancel){ const wasEraser = cur.t==='eraser'; cur=null; if(wasEraser) redrawAll(); return; }
   strokes.push({t:cur.t, w:cur.w, c:cur.c, p:cur.p}); redo = [];
   if(cur.t!=='eraser') drawStroke(ictx, strokes[strokes.length-1]);
   cur = null; updUndo(); persist();
