@@ -741,11 +741,31 @@ function paintPaper(ctx,s){
 }
 async function renderPaper(){
   const tok=++paperToken;const s=cur();if(!s)return;
-  paintPaper(paperCtx,s); // primero con lo que haya cargado
   const items=getItems(s.tpl).slice(s.tpl.offset,s.tpl.offset+capacity(s));const g=geom(s);
-  try{await Promise.race([document.fonts.load(`${Math.round(g.fs)}px "${s.tpl.font}"`,(items.join('')||'Aa')+'Hxgy'),sleep(3000)])}catch(e){}
+  const spec=`${Math.round(g.fs)}px "${s.tpl.font}"`,sample=(items.join('').slice(0,400)||'Aa')+'Hxgy';
+  let ready=false;try{ready=document.fonts.check(spec,sample)}catch(e){}
+  paintPaper(paperCtx,s);                       // se ve al momento
+  if(ready){fontLoading(false);return}          // la letra ya estaba descargada: listo
+  fontLoading(true);
+  try{await Promise.race([document.fonts.load(spec,sample),sleep(8000)])}catch(e){}
   if(tok!==paperToken)return;
-  paintPaper(paperCtx,s);
+  fontLoading(false);paintPaper(paperCtx,s);    // se repinta con la letra buena
+}
+function fontLoading(on){let el=$('#fontLoad');
+  if(!el){el=document.createElement('div');el.id='fontLoad';el.textContent='Cargando la letra…';
+    el.style.cssText='position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(35,38,58,.85);color:#fff;font:700 13px Nunito,sans-serif;padding:7px 14px;border-radius:99px;z-index:5;pointer-events:none;transition:opacity .2s';
+    $('#page').append(el)}
+  el.style.opacity=on?1:0}
+// Descarga en segundo plano todas las letras incluidas, para que cambiar de plantilla sea instantáneo
+function preloadFonts(){
+  const lat='ABCDEFGHIJKLMNÑOPQRSTUVWXYZabcdefghijklmnñopqrstuvwxyz0123456789áéíóú.,;:¿?¡!';
+  const jp=HIRA.join('')+KATA.join('')+'、。ー';
+  const JP=['Klee One','Zen Maru Gothic','Kosugi Maru','Yuji Syuku'];
+  const list=BUILTIN_FONTS.map(f=>f.family);let i=0;
+  const next=()=>{if(i>=list.length)return;const fam=list[i++];
+    document.fonts.load(`40px "${fam}"`,JP.includes(fam)?lat+jp:lat).catch(()=>{}).finally(()=>setTimeout(next,150))};
+  const go=()=>next();
+  if(window.requestIdleCallback)requestIdleCallback(go,{timeout:4000});else setTimeout(go,1500);
 }
 function schedulePaper(){clearTimeout(paperTimer);paperTimer=setTimeout(renderPaper,60)}
 
@@ -1357,6 +1377,7 @@ async function init(){
   renderAll();
   setPill(idb?'ok':'err',idb?'Guardado en este dispositivo':'Sin guardado: descarga una copia');
   document.fonts.ready.then(()=>renderPaper());
+  setTimeout(preloadFonts,1200);
   getCap('downloads').then(d=>{downloads=d});
   initCloud();
 }
