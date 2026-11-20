@@ -823,7 +823,7 @@ function renderStroke(ctx,st){
   for(let i=0;i<n;i++)drawSeg(tctx,st,i);drawTail(tctx,st);
   if(st.t==='pencil'){tctx.save();tctx.globalCompositeOperation='destination-out';tctx.globalAlpha=.6;tctx.fillStyle=grain;tctx.fillRect(b.x,b.y,b.w,b.h);tctx.restore()}
   ctx.save();ctx.globalAlpha=TOOLS[st.t].alpha;if(st.t==='marker')ctx.globalCompositeOperation='multiply';
-  ctx.drawImage(tmp,b.x*IK,b.y*IK,b.w*IK,b.h*IK,b.x,b.y,b.w,b.h);ctx.restore();
+  ctx.drawImage(tmp,b.x,b.y,b.w,b.h,b.x,b.y,b.w,b.h);ctx.restore();
   tctx.clearRect(b.x,b.y,b.w,b.h);
 }
 function redrawInk(){
@@ -989,16 +989,21 @@ function closePop(){$('#colorPop').classList.add('hidden');$('#editPal').checked
 const ZOOMS=[0.6,0.75,0.9,1,1.25,1.5,2,2.5];
 function applyZoom(){const ws=$('#ws');const base=Math.min(ws.clientWidth-48,920);$('#page').style.width=Math.max(260,base*state.settings.zoom)+'px';
   clearTimeout(resT);resT=setTimeout(setupRes,pinch?250:60)}
-/* ---- nitidez: los lienzos se dibujan a la resolución real de la pantalla ---- */
+/* ---- nitidez: la plantilla se dibuja a la resolución de la pantalla, con límite de memoria para el iPad ---- */
 let PK=1,IK=1,resT=null;
+const MAX_PAPER_PX=7.5e6; // el iPad deja la hoja en blanco si los lienzos ocupan demasiado
+function canvasWorks(ctx){try{ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#f00';ctx.fillRect(0,0,1,1);
+  const ok=ctx.getImageData(0,0,1,1).data[3]>0;ctx.clearRect(0,0,1,1);ctx.restore();return ok}catch(e){return false}}
+function sizePaper(k){paperCanvas.width=Math.round(W*k);paperCanvas.height=Math.round(H*k);paperCtx.setTransform(k,0,0,k,0,0)}
 function setupRes(){
   if(pinch||curSt){resT=setTimeout(setupRes,250);return}
   const cssW=$('#page').clientWidth||W;const need=cssW*(window.devicePixelRatio||1)/W;
-  const pk=clamp(Math.ceil(need*4)/4,1,2.25), ik=clamp(Math.ceil(need*4)/4,1,1.5);
-  if(pk!==PK){PK=pk;paperCanvas.width=Math.round(W*PK);paperCanvas.height=Math.round(H*PK);paperCtx.setTransform(PK,0,0,PK,0,0);renderPaper()}
-  if(ik!==IK){IK=ik;
-    for(const [c,x] of [[inkCanvas,inkCtx],[live,liveCtx],[tmp,tctx]]){c.width=Math.round(W*IK);c.height=Math.round(H*IK);x.setTransform(IK,0,0,IK,0,0)}
-    redrawInk()}
+  const maxK=Math.sqrt(MAX_PAPER_PX/(W*H));
+  const pk=clamp(Math.ceil(need*2)/2,1,Math.min(2,maxK));
+  if(Math.abs(pk-PK)<0.01)return;
+  sizePaper(pk);
+  if(!canvasWorks(paperCtx)){sizePaper(1);PK=1}else PK=pk;
+  renderPaper();
 }
 function zoomStep(d){const z=state.settings.zoom;let i=ZOOMS.findIndex(x=>x>=z-0.001);if(i<0)i=3;i=clamp(i+d,0,ZOOMS.length-1);state.settings.zoom=ZOOMS[i];applyZoom();touch('state')}
 
