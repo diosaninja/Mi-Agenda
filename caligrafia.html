@@ -823,7 +823,7 @@ function renderStroke(ctx,st){
   for(let i=0;i<n;i++)drawSeg(tctx,st,i);drawTail(tctx,st);
   if(st.t==='pencil'){tctx.save();tctx.globalCompositeOperation='destination-out';tctx.globalAlpha=.6;tctx.fillStyle=grain;tctx.fillRect(b.x,b.y,b.w,b.h);tctx.restore()}
   ctx.save();ctx.globalAlpha=TOOLS[st.t].alpha;if(st.t==='marker')ctx.globalCompositeOperation='multiply';
-  ctx.drawImage(tmp,b.x,b.y,b.w,b.h,b.x,b.y,b.w,b.h);ctx.restore();
+  ctx.drawImage(tmp,b.x*IK,b.y*IK,b.w*IK,b.h*IK,b.x,b.y,b.w,b.h);ctx.restore();
   tctx.clearRect(b.x,b.y,b.w,b.h);
 }
 function redrawInk(){
@@ -853,9 +853,9 @@ function cancelStroke(){
   liveCtx.clearRect(0,0,W,H);if(wasEraser)redrawInk();
 }
 let liveRect=null;
-function toXY(e){const r=liveRect||live.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
-function addPoint(e){
-  const[x,y]=toXY(e);let p=e.pointerType==='pen'?e.pressure:0.5;if(!p||p<0.05)p=e.pointerType==='pen'?0.15:0.5;
+function toXY(e,dx=0,dy=0){const r=liveRect||live.getBoundingClientRect();return[(e.clientX+dx-r.left)*W/r.width,(e.clientY+dy-r.top)*H/r.height]}
+function addPoint(e,dx,dy){
+  const[x,y]=toXY(e,dx,dy);let p=e.pointerType==='pen'?e.pressure:0.5;if(!p||p<0.05)p=e.pointerType==='pen'?0.15:0.5;
   const a=curSt.p,n=a.length/3;
   if(n&&Math.hypot(a[(n-1)*3]-x,a[(n-1)*3+1]-y)<0.8)return;
   a.push(Math.round(x*2)/2,Math.round(y*2)/2,Math.round(p*100));
@@ -895,8 +895,13 @@ live.addEventListener('pointermove',e=>{
   if(pan&&e.pointerId===pan.id){const ws=$('#ws');ws.scrollLeft=pan.sl-(e.clientX-pan.x);ws.scrollTop=pan.st-(e.clientY-pan.y);return}
   if(!curSt||e.pointerId!==curSt.id)return;
   e.preventDefault();
-  const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
-  for(const ev of (evs.length?evs:[e]))addPoint(ev);
+  liveRect=live.getBoundingClientRect();   // por si la hoja se ha movido durante el trazo
+  // En algunos iPad los puntos intermedios del Apple Pencil llegan desplazados: se corrigen con el punto real
+  const evs=e.getCoalescedEvents?e.getCoalescedEvents():null;
+  if(evs&&evs.length){const last=evs[evs.length-1];let dx=e.clientX-last.clientX,dy=e.clientY-last.clientY;
+    if(Math.abs(dx)<1.5&&Math.abs(dy)<1.5){dx=0;dy=0}
+    for(const ev of evs)addPoint(ev,dx,dy)}
+  else addPoint(e);
 });
 function endStroke(e){
   if(e.pointerType==='touch'){touches.delete(e.pointerId);
@@ -982,7 +987,19 @@ function closePop(){$('#colorPop').classList.add('hidden');$('#editPal').checked
 
 /* ---- zoom ---- */
 const ZOOMS=[0.6,0.75,0.9,1,1.25,1.5,2,2.5];
-function applyZoom(){const ws=$('#ws');const base=Math.min(ws.clientWidth-48,920);$('#page').style.width=Math.max(260,base*state.settings.zoom)+'px'}
+function applyZoom(){const ws=$('#ws');const base=Math.min(ws.clientWidth-48,920);$('#page').style.width=Math.max(260,base*state.settings.zoom)+'px';
+  clearTimeout(resT);resT=setTimeout(setupRes,pinch?250:60)}
+/* ---- nitidez: los lienzos se dibujan a la resolución real de la pantalla ---- */
+let PK=1,IK=1,resT=null;
+function setupRes(){
+  if(pinch||curSt){resT=setTimeout(setupRes,250);return}
+  const cssW=$('#page').clientWidth||W;const need=cssW*(window.devicePixelRatio||1)/W;
+  const pk=clamp(Math.ceil(need*4)/4,1,2.25), ik=clamp(Math.ceil(need*4)/4,1,1.5);
+  if(pk!==PK){PK=pk;paperCanvas.width=Math.round(W*PK);paperCanvas.height=Math.round(H*PK);paperCtx.setTransform(PK,0,0,PK,0,0);renderPaper()}
+  if(ik!==IK){IK=ik;
+    for(const [c,x] of [[inkCanvas,inkCtx],[live,liveCtx],[tmp,tctx]]){c.width=Math.round(W*IK);c.height=Math.round(H*IK);x.setTransform(IK,0,0,IK,0,0)}
+    redrawInk()}
+}
 function zoomStep(d){const z=state.settings.zoom;let i=ZOOMS.findIndex(x=>x>=z-0.001);if(i<0)i=3;i=clamp(i+d,0,ZOOMS.length-1);state.settings.zoom=ZOOMS[i];applyZoom();touch('state')}
 
 /* =========================================================
@@ -1257,7 +1274,7 @@ async function restoreFrom(file){
 }
 async function exportPNG(withInk){
   const s=cur();const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-  x.drawImage(paperCanvas,0,0);if(withInk)x.drawImage(inkCanvas,0,0);
+  x.drawImage(paperCanvas,0,0,W,H);if(withInk)x.drawImage(inkCanvas,0,0,W,H);
   const blob=await new Promise(r=>c.toBlob(r,'image/png'));
   const fname=(s.name.replace(/[\\/:*?"<>|]+/g,'-')||'hoja')+(withInk?'':' (plantilla)')+'.png';
   const r=await saveFile(fname,blob,'Imagen guardada ✓');

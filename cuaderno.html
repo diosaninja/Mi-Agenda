@@ -689,9 +689,13 @@ function startStroke(e){
   return true;
 }
 function moveStroke(e){
+  rectCache = ink.getBoundingClientRect();
   const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
   const list = evs && evs.length ? evs : [e];
-  for(const ev of list){ const pt = sheetPoint(ev, rectCache), l = cur.p[cur.p.length-1]; if(Math.abs(pt[0]-l[0]) + Math.abs(pt[1]-l[1]) > .6) cur.p.push(pt); }
+  // corrige puntos intermedios desplazados (pasa en algunos iPad con Apple Pencil)
+  const last = list[list.length-1]; let dx = e.clientX - last.clientX, dy = e.clientY - last.clientY;
+  if(Math.abs(dx) < 1.5 && Math.abs(dy) < 1.5){ dx = 0; dy = 0; }
+  for(const ev of list){ const pt = sheetPoint({clientX:ev.clientX+dx, clientY:ev.clientY+dy, pressure:ev.pressure, pointerType:ev.pointerType}, rectCache), l = cur.p[cur.p.length-1]; if(Math.abs(pt[0]-l[0]) + Math.abs(pt[1]-l[1]) > .6) cur.p.push(pt); }
   if(!rafId) rafId = requestAnimationFrame(paintLive);
 }
 function endStroke(cancel){
