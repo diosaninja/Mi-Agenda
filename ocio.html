@@ -164,6 +164,7 @@ h2 .jp{font-size:13px;color:var(--soft);font-weight:400}
 <div class="cf" id="cf"><div class="box"><p id="cfTx"></p><div class="row" style="justify-content:center"><button class="btn" id="cfNo">Cancelar</button><button class="btn pri" id="cfYes">Sí</button></div></div></div>
 <div class="toast" id="toast"></div>
 <input type="file" id="coverFile" accept="image/*" hidden>
+<input type="file" id="bookFile" accept=".pdf,.epub,application/pdf,application/epub+zip" hidden>
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 
 <script>
@@ -185,13 +186,34 @@ const color = t => getComputedStyle(document.documentElement).getPropertyValue('
 /* ---------- almacenamiento (IndexedDB) ---------- */
 let S = {items:[], goals:{}, ver:1};
 const DBN='mi-estanteria', STO='kv';
-function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DBN,1);
-  r.onupgradeneeded=()=>r.result.createObjectStore(STO); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+const FST='files';
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DBN,2);
+  r.onupgradeneeded=()=>{ const d=r.result; if(!d.objectStoreNames.contains(STO)) d.createObjectStore(STO); if(!d.objectStoreNames.contains(FST)) d.createObjectStore(FST); }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 async function load(){
   try{ const db=await idb(); const v=await new Promise((res,rej)=>{const q=db.transaction(STO).objectStore(STO).get('state');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});
     if(v&&v.items) S=Object.assign({items:[],goals:{}},v); }
   catch(e){ try{ const v=JSON.parse(localStorage.getItem(DBN)||'null'); if(v) S=v; }catch(_){} }
 }
+async function fileOp(mode,key,val){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction(FST,mode==='get'?'readonly':'readwrite'); const st=tx.objectStore(FST);
+  const q= mode==='get'?st.get(key): mode==='put'?st.put(val,key): st.delete(key);
+  if(mode==='get'){ q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); } else { tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); } }); }
+const fmtSize=b=> b>1048576? (b/1048576).toFixed(1).replace('.',',')+' MB' : Math.max(1,Math.round(b/1024))+' KB';
+function isEpub(f){ return /epub/i.test(f.mime||'')||/\.epub$/i.test(f.name||''); }
+async function openBook(id){
+  const it=S.items.find(i=>i.id===id)||E; if(!it) return;
+  if(!it.file){ if(it.readLink) window.open(it.readLink,'_blank','noopener'); return; }
+  let blob; try{ blob=(pendingFile&&E&&E.id===id)?pendingFile:await fileOp('get',id); }catch(_){}
+  if(!blob){ toast('No encuentro el archivo en este dispositivo'); return; }
+  const name=it.file.name||'libro';
+  if(isEpub(it.file)){
+    const f=new File([blob],name,{type:'application/epub+zip'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:it.title}); }catch(_){} return; }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(f); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000); toast('Descargado: ábrelo con Libros'); return;
+  }
+  const u=URL.createObjectURL(new Blob([blob],{type:'application/pdf'}));
+  const a=document.createElement('a'); a.href=u; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),600000);
+}
+let pendingFile=null, dropFile=false;
 let saveT;
 function save(){ clearTimeout(saveT); saveT=setTimeout(async()=>{
   try{ const db=await idb(); await new Promise((res,rej)=>{const tx=db.transaction(STO,'readwrite');tx.objectStore(STO).put(JSON.parse(JSON.stringify(S)),'state');tx.oncomplete=res;tx.onerror=()=>rej(tx.error);}); }
@@ -253,7 +275,7 @@ function renderShelf(){
   if(F.minR) list=list.filter(i=>(i.rating||0)>=F.minR);
   if(F.genre) list=list.filter(i=>(i.genre||'').toLowerCase().split(',').map(s=>s.trim()).includes(F.genre));
   if(F.plat) list=list.filter(i=>(i.platform||'').trim().toLowerCase()===F.plat);
-  if(F.q){ const q=F.q.toLowerCase(); list=list.filter(i=>[i.title,i.creator,i.genre,i.platform,i.notes,(i.quotes||[]).map(x=>x.text).join(' '),(i.vocab||[]).map(v=>v.jp+' '+v.kana+' '+v.es).join(' ')].join(' ').toLowerCase().includes(q)); }
+  if(F.q){ const q=F.q.toLowerCase(); list=list.filter(i=>[i.title,i.creator,i.file?i.file.name:'',i.genre,i.platform,i.notes,(i.quotes||[]).map(x=>x.text).join(' '),(i.vocab||[]).map(v=>v.jp+' '+v.kana+' '+v.es).join(' ')].join(' ').toLowerCase().includes(q)); }
   const ord={encurso:0,pendiente:1,terminado:2,abandonado:3,deseo:4};
   const sorts={rec:(a,b)=>(b.updated||0)-(a.updated||0), az:(a,b)=>a.title.localeCompare(b.title,'es'),
     rate:(a,b)=>(b.rating||0)-(a.rating||0), est:(a,b)=>ord[a.status]-ord[b.status]||(b.updated||0)-(a.updated||0),
@@ -290,6 +312,7 @@ function renderShelf(){
   if($('#shelf')) $('#shelf').onclick=e=>{
     const pl=e.target.closest('[data-plus]'); const c=e.target.closest('[data-id]'); if(!c) return;
     if(pl){ e.stopPropagation(); bump(c.dataset.id); return; }
+    if(e.target.closest('[data-read]')){ e.stopPropagation(); openBook(c.dataset.id); return; }
     openEditor(c.dataset.id);
   };
   $('#expBtn').onclick=exportData; $('#impBtn').onclick=()=>$('#importFile').click();
@@ -304,6 +327,7 @@ function card(it){
       ${it.rating?starsHtml(it.rating):''}
       ${showP?`<div class="prog">${p.pct!=null?`<div class="bar"><i style="width:${Math.round(p.pct*100)}%;background:${color(it.type)}"></i></div>`:''}<span class="lbl">${esc(p.lbl)}</span>${it.status==='encurso'?`<button class="plus" data-plus title="Sumar uno">+1</button>`:''}</div>`:''}
       ${it.status==='terminado'&&it.end?`<div class="muted" style="font-size:12.5px;margin-top:auto">${esc(fmtD(it.end))}</div>`:''}
+      ${it.file||it.readLink?`<button class="plus" data-read style="align-self:flex-start;margin-top:${it.status==='terminado'?'4px':'auto'};font-weight:600">${it.file?(isEpub(it.file)?'📗 Abrir EPUB':'📕 Abrir PDF'):'🔗 Leer'}</button>`:''}
     </div></div>`;
 }
 function bump(id){
@@ -318,8 +342,8 @@ function bump(id){
 /* ---------- editor ---------- */
 let E=null, isNew=false;
 function blank(type){ return {id:uid(),type:type||(TYPES[view]?view:'libro'),title:'',creator:'',status:view==='deseo'?'deseo':'pendiente',rating:0,genre:'',platform:'',year:'',link:'',cover:'',start:'',end:'',prog:{},notes:'',quotes:[],vocab:[],created:Date.now(),updated:Date.now()}; }
-$('#addBtn').onclick=()=>{ E=blank(); isNew=true; drawEditor(); $('#ov').classList.add('on'); };
-function openEditor(id,focus){ const it=S.items.find(i=>i.id===id); if(!it) return; E=JSON.parse(JSON.stringify(it)); isNew=false; drawEditor(); $('#ov').classList.add('on'); $('#sheet').scrollTop=0; }
+$('#addBtn').onclick=()=>{ pendingFile=null; dropFile=false; E=blank(); isNew=true; drawEditor(); $('#ov').classList.add('on'); };
+function openEditor(id,focus){ const it=S.items.find(i=>i.id===id); if(!it) return; E=JSON.parse(JSON.stringify(it)); isNew=false; pendingFile=null; dropFile=false; drawEditor(); $('#ov').classList.add('on'); $('#sheet').scrollTop=0; }
 function drawEditor(){
   const T=TYPES[E.type]; const p=E.prog||{};
   const progF = E.type==='libro'? `<div class="g2"><div class="f"><label>Página actual</label><input inputmode="numeric" data-p="cur" value="${esc(p.cur??'')}"></div><div class="f"><label>Páginas totales</label><input inputmode="numeric" data-p="total" value="${esc(p.total??'')}"></div></div>`
@@ -340,6 +364,10 @@ function drawEditor(){
       <div class="f"><label>Enlace</label><input type="url" data-k="link" value="${esc(E.link)}" placeholder="https://…">${E.link?`<a class="link" href="${esc(E.link)}" target="_blank" rel="noopener" style="font-size:14px">Abrir enlace ↗</a>`:''}</div>
     </div>
   </div>
+  ${E.type==='libro'?`<div class="sec"><h3>El libro <span class="jp">本</span></h3>
+    <div class="card" style="padding:12px">${E.file?`<div class="row"><span style="font-size:26px">${isEpub(E.file)?'📗':'📕'}</span><div style="flex:1;min-width:0"><div style="font-weight:600;word-break:break-all">${esc(E.file.name)}</div><div class="muted">${isEpub(E.file)?'EPUB':'PDF'} · ${fmtSize(E.file.size||0)}${pendingFile?' · se guardará al pulsar Guardar':''}</div></div><button class="btn sm pri" id="bkOpen">Abrir</button><button class="btn sm danger" id="bkDel">Quitar</button></div>`
+      :`<div class="row"><button class="btn sm" id="bkAdd">📎 Adjuntar PDF o EPUB</button><span class="muted">desde Descargas, iCloud o un disco externo</span></div>`}
+      <div class="f" style="margin:12px 0 0"><label>…o enlace para leerlo (iCloud Drive, Google Drive, web)</label><input type="url" data-k="readLink" value="${esc(E.readLink||'')}" placeholder="https://…">${E.readLink?`<a class="link" href="${esc(E.readLink)}" target="_blank" rel="noopener" style="font-size:14px">Abrir enlace ↗</a>`:''}</div></div></div>`:''}
   <div class="sec"><h3>Estado</h3><div class="seg" id="edSt">${ST.map(s=>`<button class="${E.status===s?'on':''}" data-s="${s}">${esc(stLabel(s,E.type))}</button>`).join('')}</div>
     <div class="g2" style="margin-top:10px"><div class="f"><label>Empecé</label><input type="date" data-k="start" value="${esc(E.start)}"></div><div class="f"><label>Terminé</label><input type="date" data-k="end" value="${esc(E.end)}"></div></div></div>
   <div class="sec"><h3>Mi valoración</h3><div class="rate" id="edRate">${[1,2,3,4,5].map(n=>`<button class="${n<=E.rating?'on':''}" data-r="${n}">★</button>`).join('')}<span class="muted" style="font-size:14px;align-self:center;margin-left:8px">${E.rating?'Toca otra vez la misma estrella para quitarla':''}</span></div></div>
@@ -381,10 +409,16 @@ function bindEditor(){
     $('#vAdd').onclick=add; ['vJp','vKa','vEs','vEp'].forEach(id=>$('#'+id).onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();add();}});
     sh.querySelectorAll('[data-dv]').forEach(b=>b.onclick=()=>{readForm(); E.vocab.splice(+b.dataset.dv,1); drawEditor();});
   }
-  if($('#edDel')) $('#edDel').onclick=async()=>{ if(await ask(`¿Borrar «${E.title}» de tu estantería? No se puede deshacer.`)){ S.items=S.items.filter(i=>i.id!==E.id); save(); $('#ov').classList.remove('on'); E=null; render(); toast('Borrado'); } };
+  if($('#bkAdd')) $('#bkAdd').onclick=()=>{readForm(); $('#bookFile').click();};
+  if($('#bkOpen')) $('#bkOpen').onclick=()=>{readForm(); openBook(E.id);};
+  if($('#bkDel')) $('#bkDel').onclick=async()=>{ readForm(); if(await ask('¿Quitar el archivo del libro de esta ficha?')){ E.file=null; pendingFile=null; dropFile=true; drawEditor(); } };
+  if($('#edDel')) $('#edDel').onclick=async()=>{ if(await ask(`¿Borrar «${E.title}» de tu estantería? No se puede deshacer.`)){ S.items=S.items.filter(i=>i.id!==E.id); save(); fileOp('del',E.id).catch(()=>{}); $('#ov').classList.remove('on'); E=null; render(); toast('Borrado'); } };
 }
+$('#bookFile').onchange=e=>{ const f=e.target.files[0]; e.target.value=''; if(!f||!E) return;
+  if(!/\.(pdf|epub)$/i.test(f.name)&&!/pdf|epub/i.test(f.type)){ toast('Elige un archivo PDF o EPUB'); return; }
+  readForm(); pendingFile=f; dropFile=false; E.file={name:f.name,size:f.size,mime:f.type||(/\.epub$/i.test(f.name)?'application/epub+zip':'application/pdf')}; drawEditor(); toast('Archivo listo: pulsa Guardar'); };
 $('#coverFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f||!E) return;
-  try{ E.cover=await resizeImg(f,360,540); drawEditor(); }catch(_){ toast('No se pudo leer la imagen'); } };
+  readForm(); try{ E.cover=await resizeImg(f,360,540); drawEditor(); }catch(_){ toast('No se pudo leer la imagen'); } };
 function resizeImg(file,W,H){ return new Promise((res,rej)=>{ const img=new Image(); const u=URL.createObjectURL(file);
   img.onload=()=>{ const s=Math.min(1,Math.max(W/img.width,H/img.height)); const w=Math.round(img.width*s),h=Math.round(img.height*s);
     const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); x.fillStyle='#efe7db'; x.fillRect(0,0,W,H);
@@ -394,6 +428,9 @@ function resizeImg(file,W,H){ return new Promise((res,rej)=>{ const img=new Imag
 function saveEditor(){
   readForm(); if(!E.title){ toast('Ponle un título'); $('#edTitle').focus(); return; }
   E.updated=Date.now();
+  if(pendingFile){ const id=E.id, f=pendingFile; fileOp('put',id,f).then(()=>toast('Libro guardado en este dispositivo')).catch(()=>{ toast('No cabe el archivo: usa mejor un enlace'); const it=S.items.find(x=>x.id===id); if(it){it.file=null; save(); render();} }); }
+  else if(dropFile){ fileOp('del',E.id).catch(()=>{}); }
+  pendingFile=null; dropFile=false;
   const i=S.items.findIndex(x=>x.id===E.id); if(i>=0) S.items[i]=E; else S.items.push(E);
   save(); $('#ov').classList.remove('on');
   if(isNew && view!=='todo' && view!==E.type && !(view==='deseo'&&E.status==='deseo') && TYPES[view]) view=E.type;
@@ -404,7 +441,7 @@ function saveEditor(){
 async function closeEditor(){
   if(E && !isNew){ const o=S.items.find(i=>i.id===E.id); readForm(); if(JSON.stringify(o)!==JSON.stringify(E)){ if(await ask('¿Guardar los cambios?')) return saveEditor(); } }
   else if(E && isNew){ readForm(); if(E.title && await ask('¿Guardar lo que has escrito?')) return saveEditor(); }
-  $('#ov').classList.remove('on'); E=null;
+  $('#ov').classList.remove('on'); E=null; pendingFile=null; dropFile=false;
 }
 $('#ov').addEventListener('click',e=>{ if(e.target.id==='ov') closeEditor(); });
 
