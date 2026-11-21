@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mi Plan de Japonés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6f1; --card:#ffffff; --ink:#2f2a28; --muted:#8a817c; --line:#ece4dc;
+  --accent:#d9607a; --accent-soft:#fbe4e9; --ok:#5b9a7d; --ok-soft:#e2f1ea;
+  --blue:#5f7fbf; --blue-soft:#e5ebf7; --gold:#c9963b; --gold-soft:#f8eedb;
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Maru Gothic","Noto Sans JP",system-ui,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(84px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+.wrap{max-width:640px;margin:0 auto;padding:18px 16px}
+.back{display:inline-block;color:var(--accent);text-decoration:none;font-size:.9rem;margin-bottom:8px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+h1{font-size:1.35rem;margin:0;font-weight:700}
+h1 .jp{color:var(--accent);font-family:"Noto Sans JP";margin-right:6px}
+.streak{background:var(--gold-soft);color:var(--gold);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.9rem;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.daynav button{border:none;background:var(--accent-soft);color:var(--accent);width:40px;height:40px;border-radius:50%;font-size:1.2rem;cursor:pointer}
+.daytitle{text-align:center;flex:1}
+.daytitle .big{font-size:1.15rem;font-weight:700;text-transform:capitalize}
+.daytitle .small{font-size:.8rem;color:var(--muted)}
+.todaylink{font-size:.75rem;color:var(--accent);background:none;border:none;cursor:pointer;text-decoration:underline;padding:2px}
+.progress{display:flex;align-items:center;gap:14px;margin-top:14px}
+.ring{width:74px;height:74px;flex:none}
+.ring circle{fill:none;stroke-width:8}
+.ring .bgc{stroke:var(--line)}
+.ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .4s}
+.ring text{font-size:15px;font-weight:700;fill:var(--ink);font-family:inherit}
+.progress .info{font-size:.9rem;color:var(--muted);line-height:1.5}
+.progress .info b{color:var(--ink)}
+.section-title{display:flex;align-items:center;justify-content:space-between;font-weight:700;margin:2px 0 10px}
+.tag{font-size:.72rem;padding:3px 9px;border-radius:999px;font-weight:500}
+.tag.base{background:var(--blue-soft);color:var(--blue)}
+.tag.var{background:var(--accent-soft);color:var(--accent)}
+.task{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid var(--line);cursor:pointer;user-select:none}
+.task:first-of-type{border-top:none}
+.box{width:28px;height:28px;border-radius:9px;border:2px solid #d6ccc3;flex:none;display:grid;place-items:center;transition:.15s}
+.task.done .box{background:var(--ok);border-color:var(--ok)}
+.task.done .box::after{content:"✓";color:#fff;font-weight:700}
+.task .txt{flex:1}
+.task .name{font-size:.98rem}
+.task.done .name{color:var(--muted);text-decoration:line-through}
+.task .hint{font-size:.78rem;color:var(--muted);margin-top:2px}
+.mins{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.rest{text-align:center;padding:10px 4px 2px;color:var(--muted)}
+.rest .k{font-size:2rem;font-family:"Noto Sans JP";color:var(--ok)}
+textarea,input[type=text],input[type=date]{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:16px;background:#fffdfb;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+label{font-size:.85rem;color:var(--muted);display:block;margin:10px 0 5px}
+.btn{border:none;border-radius:12px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
+.btn.soft{background:var(--accent-soft);color:var(--accent)}
+.btn.ghost{background:#f2ece6;color:var(--ink)}
+.btn.small{padding:6px 10px;font-size:.8rem;border-radius:9px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner{background:var(--gold-soft);border-radius:14px;padding:12px 14px;font-size:.9rem;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+/* semana */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd{border-radius:14px;padding:8px 2px;text-align:center;background:#f6f1eb;cursor:pointer;border:2px solid transparent}
+.wd.sel{border-color:var(--accent)}
+.wd .n{font-size:.72rem;color:var(--muted)}
+.wd .d{font-weight:700;font-size:1rem}
+.wd .p{font-size:.7rem;margin-top:4px}
+.wd.full{background:var(--ok-soft)} .wd.full .p{color:var(--ok);font-weight:700}
+.wd.part{background:var(--gold-soft)} .wd.part .p{color:var(--gold)}
+.wd.restd{background:var(--blue-soft)} .wd.restd .p{color:var(--blue)}
+.plan-line{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:.9rem}
+.plan-line:first-child{border-top:none}
+.plan-line b{width:72px;flex:none}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stat{background:#f6f1eb;border-radius:14px;padding:10px 4px}
+.stat .v{font-size:1.3rem;font-weight:700}
+.stat .l{font-size:.72rem;color:var(--muted)}
+/* registro */
+.slider-wrap{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--accent)}
+.pct{font-weight:700;font-size:1.3rem;width:58px;text-align:right;color:var(--accent)}
+.chart{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:18px;overflow-x:auto}
+.bar{flex:1;min-width:26px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bar .b{width:100%;background:linear-gradient(180deg,#e88aa0,var(--accent));border-radius:8px 8px 4px 4px;position:relative;min-height:4px}
+.bar .b span{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:.68rem;font-weight:700;color:var(--accent)}
+.bar .x{font-size:.62rem;color:var(--muted);margin-top:4px;white-space:nowrap}
+.entry{border-top:1px solid var(--line);padding:11px 0;display:flex;gap:12px;align-items:flex-start}
+.entry:first-child{border-top:none}
+.entry .p{background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:12px;padding:8px 0;width:58px;text-align:center;flex:none}
+.entry .t{flex:1;font-size:.9rem}
+.entry .t .m{font-size:.78rem;color:var(--muted)}
+.entry .del{background:none;border:none;color:#c9b9ad;font-size:1.1rem;cursor:pointer}
+.empty{color:var(--muted);text-align:center;font-size:.9rem;padding:14px 0}
+.trend{font-size:.85rem;color:var(--muted);margin-top:8px}
+/* tabs */
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav .in{display:flex;max-width:640px;width:100%}
+nav button{flex:1;border:none;background:none;padding:10px 0 9px;font:inherit;font-size:.75rem;color:var(--muted);cursor:pointer}
+nav button .i{display:block;font-size:1.25rem;font-family:"Noto Sans JP";margin-bottom:1px}
+nav button.on{color:var(--accent);font-weight:700}
+.view{display:none}.view.on{display:block}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:.88rem;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;inset:0;background:rgba(40,30,28,.35);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}
+.modal.show{display:flex}
+.modal .card{max-width:360px;width:100%;margin:0}
+.note{font-size:.8rem;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">‹ Biblioteca</a>
+  <header>
+    <h1><span class="jp">日本語</span>Mi Plan</h1>
+    <div class="streak" id="streak">🔥 0 días</div>
+  </header>
+
+  <!-- HOY -->
+  <section class="view on" id="v-hoy">
+    <div class="card">
+      <div class="daynav">
+        <button id="prev" aria-label="Día anterior">‹</button>
+        <div class="daytitle">
+          <div class="big" id="dTitle"></div>
+          <div class="small" id="dSub"></div>
+          <button class="todaylink" id="goToday" style="display:none">Volver a hoy</button>
+        </div>
+        <button id="next" aria-label="Día siguiente">›</button>
+      </div>
+      <div class="progress">
+        <svg class="ring" viewBox="0 0 80 80">
+          <circle class="bgc" cx="40" cy="40" r="34"/>
+          <circle class="fg" id="ringFg" cx="40" cy="40" r="34" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 40 40)"/>
+          <text x="40" y="45" text-anchor="middle" id="ringTxt">0%</text>
+        </svg>
+        <div class="info" id="pInfo"></div>
+      </div>
+    </div>
+
+    <div class="banner" id="satBanner" style="display:none">
+      <span>Hoy es sábado: apunta cuánto entendiste del episodio.</span>
+      <button class="btn small" id="goLog">Registrar</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Base diaria <span class="tag base">40 min</span></div>
+      <div id="baseList"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span id="varTitle">Bloque del día</span> <span class="tag var" id="varTag">50 min</span></div>
+      <div id="varList"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Notas del día</div>
+      <textarea id="dayNote" placeholder="Frases nuevas, dudas para Misa, cosas para la clase…"></textarea>
+    </div>
+  </section>
+
+  <!-- SEMANA -->
+  <section class="view" id="v-semana">
+    <div class="card">
+      <div class="daynav" style="margin-bottom:12px">
+        <button id="wPrev">‹</button>
+        <div class="daytitle"><div class="big" id="wTitle"></div></div>
+        <button id="wNext">›</button>
+      </div>
+      <div class="week" id="weekGrid"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Esta semana</div>
+      <div class="stats" id="wStats"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">El plan <span class="tag var">90 min/día</span></div>
+      <div id="planList"></div>
+    </div>
+  </section>
+
+  <!-- REGISTRO -->
+  <section class="view" id="v-registro">
+    <div class="card">
+      <div class="section-title">Registro del sábado</div>
+      <label>Fecha</label>
+      <input type="date" id="lDate">
+      <label>Anime y episodio</label>
+      <input type="text" id="lAnime" placeholder="Ej.: Shirokuma Café, ep. 3">
+      <label>¿Cuánto entendiste sin subtítulos?</label>
+      <div class="slider-wrap">
+        <input type="range" id="lPct" min="0" max="100" step="5" value="30">
+        <div class="pct" id="lPctTxt">30%</div>
+      </div>
+      <label>Notas (opcional)</label>
+      <textarea id="lNotes" placeholder="Qué entendiste, qué se te escapó, palabras que se repetían…"></textarea>
+      <div class="row" style="margin-top:12px"><button class="btn" id="lSave">Guardar registro</button></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Tu evolución</div>
+      <div class="chart" id="chart"></div>
+      <div class="trend" id="trend"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Historial</div>
+      <div id="logList"></div>
+    </div>
+  </section>
+
+  <!-- COPIA -->
+  <section class="view" id="v-copia">
+    <div class="card">
+      <div class="section-title">Copia de seguridad</div>
+      <p class="note">Tus datos se guardan en este navegador y en este dispositivo. Para no perderlos o pasarlos a otro dispositivo, copia el texto de abajo y guárdalo en una nota. Para recuperarlos, pégalo y pulsa «Restaurar».</p>
+      <div class="row" style="margin:10px 0"><button class="btn soft" id="bCopy">Copiar mis datos</button></div>
+      <textarea id="bText" style="min-height:120px;font-size:13px" placeholder="Pega aquí tu copia para restaurarla"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="bRestore">Restaurar</button>
+        <button class="btn ghost" id="bReset" style="color:#b5485e">Borrar todo</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav><div class="in">
+  <button data-v="hoy" class="on"><span class="i">今日</span>Hoy</button>
+  <button data-v="semana"><span class="i">週</span>Semana</button>
+  <button data-v="registro"><span class="i">記録</span>Registro</button>
+  <button data-v="copia"><span class="i">保存</span>Copia</button>
+</div></nav>
+
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="card">
+  <div id="mText" style="margin-bottom:14px"></div>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn ghost" id="mNo">Cancelar</button>
+    <button class="btn" id="mYes">Sí</button>
+  </div>
+</div></div>
+
+<script>
+const KEY='planJapones.v1';
+const DAYS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const DAYS_JP=['日','月','火','水','木','金','土'];
+const SHORT=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const BASE=[
+  {id:'anki',name:'Anki',hint:'Primero el repaso, luego hasta 10 tarjetas nuevas',min:15},
+  {id:'yuki',name:'Yuki · Comprehensible Japanese',hint:'Con entender un 70 % vas bien',min:20},
+  {id:'shadow',name:'Shadowing',hint:'Pausa una frase y repítela imitando la entonación',min:5}
+];
+const VAR={
+  1:{title:'Lunes · Gramática',items:[{id:'tk',name:'Tae Kim: 1 lección',min:40},{id:'notes',name:'Apuntar ejemplos en la libreta',min:10}]},
+  2:{title:'Martes · Anime (1.ª vez)',items:[{id:'ep',name:'Episodio con subtítulos en español',hint:'Elige un anime cotidiano o de vida escolar',min:35},{id:'mine',name:'Sacar 3–5 frases para Anki',min:15}]},
+  3:{title:'Miércoles · Gramática',items:[{id:'tk',name:'Tae Kim: 1 lección',min:40},{id:'rev',name:'Repasar la lección del lunes',min:10}]},
+  4:{title:'Jueves · Anime (2.ª vez)',items:[{id:'ep',name:'El mismo episodio con subtítulos en japonés',min:50}]},
+  5:{title:'Viernes · Conversación',items:[{id:'class',name:'Clase de conversación',min:30},{id:'prep',name:'Preparar o repasar lo que salió en la clase',min:20}]},
+  6:{title:'Sábado · Anime (3.ª vez)',items:[{id:'ep',name:'El mismo episodio sin subtítulos',min:25},{id:'misa',name:'Vídeo de Misa sobre una duda de la semana',min:20},{id:'log',name:'Registrar el % que entendiste',hint:'En la pestaña Registro',min:5}]},
+  0:{title:'Domingo · Descanso',items:[],rest:true}
+};
+
+let S={days:{},logs:[]};
+try{const r=localStorage.getItem(KEY); if(r) S=Object.assign({days:{},logs:[]},JSON.parse(r));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('No se pudo guardar en este navegador');}}
+
+const iso=d=>{const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());};
+const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c);};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+const fmt=d=>d.toLocaleDateString('es-ES',{day:'numeric',month:'long'});
+
+let cur=today();
+let weekRef=today();
+
+function itemsFor(d){const dw=d.getDay();const v=VAR[dw];return {v,all:[...BASE.map(b=>({...b,k:'b-'+b.id})),...v.items.map(i=>({...i,k:'v-'+i.id}))]};}
+function dayData(k){return S.days[k]||(S.days[k]={checks:{},note:''});}
+function dayStats(d){
+  const k=iso(d);const dd=S.days[k];const {v,all}=itemsFor(d);
+  const checks=dd?dd.checks:{};
+  if(v.rest){const n=BASE.filter(b=>checks['b-'+b.id]).length;return {rest:true,done:n,total:BASE.length,pct:Math.round(n/BASE.length*100),mins:BASE.filter(b=>checks['b-'+b.id]).reduce((a,b)=>a+b.min,0),totalMins:40};}
+  const done=all.filter(i=>checks[i.k]);
+  return {rest:false,done:done.length,total:all.length,pct:Math.round(done.length/all.length*100),mins:done.reduce((a,b)=>a+b.min,0),totalMins:all.reduce((a,b)=>a+b.min,0)};
+}
+function streak(){
+  let n=0;let d=today();
+  const st=dayStats(d);
+  if(!(st.pct===100||st.rest)) d=addDays(d,-1); // hoy aún en curso
+  for(let i=0;i<730;i++){
+    const s=dayStats(d);
+    if(s.rest){ d=addDays(d,-1); continue; }
+    if(s.pct===100){n++; d=addDays(d,-1);} else break;
+  }
+  return n;
+}
+
+function renderTask(i,checks,container){
+  const el=document.createElement('div');
+  el.className='task'+(checks[i.k]?' done':'');
+  el.innerHTML=`<div class="box"></div><div class="txt"><div class="name"></div>${i.hint?'<div class="hint"></div>':''}</div><div class="mins">${i.min} min</div>`;
+  el.querySelector('.name').textContent=i.name;
+  if(i.hint) el.querySelector('.hint').textContent=i.hint;
+  el.onclick=()=>{
+    const dd=dayData(iso(cur));dd.checks[i.k]=!dd.checks[i.k];save();renderHoy();
+    const s=dayStats(cur); if(s.pct===100&&!s.rest) toast('¡Día completado! よくできました 🎉');
+  };
+  container.appendChild(el);
+}
+
+function renderHoy(){
+  const k=iso(cur);const dd=S.days[k]||{checks:{},note:''};const dw=cur.getDay();const {v}=itemsFor(cur);
+  const isToday=k===iso(today());
+  document.getElementById('dTitle').textContent=(isToday?'Hoy, ':'')+DAYS[dw];
+  document.getElementById('dSub').textContent=fmt(cur)+' · '+DAYS_JP[dw]+'曜日';
+  document.getElementById('goToday').style.display=isToday?'none':'inline-block';
+  const b=document.getElementById('baseList');b.innerHTML='';
+  BASE.forEach(x=>renderTask({...x,k:'b-'+x.id},dd.checks,b));
+  document.getElementById('varTitle').textContent=v.title;
+  const vl=document.getElementById('varList');vl.innerHTML='';
+  const tag=document.getElementById('varTag');
+  if(v.rest){tag.textContent='libre';vl.innerHTML='<div class="rest"><div class="k">休</div>Día de descanso. Si te apetece, haz solo la base diaria. No rompe tu racha.</div>';}
+  else{tag.textContent=v.items.reduce((a,b)=>a+b.min,0)+' min';v.items.forEach(x=>renderTask({...x,k:'v-'+x.id},dd.checks,vl));}
+  const s=dayStats(cur);
+  document.getElementById('ringFg').setAttribute('stroke-dashoffset',213.6*(1-s.pct/100));
+  document.getElementById('ringTxt').textContent=s.pct+'%';
+  document.getElementById('pInfo').innerHTML=`<b>${s.done} de ${s.total}</b> tareas hechas<br><b>${s.mins}</b> de ${s.totalMins} min`+(s.pct===100?'<br><span style="color:var(--ok);font-weight:700">¡Completado! ✓</span>':'');
+  document.getElementById('dayNote').value=dd.note||'';
+  const hasLog=S.logs.some(l=>l.date===k);
+  document.getElementById('satBanner').style.display=(dw===6&&!hasLog)?'flex':'none';
+  document.getElementById('streak').textContent='🔥 '+streak()+(streak()===1?' día':' días');
+}
+
+function monday(d){const x=new Date(d);const dw=(x.getDay()+6)%7;x.setDate(x.getDate()-dw);return x;}
+function renderSemana(){
+  const m=monday(weekRef);const end=addDays(m,6);
+  document.getElementById('wTitle').textContent=fmt(m)+' – '+fmt(end);
+  const g=document.getElementById('weekGrid');g.innerHTML='';
+  let mins=0,full=0,workDays=0;
+  for(let i=0;i<7;i++){
+    const d=addDays(m,i);const s=dayStats(d);const el=document.createElement('div');
+    let cls='wd';
+    if(s.rest) cls+=' restd'; else if(s.pct===100) cls+=' full'; else if(s.pct>0) cls+=' part';
+    if(iso(d)===iso(today())) cls+=' sel';
+    el.className=cls;
+    el.innerHTML=`<div class="n">${SHORT[d.getDay()]}</div><div class="d">${d.getDate()}</div><div class="p">${s.rest?'休':s.pct+'%'}</div>`;
+    el.onclick=()=>{cur=d;show('hoy');};
+    g.appendChild(el);
+    mins+=s.mins; if(!s.rest){workDays++; if(s.pct===100) full++;}
+  }
+  const h=Math.floor(mins/60),mm=mins%60;
+  document.getElementById('wStats').innerHTML=
+    `<div class="stat"><div class="v">${h}h ${mm}m</div><div class="l">estudiadas</div></div>`+
+    `<div class="stat"><div class="v">${full}/${workDays}</div><div class="l">días completos</div></div>`+
+    `<div class="stat"><div class="v">${streak()}</div><div class="l">racha 🔥</div></div>`;
+  const pl=document.getElementById('planList');pl.innerHTML='';
+  const add=(t,txt)=>{const r=document.createElement('div');r.className='plan-line';r.innerHTML='<b></b><span></span>';r.querySelector('b').textContent=t;r.querySelector('span').textContent=txt;pl.appendChild(r);};
+  add('Cada día','Anki 15 · Yuki 20 · Shadowing 5');
+  [1,2,3,4,5,6,0].forEach(d=>{const v=VAR[d];add(SHORT[d],v.rest?'Descanso (o solo la base)':v.items.map(i=>i.name).join(' · '));});
+}
+
+function renderRegistro(){
+  const logs=[...S.logs].sort((a,b)=>a.date.localeCompare(b.date));
+  const c=document.getElementById('chart');c.innerHTML='';
+  if(!logs.length){c.innerHTML='<div class="empty" style="width:100%">Aún no hay registros. ¡El primero será tu punto de partida!</div>';}
+  logs.slice(-12).forEach(l=>{
+    const d=parse(l.date);const b=document.createElement('div');b.className='bar';
+    b.innerHTML=`<div class="b" style="height:${Math.max(l.pct,3)}%"><span>${l.pct}%</span></div><div class="x">${d.getDate()}/${d.getMonth()+1}</div>`;
+    c.appendChild(b);
+  });
+  const tr=document.getElementById('trend');
+  if(logs.length>=2){const diff=logs[logs.length-1].pct-logs[0].pct;tr.textContent=diff>0?`Has subido ${diff} puntos desde tu primer registro. 頑張って!`:diff<0?`Bajaste ${-diff} puntos respecto al primero. Es normal si el episodio era más difícil.`:'Te mantienes igual que en tu primer registro.';}
+  else tr.textContent='';
+  const ll=document.getElementById('logList');ll.innerHTML='';
+  if(!logs.length) ll.innerHTML='<div class="empty">Sin registros todavía</div>';
+  [...logs].reverse().forEach(l=>{
+    const e=document.createElement('div');e.className='entry';
+    e.innerHTML=`<div class="p">${l.pct}%</div><div class="t"><div class="a"></div><div class="m"></div><div class="m nt"></div></div><button class="del" aria-label="Borrar">×</button>`;
+    e.querySelector('.a').textContent=l.anime||'(sin título)';
+    e.querySelector('.m').textContent=fmt(parse(l.date));
+    e.querySelector('.nt').textContent=l.notes||'';
+    e.querySelector('.del').onclick=()=>ask('¿Borrar este registro?',()=>{S.logs=S.logs.filter(x=>x.id!==l.id);save();renderRegistro();renderHoy();});
+    ll.appendChild(e);
+  });
+}
+
+function show(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(v==='hoy') renderHoy(); if(v==='semana') renderSemana(); if(v==='registro') renderRegistro();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+document.getElementById('prev').onclick=()=>{cur=addDays(cur,-1);renderHoy();};
+document.getElementById('next').onclick=()=>{cur=addDays(cur,1);renderHoy();};
+document.getElementById('goToday').onclick=()=>{cur=today();renderHoy();};
+document.getElementById('dayNote').oninput=e=>{dayData(iso(cur)).note=e.target.value;save();};
+document.getElementById('goLog').onclick=()=>{document.getElementById('lDate').value=iso(cur);show('registro');};
+document.getElementById('wPrev').onclick=()=>{weekRef=addDays(weekRef,-7);renderSemana();};
+document.getElementById('wNext').onclick=()=>{weekRef=addDays(weekRef,7);renderSemana();};
+
+const lPct=document.getElementById('lPct');
+lPct.oninput=()=>document.getElementById('lPctTxt').textContent=lPct.value+'%';
+document.getElementById('lDate').value=iso(today());
+document.getElementById('lSave').onclick=()=>{
+  const date=document.getElementById('lDate').value||iso(today());
+  const anime=document.getElementById('lAnime').value.trim();
+  const notes=document.getElementById('lNotes').value.trim();
+  S.logs.push({id:Date.now(),date,anime,pct:+lPct.value,notes});
+  // marcar la tarea "registrar" si es sábado
+  const d=parse(date); if(d.getDay()===6){dayData(date).checks['v-log']=true;}
+  save();
+  document.getElementById('lAnime').value='';document.getElementById('lNotes').value='';
+  renderRegistro();renderHoy();toast('Registro guardado ✓');
+};
+
+document.getElementById('bCopy').onclick=async()=>{
+  const txt=JSON.stringify(S);document.getElementById('bText').value=txt;
+  try{await navigator.clipboard.writeText(txt);toast('Copiado. Pégalo en una nota para guardarlo');}
+  catch(e){document.getElementById('bText').select();toast('Selecciona el texto y cópialo a mano');}
+};
+document.getElementById('bRestore').onclick=()=>{
+  try{const d=JSON.parse(document.getElementById('bText').value);if(!d.days||!d.logs) throw 0;
+    ask('¿Sustituir tus datos actuales por esta copia?',()=>{S=d;save();toast('Datos restaurados ✓');show('hoy');});
+  }catch(e){toast('Ese texto no es una copia válida');}
+};
+document.getElementById('bReset').onclick=()=>ask('¿Borrar todos tus datos? No se puede deshacer.',()=>{S={days:{},logs:[]};save();toast('Datos borrados');show('hoy');});
+
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200);}
+function ask(text,yes){const m=document.getElementById('modal');document.getElementById('mText').textContent=text;m.classList.add('show');
+  document.getElementById('mYes').onclick=()=>{m.classList.remove('show');yes();};
+  document.getElementById('mNo').onclick=()=>m.classList.remove('show');}
+
+renderHoy();
+</script>
+</body>
+</html>
