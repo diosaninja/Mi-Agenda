@@ -142,6 +142,16 @@ textarea{min-height:90px;resize:vertical}
 .dlgbox h3{margin:0 0 8px;font-family:"Fraunces",serif;font-weight:600}
 .dlgbody{font-size:14px;line-height:1.5;color:#45434d}
 .dlgbody img{max-width:100%;border:1px solid var(--line);border-radius:6px;margin-top:8px}
+.dlgbox.wide{width:min(620px,100%)}
+.txtbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 8px}
+.txtbar label.btn{position:relative;overflow:hidden}
+#tText{min-height:190px;font-size:15px;line-height:1.45}
+.txtsaved{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.txtsaved h5{margin:0 0 6px;font-size:13px}
+.txtrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.txtrow span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
+.txtrow small{color:var(--muted)}
+.dropzone-on #ws{outline:3px dashed var(--accent);outline-offset:-10px}
 .dlgbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
   padding:11px 18px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:120;max-width:90vw;text-align:center}
@@ -195,6 +205,7 @@ textarea{min-height:90px;resize:vertical}
   </div>
 
   <a class="chipbtn hidden" id="backAgenda" href="./" style="text-decoration:none">← Mi Agenda</a>
+  <button class="chipbtn" id="btnText" title="Pegar o subir un texto para practicarlo">📝 Mi texto</button>
   <button class="chipbtn" id="btnStroke" title="Ver el orden de los trazos (hiragana y katakana)"><span style="font-family:'Klee One',serif">書き順</span> Trazos</button>
   <button class="chipbtn" id="btnExam" title="Escribe de memoria y luego compara">🎯 Examen</button>
   <button class="chipbtn hidden" id="btnCompare" title="Muestra la forma correcta debajo de tu escritura">👁 Comparar</button>
@@ -318,7 +329,7 @@ function newSheet(name,tpl,paper){return{id:uid(),name:name||'Abecedario',autoNa
   tpl:tpl?{...tpl}:defaultTpl(),paper:paper?{...paper}:defaultPaper()}}
 function defaultState(){return{v:1,updatedAt:0,settings:{tool:'pen',lastDraw:'pen',sizes:{...DEFAULT_SIZES},color:'#1f2a44',
   palette:DEFAULT_PALETTE.slice(),penOnly:false,zoom:1,nibAngle:40,days:[],lastBackup:0,tab:'tpl',strokesTotal:0,exam:false,compare:false},
-  sheets:[],currentId:null,fonts:[]}}
+  sheets:[],currentId:null,fonts:[],texts:[]}}
 
 let state=defaultState();
 let strokes={};   // id hoja -> array de trazos
@@ -345,8 +356,9 @@ function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeou
 let toastT;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600)}
 
-function dialog({title,html,buttons,onOpen}){
+function dialog({title,html,buttons,onOpen,wide}){
   return new Promise(res=>{
+    $('#dlg .dlgbox').classList.toggle('wide',!!wide);
     $('#dlgTitle').textContent=title||'';$('#dlgBody').innerHTML=html||'';
     const bb=$('#dlgBtns');bb.innerHTML='';
     (buttons||[{label:'Aceptar',value:true,primary:true}]).forEach(b=>{
@@ -499,6 +511,7 @@ function normalizeState(s){
   if(!Array.isArray(out.settings.palette)||!out.settings.palette.length)out.settings.palette=DEFAULT_PALETTE.slice();
   out.sheets=(out.sheets||[]).map(x=>({...x,tpl:{...defaultTpl(),...x.tpl},paper:{...defaultPaper(),...x.paper}}));
   out.fonts=out.fonts||[];
+  out.texts=Array.isArray(out.texts)?out.texts:[];
   if(!out.sheets.length){const sh=newSheet();out.sheets=[sh];out.currentId=sh.id}
   if(!out.sheets.some(x=>x.id===out.currentId))out.currentId=out.sheets[0].id;
   return out;
@@ -1034,7 +1047,8 @@ function tabTpl(){
   const s=cur(),t=s.tpl;
   return `
   <h4>Contenido</h4>
-  <div class="fld"><select data-t="preset">${Object.entries(PRESETS).map(([k,v])=>`<option value="${k}"${k===t.preset?' selected':''}>${v.n}</option>`).join('')}</select></div>
+  <div class="fld"><select data-t="preset">${Object.entries(PRESETS).map(([k,v])=>`<option value="${k}"${k===t.preset?' selected':''}>${v.n}</option>`).join('')}</select>
+  <button class="btn block" data-act="textDlg" style="margin-top:8px">📝 Pegar o subir mi texto…</button></div>
   ${t.preset==='para'?`<div class="fld"><textarea data-t="text" style="min-height:140px" placeholder="Escribe o pega aquí tu texto. Por ejemplo:&#10;El que lee mucho y anda mucho, ve mucho y sabe mucho.&#10;&#10;おはようございます。">${esc(t.text)}</textarea></div>
   <p class="note" style="margin-top:-6px">El texto se reparte solo en líneas y aparece en gris para repasarlo. Un salto de línea empieza un renglón nuevo; una línea vacía deja un renglón en blanco.</p>`:''}
   ${t.preset==='custom'?`<div class="fld"><textarea data-t="text" placeholder="Escribe aquí. Ejemplo:&#10;Hola&#10;ありがとう&#10;日本語">${esc(t.text)}</textarea></div>
@@ -1149,6 +1163,209 @@ function tabBackup(){
   <button class="btn block" data-act="pngTpl">📄 Guardar la plantilla vacía (PNG, para imprimir)</button>`;
 }
 
+
+/* =========================================================
+   Mi texto: pegar o subir textos (txt, rtf, docx, md, html)
+   ========================================================= */
+function rtfToText(r){
+  const DEST=['fonttbl','colortbl','stylesheet','info','pict','header','footer','headerl','headerr','footerl','footerr','listtable','listoverridetable','rsidtbl','generator','themedata','colorschememapping','latentstyles','datastore','xmlnstbl','mmathPr','expandedcolortbl','listtext','pntext','pntxta','pntxtb'];
+  let out='',i=0,skip=false,uc=1;const st=[];
+  while(i<r.length){const c=r[i];
+    if(c==='{'){st.push(skip);i++;continue}
+    if(c==='}'){skip=st.length?st.pop():false;i++;continue}
+    if(c==='\\'){const n=r[i+1];
+      if(n==='\\'||n==='{'||n==='}'){if(!skip)out+=n;i+=2;continue}
+      if(n==="'"){if(!skip)out+=new TextDecoder('windows-1252').decode(new Uint8Array([parseInt(r.substr(i+2,2),16)]));i+=4;continue}
+      if(n==='*'){skip=true;i+=2;continue}
+      if(n==='\n'||n==='\r'){if(!skip)out+='\n';i+=2;continue}
+      const m=/^([a-zA-Z]+)(-?\d+)? ?/.exec(r.slice(i+1,i+48));
+      if(!m){i+=2;continue}
+      const w=m[1],prm=m[2];i+=1+m[0].length;
+      if(w==='uc'){uc=+prm||0;continue}
+      if(DEST.includes(w)){skip=true;continue}
+      if(skip)continue;
+      if(w==='par'||w==='line'||w==='sect'||w==='page')out+='\n';
+      else if(w==='tab')out+='\t';
+      else if(w==='u'){let code=+prm;if(code<0)code+=65536;out+=String.fromCharCode(code);
+        for(let k=0;k<uc&&i<r.length;k++){if(r[i]==='\\'&&r[i+1]==="'")i+=4;else i++}}
+      continue}
+    if(c==='\n'||c==='\r'){i++;continue}
+    if(!skip)out+=c;i++}
+  return out.replace(/[ \t]+\n/g,'\n').trim();
+}
+async function unzipEntry(buf,want){
+  const dv=new DataView(buf);let e=buf.byteLength-22;
+  while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
+  if(e<0)throw new Error('zip');
+  const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const dec=new TextDecoder();
+  for(let k=0;k<n;k++){
+    const method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
+    const name=dec.decode(new Uint8Array(buf,p+46,nl));
+    if(name===want){
+      const lnl=dv.getUint16(off+26,true),lxl=dv.getUint16(off+28,true);
+      const data=new Uint8Array(buf,off+30+lnl+lxl,csize);
+      if(method===0)return dec.decode(data);
+      const out=await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+      return dec.decode(out)}
+    p+=46+nl+xl+cl}
+  throw new Error('nodoc');
+}
+async function readDocx(file){
+  const xml=await unzipEntry(await file.arrayBuffer(),'word/document.xml');
+  const d=new DOMParser().parseFromString(xml,'application/xml');
+  const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const body=d.getElementsByTagNameNS(W,'body')[0]||d.documentElement;
+  const lines=[];
+  for(const p of body.getElementsByTagNameNS(W,'p')){
+    let up=p.parentNode,inBox=false;while(up&&up!==body){if(up.localName==='txbxContent'){inBox=true;break}up=up.parentNode}
+    if(inBox)continue;
+    let s='';
+    for(const el of p.getElementsByTagNameNS(W,'*')){
+      if(el.parentNode.localName!=='r')continue;
+      if(el.localName==='t')s+=el.textContent;
+      else if(el.localName==='tab')s+='\t';
+      else if(el.localName==='br'||el.localName==='cr')s+='\n';
+    }
+    lines.push(s)}
+  return lines.join('\n');
+}
+async function readTextFile(file){
+  const name=(file.name||'').toLowerCase();
+  if(name.endsWith('.pages'))throw new Error('pages');
+  if(name.endsWith('.docx'))return await readDocx(file);
+  if(name.endsWith('.doc')||name.endsWith('.pdf'))throw new Error('formato');
+  let txt=await file.text();
+  if(name.endsWith('.rtf')||/^\{\\rtf/.test(txt))txt=rtfToText(txt);
+  else if(/\.html?$/.test(name)){const d=new DOMParser().parseFromString(txt,'text/html');
+    d.querySelectorAll('script,style').forEach(x=>x.remove());
+    d.querySelectorAll('br').forEach(x=>x.replaceWith('\n'));
+    d.querySelectorAll('p,div,li,h1,h2,h3,h4,h5,h6,tr').forEach(x=>x.append('\n'));
+    txt=d.body.textContent}
+  else if(name.endsWith('.md'))txt=txt.replace(/^#{1,6}\s+/gm,'').replace(/(\*\*|__)(.*?)\1/g,'$2').replace(/^\s*[-*+]\s+/gm,'');
+  return txt.replace(/\r\n?/g,'\n').replace(/ /g,' ').replace(/\n{3,}/g,'\n\n').trim();
+}
+function textTitle(t){const w=t.replace(/\s+/g,' ').trim();return w.length>28?w.slice(0,28).trim()+'…':(w||'Mi texto')}
+
+async function openTextDlg(initial){
+  const s=cur(),t=s.tpl;
+  let text=initial!=null?initial:((t.preset==='para'||t.preset==='custom')?t.text:'');
+  let kind=t.preset==='custom'?(t.mode==='chars'?'chars':'lines'):'para';
+  let font=t.font;
+  const KINDS=[{v:'para',n:'Frases y párrafos'},{v:'lines',n:'Una fila por línea'},{v:'chars',n:'Una fila por letra'}];
+  const savedHtml=()=>!state.texts.length?'':`<div class="txtsaved"><h5>Mis textos guardados</h5>${state.texts.map(x=>`<div class="txtrow">
+    <span>${esc(x.name)} <small>· ${x.text.length} caracteres</small></span>
+    <button class="btn sm" data-tuse="${x.id}">Usar</button><button class="btn sm danger" data-tdel="${x.id}">×</button></div>`).join('')}</div>`;
+  const html=`
+  <p class="note" style="margin-top:0">Pega tu texto o súbelo desde un archivo: <b>.txt, .rtf, .docx (Word), .md o .html</b>. También puedes arrastrar el archivo encima de la hoja (en el Mac).</p>
+  <div class="txtbar">
+    <button class="btn sm" id="tPaste">📋 Pegar</button>
+    <label class="btn sm">📂 Subir archivo<input type="file" id="tFile" hidden accept=".txt,.text,.md,.rtf,.docx,.html,.htm,.csv,text/plain,text/rtf,application/rtf,text/html,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>
+    <button class="btn sm" id="tClear">Borrar</button>
+    <span class="note" id="tCount" style="margin-left:auto"></span>
+  </div>
+  <textarea id="tText" placeholder="Pega o escribe aquí tu texto. Por ejemplo:&#10;El que lee mucho y anda mucho, ve mucho y sabe mucho.&#10;&#10;おはようございます。">${esc(text)}</textarea>
+  <div class="fld" style="margin-top:12px"><label class="l">Cómo repartirlo en la hoja</label>
+    <div class="seg" id="tKind">${KINDS.map(o=>`<button data-v="${o.v}" class="${o.v===kind?'on':''}">${o.n}</button>`).join('')}</div></div>
+  <div class="fld"><label class="l">Tipografía</label><select id="tFont">${fontOptions(font)}</select>
+    <div class="fontprev" id="tPrev"></div>
+    <label class="link" style="display:inline-block;cursor:pointer">+ Importar mi tipografía<input type="file" id="tFontFile" hidden multiple accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"></label></div>
+  <label class="chk" style="margin-bottom:6px"><input type="checkbox" id="tSave"> Guardar en «Mis textos» para usarlo otro día</label>
+  <input class="tin" id="tName" placeholder="Nombre del texto y de la hoja (opcional)" maxlength="60">
+  <div id="tSaved">${savedHtml()}</div>`;
+  let ta;
+  const refresh=()=>{
+    text=ta.value;
+    const lines=text?text.split('\n').length:0;
+    $('#tCount').textContent=text?`${text.length} caracteres · ${lines} línea${lines===1?'':'s'}`:'';
+    const pv=$('#tPrev');pv.style.fontFamily=fontStack(font);
+    pv.textContent=(text.split('\n').find(l=>l.trim())||'Aa Bb Ññ 123 あア字').slice(0,60);
+    document.fonts.load(`26px "${font}"`,pv.textContent).catch(()=>{});
+  };
+  const onOpen=b=>{
+    ta=b.querySelector('#tText');refresh();
+    ta.addEventListener('input',refresh);
+    b.querySelector('#tPaste').onclick=async()=>{
+      try{const c=await navigator.clipboard.readText();
+        if(!c){toast('El portapapeles está vacío');return}
+        const st=ta.selectionStart??ta.value.length,en=ta.selectionEnd??ta.value.length;
+        ta.value=ta.value.slice(0,st)+c+ta.value.slice(en);refresh();toast('Texto pegado ✓')}
+      catch(e){ta.focus();toast('Mantén el dedo en el recuadro y elige «Pegar»')}};
+    b.querySelector('#tClear').onclick=()=>{ta.value='';refresh();ta.focus()};
+    b.querySelector('#tFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+      try{const txt=await readTextFile(f);
+        if(!txt){toast('El archivo no tiene texto');return}
+        ta.value=ta.value.trim()?ta.value.replace(/\s*$/,'')+'\n\n'+txt:txt;
+        const nm=b.querySelector('#tName');if(!nm.value)nm.value=f.name.replace(/\.[^.]+$/,'');
+        refresh();toast(`«${f.name}» cargado ✓`)}
+      catch(err){toast(err&&err.message==='pages'?'Los archivos de Pages no se pueden leer: expórtalo como Word o texto (.txt/.rtf)':
+        err&&err.message==='formato'?'Ese formato no se puede leer. Guárdalo como .txt, .rtf o .docx':`No se pudo leer «${f.name}»`)}};
+    b.querySelector('#tKind').onclick=e=>{const x=e.target.closest('button');if(!x)return;kind=x.dataset.v;
+      b.querySelectorAll('#tKind button').forEach(y=>y.classList.toggle('on',y===x))};
+    b.querySelector('#tFont').onchange=e=>{font=e.target.value;refresh()};
+    b.querySelector('#tFontFile').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;
+      const before=state.fonts.length;await importFonts(fs);
+      if(state.fonts.length>before)font=state.fonts[state.fonts.length-1].family;
+      b.querySelector('#tFont').innerHTML=fontOptions(font);refresh()};
+    b.querySelector('#tSaved').onclick=async e=>{
+      const u=e.target.closest('[data-tuse]'),d=e.target.closest('[data-tdel]');
+      if(u){const x=state.texts.find(y=>y.id===u.dataset.tuse);if(x){ta.value=x.text;b.querySelector('#tName').value=x.name;if(x.kind){kind=x.kind;b.querySelectorAll('#tKind button').forEach(y=>y.classList.toggle('on',y.dataset.v===kind))}if(x.font){font=x.font;b.querySelector('#tFont').innerHTML=fontOptions(font)}refresh()}}
+      if(d){state.texts=state.texts.filter(y=>y.id!==d.dataset.tdel);touch('state');b.querySelector('#tSaved').innerHTML=savedHtml();toast('Texto eliminado')}};
+    setTimeout(()=>{if(!text)ta.focus()},50);
+  };
+  const grab=target=>()=>{
+    const v=ta.value.replace(/\r\n?/g,'\n').replace(/\s+$/,'');
+    if(!v.trim()){toast('Primero pega o sube un texto');return false}
+    return{target,text:v,kind,font,name:$('#tName').value.trim(),save:$('#tSave').checked}};
+  const r=await dialog({title:'📝 Mi texto',html,onOpen,wide:true,buttons:[
+    {label:'Cancelar',value:null},
+    {label:'Crear hoja nueva',onClick:grab('new')},
+    {label:'Usar en esta hoja',primary:true,onClick:grab('here')}]});
+  if(r)applyText(r);
+}
+function applyText({target,text,kind,font,name,save}){
+  let s=cur();
+  const nm=name||textTitle(text);
+  if(target==='new'){
+    const ns=newSheet(nm,{...s.tpl},s.paper);ns.autoName=false;
+    state.sheets.splice(state.sheets.indexOf(s)+1,0,ns);s=ns;touch('sheet',ns.id);
+  }else if(s.autoName||name){s.name=nm;s.autoName=false}
+  const preset=kind==='para'?'para':'custom';
+  if(s.tpl.preset!==preset){
+    const P=PRESETS[preset];Object.assign(s.tpl,P.set);
+    if(s.paper.type==='genko'&&!/[぀-ヿ一-鿿]/.test(text))s.paper.type='dots';
+    if(!P.set.size)s.tpl.size=.62;
+  }
+  s.tpl.preset=preset;if(preset==='custom')s.tpl.mode=kind;
+  s.tpl.text=text;s.tpl.offset=0;s.tpl.font=font;s.updated=Date.now();
+  if(save){
+    const ex=state.texts.find(x=>x.text===text);
+    if(ex){ex.name=nm;ex.kind=kind;ex.font=font;ex.added=Date.now()}
+    else state.texts.unshift({id:uid(),name:nm,text,kind,font,added:Date.now()});
+    if(state.texts.length>60)state.texts.length=60;
+  }
+  state.settings.tab='tpl';
+  openSheet(s.id);
+  const total=getItems(s.tpl).length,cap=capacity(s);
+  toast(total>cap?'No cabe todo en una hoja: en «Plantilla» pulsa «Crear hoja(s) más con el resto»':(target==='new'?'Hoja nueva con tu texto ✓':'Texto puesto en la hoja ✓')+(save?' · guardado en Mis textos':''));
+}
+function initTextDrop(){
+  const ws=$('#ws');if(!ws)return;let n=0;
+  const isFile=e=>e.dataTransfer&&[...e.dataTransfer.types].includes('Files');
+  ws.addEventListener('dragenter',e=>{if(!isFile(e))return;e.preventDefault();n++;document.body.classList.add('dropzone-on')});
+  ws.addEventListener('dragover',e=>{if(isFile(e))e.preventDefault()});
+  ws.addEventListener('dragleave',()=>{if(--n<=0){n=0;document.body.classList.remove('dropzone-on')}});
+  ws.addEventListener('drop',async e=>{if(!isFile(e))return;e.preventDefault();n=0;document.body.classList.remove('dropzone-on');
+    const f=e.dataTransfer.files[0];if(!f)return;
+    if(/\.(ttf|otf|woff2?)$/i.test(f.name)){importFonts([...e.dataTransfer.files]);return}
+    try{const txt=await readTextFile(f);if(txt)openTextDlg(txt);else toast('El archivo no tiene texto')}
+    catch(err){toast(`No se pudo leer «${f.name}». Usa .txt, .rtf o .docx`)}});
+  document.addEventListener('paste',e=>{
+    if(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))return;
+    if(!$('#dlg').classList.contains('hidden'))return;
+    const txt=(e.clipboardData&&e.clipboardData.getData('text/plain'))||'';
+    if(txt.trim()){e.preventDefault();openTextDlg(txt)}});
+}
+
 /* ---- eventos del panel ---- */
 function readVal(el){if(el.type==='checkbox')return el.checked;if(el.type==='range'||el.type==='number')return parseFloat(el.value);return el.value}
 function setTpl(k,v){
@@ -1192,6 +1409,7 @@ $('#tabBody').addEventListener('click',async e=>{
   const act=b.dataset.act,v=b.dataset.v,s=cur();
   switch(act){
     case 'gofonts':state.settings.tab='fonts';renderTab();break;
+    case 'textDlg':openTextDlg();break;
     case 'reshuffle':s.tpl.seed=Math.floor(Math.random()*1e6)+1;schedulePaper();touch('state');break;
     case 'continue':{
       const total=getItems(s.tpl).length,cap=capacity(s);let off=s.tpl.offset+cap;
@@ -1371,6 +1589,8 @@ function bindToolbar(){
     if(st.exam)toast(cur().tpl.preset==='hira'||cur().tpl.preset==='kata'?'Examen: escribe el kana de cada rōmaji. Luego pulsa Comparar':'Examen: escribe de memoria, sin calco. Luego pulsa Comparar')};
   $('#btnCompare').onclick=()=>{state.settings.compare=!state.settings.compare;updateToolbar();renderPaper();touch('state')};
   $('#btnStroke').onclick=openStrokeOrder;
+  $('#btnText').onclick=()=>openTextDlg();
+  initTextDrop();
   if(/netlify\.app$|github\.io$/.test(location.hostname)){$('#backAgenda').classList.remove('hidden')}
   window.addEventListener('resize',()=>applyZoom());
   document.addEventListener('keydown',e=>{
