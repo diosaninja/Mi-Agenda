@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mi Estantería">
+<meta name="theme-color" content="#f7f2ea">
+<title>Mi Estantería · 本と映像</title>
+<style>
+:root{
+  --paper:#f7f2ea; --card:#fffdf9; --ink:#2d2a26; --soft:#7a7268; --line:#e6ddd0;
+  --acc:#8a6f9e; --star:#d4a62a; --bad:#b5545c;
+  --libro:#b0703c; --pelicula:#b5545c; --serie:#5d7fa3; --anime:#c2668f; --podcast:#5f8a68;
+  --r:16px; --shadow:0 2px 10px rgba(60,45,30,.07);
+  --serif:"Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",sans-serif}
+body{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:0;z-index:20;background:rgba(247,242,234,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.top{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
+.back{text-decoration:none;color:var(--soft);font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);white-space:nowrap}
+.title{flex:1;font-family:var(--serif);font-size:21px;font-weight:600}
+.title small{font-size:13px;color:var(--soft);font-weight:400;margin-left:6px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:15px}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.danger{color:var(--bad);border-color:#ecc9c9}
+.btn.sm{padding:5px 11px;font-size:14px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:15px;white-space:nowrap}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tab .n{font-size:12px;opacity:.65;margin-left:4px}
+.sep{flex:none;width:1px;background:var(--line);margin:4px 2px}
+h2{font-family:var(--serif);font-size:19px;margin:20px 0 10px;display:flex;align-items:baseline;gap:8px}
+h2 .jp{font-size:13px;color:var(--soft);font-weight:400}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+.muted{color:var(--soft);font-size:14px}
+.empty{color:var(--soft);text-align:center;padding:40px 10px;font-size:15px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 6px}
+.tools input,.tools select{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 11px;font-size:15px}
+.tools input[type=search]{flex:1;min-width:180px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 11px;font-size:13.5px}
+.chip.on{background:#efe6f4;border-color:#cdbbdb;color:#5d4670;font-weight:600}
+/* estantería */
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-top:8px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;cursor:pointer}
+.cover{aspect-ratio:2/3;background:#efe7db;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .ph{font-family:var(--serif);font-size:15px;text-align:center;padding:14px;color:#fff;line-height:1.3;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.cover .ph .em{font-size:34px}
+.badge{position:absolute;top:8px;left:8px;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:rgba(255,253,249,.93);color:var(--ink)}
+.stbadge{position:absolute;top:8px;right:8px;font-size:11.5px;padding:3px 8px;border-radius:99px;background:rgba(45,42,38,.78);color:#fff}
+.meta{padding:10px 11px 11px;display:flex;flex-direction:column;gap:4px;flex:1}
+.meta .t{font-weight:650;font-size:15px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta .c{font-size:13px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stars{color:var(--star);letter-spacing:1px;font-size:14px}
+.stars .off{color:#dcd2c3}
+.prog{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:4px}
+.prog .bar{flex:1}
+.prog .lbl{font-size:12px;color:var(--soft);white-space:nowrap}
+.plus{border:1px solid var(--line);background:#f4eee4;border-radius:10px;padding:2px 9px;font-size:14px;font-weight:700}
+.bar{height:8px;border-radius:99px;background:#efe7db;overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:99px;background:var(--acc)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(40,32,24,.38);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.ov.on{display:flex}
+.sheet{background:var(--paper);width:100%;max-width:780px;max-height:94vh;overflow:auto;border-radius:22px 22px 0 0;padding:0 18px calc(24px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+@media(min-width:760px){.ov{align-items:center}.sheet{border-radius:22px;max-height:90vh}}
+.shead{position:sticky;top:0;background:var(--paper);display:flex;align-items:center;gap:8px;padding:14px 0 10px;z-index:2;border-bottom:1px solid var(--line);margin-bottom:12px}
+.shead .st{flex:1;font-family:var(--serif);font-size:19px;font-weight:600}
+.ed{display:grid;grid-template-columns:150px 1fr;gap:16px}
+@media(max-width:560px){.ed{grid-template-columns:1fr}.ed .cv{max-width:170px;margin:0 auto}}
+.cv .cover{border-radius:12px;border:1px solid var(--line)}
+.cv .row{justify-content:center;margin-top:8px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.f label{font-size:13px;color:var(--soft)}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:9px 11px;font-size:16px;width:100%}
+.f textarea{min-height:110px;resize:vertical;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 10px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:14px}
+.seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rate{display:flex;gap:2px;font-size:30px;line-height:1}
+.rate button{border:none;background:none;padding:0 2px;color:#dcd2c3}
+.rate button.on{color:var(--star)}
+.sec{margin-top:16px}
+.sec h3{font-family:var(--serif);font-size:16.5px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.sec h3 .jp{font-size:12.5px;color:var(--soft);font-weight:400}
+.sec h3 .sp{flex:1}
+.ql{display:flex;flex-direction:column;gap:8px}
+.q{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:flex-start}
+.q .tx{flex:1;font-family:var(--serif);font-style:italic;white-space:pre-wrap}
+.q .wh{font-size:12.5px;color:var(--soft);font-style:normal;font-family:inherit;margin-top:3px}
+.x{border:none;background:none;color:var(--soft);font-size:18px;padding:0 4px}
+.addrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.addrow input,.addrow textarea{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;font-size:15px}
+.addrow textarea{flex:1 1 100%;min-height:60px}
+.vt{width:100%;border-collapse:collapse;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.vt td,.vt th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.vt th{font-size:12.5px;color:var(--soft);font-weight:600;background:#faf6ef}
+.jp1{font-family:"Hiragino Mincho ProN","Yu Mincho","Klee One",serif;font-size:19px}
+.kn{color:var(--soft);font-size:13.5px}
+.link{color:var(--acc);word-break:break-all}
+/* retos / stats */
+.goals{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.goal .hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.goal .hd b{flex:1}
+.goal input{width:64px;border:1px solid var(--line);border-radius:10px;padding:5px 8px;text-align:center;background:var(--paper)}
+.goal .big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.goal .bar{height:12px;margin:6px 0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:700px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi .l{font-size:13px;color:var(--soft)} .kpi .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.chart{display:flex;align-items:flex-end;gap:6px;height:180px;padding-top:10px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.chart .stk{width:100%;max-width:38px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden;min-height:2px;background:#efe7db}
+.chart .stk i{display:block;width:100%}
+.chart .m{font-size:12px;color:var(--soft)}
+.chart .nn{font-size:12px;font-weight:600}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--soft);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.hb{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:14.5px}
+.hb .nm{width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb .bar{flex:1;height:10px}
+.hb .n{width:30px;text-align:right;font-variant-numeric:tabular-nums;color:var(--soft)}
+/* flashcards */
+.fc{max-width:460px;margin:10px auto;text-align:center}
+.fcard{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);min-height:240px;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+.fcard .w{font-family:"Hiragino Mincho ProN","Yu Mincho","Klee One",serif;font-size:44px;line-height:1.2}
+.fcard .r{font-size:20px;color:var(--soft)}
+.fcard .s{font-size:20px}
+.fcard .o{font-size:13px;color:var(--soft)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+.cf{position:fixed;inset:0;background:rgba(40,32,24,.4);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+.cf.on{display:flex}
+.cf .box{background:var(--card);border-radius:18px;padding:20px;max-width:360px;width:100%;text-align:center}
+.cf .box p{margin:0 0 16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <a class="back" href="index.html">← Agenda</a>
+      <div class="title">Mi Estantería<small>本と映像</small></div>
+      <button class="btn pri" id="addBtn">＋ Añadir</button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+<main class="wrap" id="main"></main>
+
+<div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
+<div class="cf" id="cf"><div class="box"><p id="cfTx"></p><div class="row" style="justify-content:center"><button class="btn" id="cfNo">Cancelar</button><button class="btn pri" id="cfYes">Sí</button></div></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="coverFile" accept="image/*" hidden>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+/* ---------- configuración ---------- */
+const TYPES = {
+  libro:   {pl:'Libros',    one:'Libro',    em:'📖', who:'Autor/a',         doing:'Leyendo',     done:'Leído',     plat:'Editorial / formato'},
+  pelicula:{pl:'Películas', one:'Película', em:'🎬', who:'Director/a',      doing:'Viendo',      done:'Vista',     plat:'Plataforma / cine'},
+  serie:   {pl:'Series',    one:'Serie',    em:'📺', who:'Creador/a',       doing:'Viendo',      done:'Vista',     plat:'Plataforma'},
+  anime:   {pl:'Animes',    one:'Anime',    em:'🌸', who:'Estudio',         doing:'Viendo',      done:'Visto',     plat:'Plataforma'},
+  podcast: {pl:'Podcasts',  one:'Podcast',  em:'🎧', who:'Presentador/a',   doing:'Escuchando',  done:'Escuchado', plat:'App / plataforma'}
+};
+const TK = Object.keys(TYPES);
+const ST = ['deseo','pendiente','encurso','terminado','abandonado'];
+function stLabel(s,t){ const T=TYPES[t]||TYPES.libro;
+  return {deseo:'Lista de deseos',pendiente:'Pendiente',encurso:T.doing,terminado:T.done,abandonado:'Abandonado'}[s]; }
+const MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const color = t => getComputedStyle(document.documentElement).getPropertyValue('--'+t).trim();
+
+/* ---------- almacenamiento (IndexedDB) ---------- */
+let S = {items:[], goals:{}, ver:1};
+const DBN='mi-estanteria', STO='kv';
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DBN,1);
+  r.onupgradeneeded=()=>r.result.createObjectStore(STO); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function load(){
+  try{ const db=await idb(); const v=await new Promise((res,rej)=>{const q=db.transaction(STO).objectStore(STO).get('state');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});
+    if(v&&v.items) S=Object.assign({items:[],goals:{}},v); }
+  catch(e){ try{ const v=JSON.parse(localStorage.getItem(DBN)||'null'); if(v) S=v; }catch(_){} }
+}
+let saveT;
+function save(){ clearTimeout(saveT); saveT=setTimeout(async()=>{
+  try{ const db=await idb(); await new Promise((res,rej)=>{const tx=db.transaction(STO,'readwrite');tx.objectStore(STO).put(JSON.parse(JSON.stringify(S)),'state');tx.oncomplete=res;tx.onerror=()=>rej(tx.error);}); }
+  catch(e){ try{ localStorage.setItem(DBN,JSON.stringify(S)); }catch(_){ toast('No se pudo guardar: espacio lleno'); } }
+},150); }
+
+/* ---------- utilidades ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const fmtD=s=>{ if(!s) return ''; const [y,m,d]=s.split('-'); return `${+d} ${MES[+m-1].toLowerCase()} ${y}`; };
+const num=v=>{const n=parseInt(v,10);return isNaN(n)?'':n;};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1800);}
+function ask(txt){return new Promise(res=>{ $('#cfTx').textContent=txt; $('#cf').classList.add('on');
+  const done=v=>{$('#cf').classList.remove('on');$('#cfYes').onclick=$('#cfNo').onclick=null;res(v);};
+  $('#cfYes').onclick=()=>done(true); $('#cfNo').onclick=()=>done(false); });}
+function starsHtml(r){ r=r||0; let h=''; for(let i=1;i<=5;i++) h+= i<=r?'★':'<span class="off">★</span>'; return `<span class="stars">${h}</span>`; }
+
+function progress(it){
+  const p=it.prog||{};
+  if(it.type==='libro'){ if(p.total) return {pct:Math.min(1,(p.cur||0)/p.total),lbl:`pág. ${p.cur||0}/${p.total}`};
+    if(p.cur) return {pct:null,lbl:`pág. ${p.cur}`}; }
+  if(it.type==='serie'||it.type==='anime'){ const lbl=(p.season?`T${p.season} · `:'')+`Cap. ${p.ep||0}`+(p.total?`/${p.total}`:'');
+    return {pct:p.total?Math.min(1,(p.ep||0)/p.total):null,lbl}; }
+  if(it.type==='podcast'){ return {pct:p.total?Math.min(1,(p.ep||0)/p.total):null,lbl:`Ep. ${p.ep||0}`+(p.total?`/${p.total}`:'')}; }
+  return null;
+}
+const yearOf=it=> (it.end||'').slice(0,4);
+
+/* ---------- navegación ---------- */
+let view='todo';
+const F={q:'',st:'',sort:'rec',minR:0,genre:'',plat:''};
+function counts(){ const c={todo:S.items.filter(i=>i.status!=='deseo').length,deseo:0};
+  TK.forEach(t=>c[t]=S.items.filter(i=>i.type===t&&i.status!=='deseo').length);
+  c.deseo=S.items.filter(i=>i.status==='deseo').length;
+  c.vocab=S.items.reduce((a,i)=>a+(i.vocab?i.vocab.length:0),0); return c; }
+function renderTabs(){
+  const c=counts();
+  const tabs=[['todo','Todo'],...TK.map(t=>[t,TYPES[t].em+' '+TYPES[t].pl]),['|'],['deseo','✨ Deseos'],['vocab','🗾 Vocabulario'],['retos','🎯 Retos'],['stats','📊 Estadísticas']];
+  $('#tabs').innerHTML=tabs.map(([k,l])=> k==='|'?'<span class="sep"></span>':
+    `<button class="tab ${view===k?'on':''}" data-v="${k}">${l}${c[k]!=null?`<span class="n">${c[k]}</span>`:''}</button>`).join('');
+}
+$('#tabs').onclick=e=>{const b=e.target.closest('[data-v]'); if(!b) return; view=b.dataset.v; F.st=""; FC=null; render(); window.scrollTo(0,0);};
+function render(){ renderTabs();
+  if(view==='retos') return renderRetos();
+  if(view==='stats') return renderStats();
+  if(view==='vocab') return renderVocab();
+  renderShelf();
+}
+
+/* ---------- estantería ---------- */
+function renderShelf(){
+  const isW=view==='deseo';
+  let list=S.items.filter(i=> isW? i.status==='deseo' : i.status!=='deseo');
+  if(TYPES[view]) list=list.filter(i=>i.type===view);
+  const pool=list;
+  if(F.st) list=list.filter(i=>i.status===F.st);
+  if(F.minR) list=list.filter(i=>(i.rating||0)>=F.minR);
+  if(F.genre) list=list.filter(i=>(i.genre||'').toLowerCase().split(',').map(s=>s.trim()).includes(F.genre));
+  if(F.plat) list=list.filter(i=>(i.platform||'').trim().toLowerCase()===F.plat);
+  if(F.q){ const q=F.q.toLowerCase(); list=list.filter(i=>[i.title,i.creator,i.genre,i.platform,i.notes,(i.quotes||[]).map(x=>x.text).join(' '),(i.vocab||[]).map(v=>v.jp+' '+v.kana+' '+v.es).join(' ')].join(' ').toLowerCase().includes(q)); }
+  const ord={encurso:0,pendiente:1,terminado:2,abandonado:3,deseo:4};
+  const sorts={rec:(a,b)=>(b.updated||0)-(a.updated||0), az:(a,b)=>a.title.localeCompare(b.title,'es'),
+    rate:(a,b)=>(b.rating||0)-(a.rating||0), est:(a,b)=>ord[a.status]-ord[b.status]||(b.updated||0)-(a.updated||0),
+    fin:(a,b)=>(b.end||'').localeCompare(a.end||'')};
+  list.sort(sorts[F.sort]||sorts.rec);
+  const genres=[...new Set(pool.flatMap(i=>(i.genre||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean)))].sort();
+  const plats=[...new Set(pool.map(i=>(i.platform||'').trim().toLowerCase()).filter(Boolean))].sort();
+  const stOpts=(isW?[]:ST.filter(s=>s!=='deseo'));
+  const tlabel=TYPES[view]?TYPES[view].pl:(isW?'Lista de deseos':'Toda mi estantería');
+  $('#main').innerHTML=`
+    <h2>${esc(tlabel)} <span class="jp">${isW?'いつか見たい・読みたい':'わたしの棚'}</span></h2>
+    <div class="tools">
+      <input type="search" id="fq" placeholder="Buscar título, autor, nota, palabra…" value="${esc(F.q)}">
+      <select id="fsort">
+        <option value="rec">Recientes</option><option value="est">Por estado</option><option value="az">A–Z</option>
+        <option value="rate">Mejor valorados</option><option value="fin">Terminados últimos</option></select>
+      <select id="fr"><option value="0">Cualquier valoración</option>${[5,4,3,2,1].map(n=>`<option value="${n}">${'★'.repeat(n)}${n<5?' o más':''}</option>`).join('')}</select>
+      ${genres.length?`<select id="fg"><option value="">Todos los géneros</option>${genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')}</select>`:''}
+      ${plats.length?`<select id="fp"><option value="">Todas las plataformas</option>${plats.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')}</select>`:''}
+    </div>
+    ${stOpts.length?`<div class="chips" id="fst"><button class="chip ${!F.st?'on':''}" data-s="">Todos</button>${stOpts.map(s=>`<button class="chip ${F.st===s?'on':''}" data-s="${s}">${esc(TYPES[view]?stLabel(s,view):({pendiente:'Pendiente',encurso:'En curso',terminado:'Terminado',abandonado:'Abandonado'})[s])} <span class="muted">${pool.filter(i=>i.status===s).length}</span></button>`).join('')}</div>`:''}
+    ${list.length?`<div class="shelf" id="shelf">${list.map(card).join('')}</div>`:
+      `<div class="empty">${pool.length?'Nada coincide con la búsqueda o los filtros.':(isW?'Tu lista de deseos está vacía.<br>Pulsa «＋ Añadir» y elige «Lista de deseos».':'Todavía no hay nada aquí.<br>Pulsa «＋ Añadir» para empezar tu estantería.')}</div>`}
+    <div class="row" style="justify-content:center;margin-top:28px">
+      <button class="btn sm" id="expBtn">⬇︎ Copia de seguridad</button><button class="btn sm" id="impBtn">⬆︎ Restaurar copia</button>
+    </div>`;
+  $('#fsort').value=F.sort; $('#fr').value=F.minR; if($('#fg')) $('#fg').value=F.genre; if($('#fp')) $('#fp').value=F.plat;
+  $('#fq').oninput=e=>{F.q=e.target.value; clearTimeout(window._qt); window._qt=setTimeout(()=>{const p=e.target.selectionStart;renderShelf();const n=$('#fq');n.focus();n.setSelectionRange(p,p);},250);};
+  $('#fsort').onchange=e=>{F.sort=e.target.value;renderShelf();};
+  $('#fr').onchange=e=>{F.minR=+e.target.value;renderShelf();};
+  if($('#fg')) $('#fg').onchange=e=>{F.genre=e.target.value;renderShelf();};
+  if($('#fp')) $('#fp').onchange=e=>{F.plat=e.target.value;renderShelf();};
+  if($('#fst')) $('#fst').onclick=e=>{const b=e.target.closest('[data-s]'); if(!b) return; F.st=b.dataset.s; renderShelf();};
+  if($('#shelf')) $('#shelf').onclick=e=>{
+    const pl=e.target.closest('[data-plus]'); const c=e.target.closest('[data-id]'); if(!c) return;
+    if(pl){ e.stopPropagation(); bump(c.dataset.id); return; }
+    openEditor(c.dataset.id);
+  };
+  $('#expBtn').onclick=exportData; $('#impBtn').onclick=()=>$('#importFile').click();
+}
+function card(it){
+  const T=TYPES[it.type]; const p=progress(it);
+  const cov= it.cover?`<img src="${it.cover}" alt="">`:`<div class="ph" style="background:${color(it.type)}"><span class="em">${T.em}</span>${esc(it.title)}</div>`;
+  const showP = p && (it.status==='encurso'||it.status==='pendiente'||it.status==='abandonado');
+  return `<div class="item" data-id="${it.id}">
+    <div class="cover">${cov}<span class="badge">${T.em} ${T.one}</span><span class="stbadge">${esc(stLabel(it.status,it.type))}</span></div>
+    <div class="meta"><div class="t">${esc(it.title)}</div>${it.creator?`<div class="c">${esc(it.creator)}</div>`:''}
+      ${it.rating?starsHtml(it.rating):''}
+      ${showP?`<div class="prog">${p.pct!=null?`<div class="bar"><i style="width:${Math.round(p.pct*100)}%;background:${color(it.type)}"></i></div>`:''}<span class="lbl">${esc(p.lbl)}</span>${it.status==='encurso'?`<button class="plus" data-plus title="Sumar uno">+1</button>`:''}</div>`:''}
+      ${it.status==='terminado'&&it.end?`<div class="muted" style="font-size:12.5px;margin-top:auto">${esc(fmtD(it.end))}</div>`:''}
+    </div></div>`;
+}
+function bump(id){
+  const it=S.items.find(i=>i.id===id); if(!it) return; it.prog=it.prog||{};
+  if(it.type==='libro'){ it.prog.cur=(+it.prog.cur||0)+1; if(it.prog.total&&it.prog.cur>it.prog.total) it.prog.cur=it.prog.total; }
+  else if(it.type!=='pelicula'){ it.prog.ep=(+it.prog.ep||0)+1; if(it.prog.total&&it.prog.ep>it.prog.total) it.prog.ep=it.prog.total; }
+  it.updated=Date.now(); save(); render();
+  const p=progress(it); toast(p?p.lbl:'Hecho');
+  if(p&&p.pct===1) setTimeout(async()=>{ if(await ask(`Has llegado al final de «${it.title}». ¿Lo marco como ${TYPES[it.type].done.toLowerCase()}?`)){ it.status='terminado'; it.end=it.end||today(); save(); render(); toast('¡Terminado! 🎉'); openEditor(it.id,'rate'); } },300);
+}
+
+/* ---------- editor ---------- */
+let E=null, isNew=false;
+function blank(type){ return {id:uid(),type:type||(TYPES[view]?view:'libro'),title:'',creator:'',status:view==='deseo'?'deseo':'pendiente',rating:0,genre:'',platform:'',year:'',link:'',cover:'',start:'',end:'',prog:{},notes:'',quotes:[],vocab:[],created:Date.now(),updated:Date.now()}; }
+$('#addBtn').onclick=()=>{ E=blank(); isNew=true; drawEditor(); $('#ov').classList.add('on'); };
+function openEditor(id,focus){ const it=S.items.find(i=>i.id===id); if(!it) return; E=JSON.parse(JSON.stringify(it)); isNew=false; drawEditor(); $('#ov').classList.add('on'); $('#sheet').scrollTop=0; }
+function drawEditor(){
+  const T=TYPES[E.type]; const p=E.prog||{};
+  const progF = E.type==='libro'? `<div class="g2"><div class="f"><label>Página actual</label><input inputmode="numeric" data-p="cur" value="${esc(p.cur??'')}"></div><div class="f"><label>Páginas totales</label><input inputmode="numeric" data-p="total" value="${esc(p.total??'')}"></div></div>`
+    : (E.type==='serie'||E.type==='anime')? `<div class="g3"><div class="f"><label>Temporada</label><input inputmode="numeric" data-p="season" value="${esc(p.season??'')}"></div><div class="f"><label>Capítulo</label><input inputmode="numeric" data-p="ep" value="${esc(p.ep??'')}"></div><div class="f"><label>Caps. totales</label><input inputmode="numeric" data-p="total" value="${esc(p.total??'')}"></div></div>`
+    : E.type==='podcast'? `<div class="g2"><div class="f"><label>Episodio</label><input inputmode="numeric" data-p="ep" value="${esc(p.ep??'')}"></div><div class="f"><label>Episodios totales</label><input inputmode="numeric" data-p="total" value="${esc(p.total??'')}"></div></div>`
+    : `<div class="muted">Las películas no necesitan progreso: márcala como «Vista» cuando la termines.</div>`;
+  const pr=progress(E);
+  $('#sheet').innerHTML=`
+  <div class="shead"><button class="btn sm" id="edClose">✕</button><div class="st">${isNew?'Añadir a la estantería':esc(E.title||T.one)}</div><button class="btn pri sm" id="edSave">Guardar</button></div>
+  <div class="f"><label>Tipo</label><div class="seg" id="edType">${TK.map(t=>`<button class="${E.type===t?'on':''}" data-t="${t}">${TYPES[t].em} ${TYPES[t].one}</button>`).join('')}</div></div>
+  <div class="ed">
+    <div class="cv"><div class="cover">${E.cover?`<img src="${E.cover}" alt="">`:`<div class="ph" style="background:${color(E.type)}"><span class="em">${T.em}</span>${esc(E.title||'Sin portada')}</div>`}</div>
+      <div class="row"><button class="btn sm" id="edCov">📷 ${E.cover?'Cambiar':'Portada'}</button>${E.cover?`<button class="btn sm danger" id="edCovDel">Quitar</button>`:''}</div></div>
+    <div>
+      <div class="f"><label>Título</label><input id="edTitle" value="${esc(E.title)}" placeholder="Título"></div>
+      <div class="g2"><div class="f"><label>${T.who}</label><input data-k="creator" value="${esc(E.creator)}"></div><div class="f"><label>Año</label><input inputmode="numeric" data-k="year" value="${esc(E.year)}"></div></div>
+      <div class="g2"><div class="f"><label>Género (separa con comas)</label><input data-k="genre" value="${esc(E.genre)}" placeholder="drama, misterio"></div><div class="f"><label>${T.plat}</label><input data-k="platform" value="${esc(E.platform)}"></div></div>
+      <div class="f"><label>Enlace</label><input type="url" data-k="link" value="${esc(E.link)}" placeholder="https://…">${E.link?`<a class="link" href="${esc(E.link)}" target="_blank" rel="noopener" style="font-size:14px">Abrir enlace ↗</a>`:''}</div>
+    </div>
+  </div>
+  <div class="sec"><h3>Estado</h3><div class="seg" id="edSt">${ST.map(s=>`<button class="${E.status===s?'on':''}" data-s="${s}">${esc(stLabel(s,E.type))}</button>`).join('')}</div>
+    <div class="g2" style="margin-top:10px"><div class="f"><label>Empecé</label><input type="date" data-k="start" value="${esc(E.start)}"></div><div class="f"><label>Terminé</label><input type="date" data-k="end" value="${esc(E.end)}"></div></div></div>
+  <div class="sec"><h3>Mi valoración</h3><div class="rate" id="edRate">${[1,2,3,4,5].map(n=>`<button class="${n<=E.rating?'on':''}" data-r="${n}">★</button>`).join('')}<span class="muted" style="font-size:14px;align-self:center;margin-left:8px">${E.rating?'Toca otra vez la misma estrella para quitarla':''}</span></div></div>
+  <div class="sec"><h3>Progreso ${pr&&pr.pct!=null?`<span class="jp">${Math.round(pr.pct*100)} %</span>`:''}</h3>${progF}</div>
+  <div class="sec"><h3>Notas y opinión <span class="jp">感想</span></h3><div class="f"><textarea data-k="notes" placeholder="Qué te ha parecido, personajes, ideas… (puedes escribir con el Apple Pencil)">${esc(E.notes)}</textarea></div></div>
+  <div class="sec"><h3>Citas favoritas <span class="jp">名言</span></h3>
+    <div class="ql" id="qList">${(E.quotes||[]).map((q,i)=>`<div class="q"><div class="tx">${esc(q.text)}${q.where?`<div class="wh">— ${esc(q.where)}</div>`:''}</div><button class="x" data-dq="${i}" title="Borrar">×</button></div>`).join('')||'<div class="muted">Aún no hay citas.</div>'}</div>
+    <div class="addrow"><textarea id="qTx" placeholder="Escribe la frase…"></textarea><input id="qWh" placeholder="${E.type==='libro'?'Página / personaje':'Capítulo / personaje'}" style="flex:1"><button class="btn sm" id="qAdd">＋ Añadir cita</button></div></div>
+  ${E.type==='anime'?`<div class="sec"><h3>Vocabulario japonés <span class="jp">単語</span><span class="sp"></span><span class="muted">${(E.vocab||[]).length} palabras</span></h3>
+    ${(E.vocab||[]).length?`<table class="vt"><tr><th>Japonés</th><th>Lectura</th><th>Significado</th><th>Cap.</th><th></th></tr>${E.vocab.map((v,i)=>`<tr><td class="jp1">${esc(v.jp)}</td><td class="kn">${esc(v.kana)}</td><td>${esc(v.es)}${v.ex?`<div class="kn">${esc(v.ex)}</div>`:''}</td><td class="kn">${esc(v.ep)}</td><td><button class="x" data-dv="${i}">×</button></td></tr>`).join('')}</table>`:'<div class="muted">Apunta las palabras y frases que oigas en cada capítulo.</div>'}
+    <div class="addrow"><input id="vJp" placeholder="日本語" style="flex:1 1 120px;font-size:18px"><input id="vKa" placeholder="Lectura (かな / rōmaji)" style="flex:1 1 140px"><input id="vEs" placeholder="Significado" style="flex:2 1 160px"><input id="vEp" placeholder="Cap." inputmode="numeric" style="width:70px" value="${esc(p.ep??'')}"><input id="vEx" placeholder="Frase de ejemplo (opcional)" style="flex:1 1 100%"><button class="btn sm" id="vAdd">＋ Añadir palabra</button></div></div>`:''}
+  ${!isNew?`<div class="row" style="justify-content:center;margin-top:24px"><button class="btn danger" id="edDel">Borrar de la estantería</button></div>`:''}`;
+  bindEditor();
+}
+function readForm(){
+  const t=$('#edTitle'); if(t) E.title=t.value.trim();
+  document.querySelectorAll('#sheet [data-k]').forEach(i=>E[i.dataset.k]=i.value.trim? i.value.trim():i.value);
+  E.prog=E.prog||{}; document.querySelectorAll('#sheet [data-p]').forEach(i=>E.prog[i.dataset.p]=num(i.value));
+}
+function bindEditor(){
+  const sh=$('#sheet');
+  $('#edClose').onclick=closeEditor;
+  $('#edSave').onclick=saveEditor;
+  $('#edType').onclick=e=>{const b=e.target.closest('[data-t]'); if(!b) return; readForm(); E.type=b.dataset.t; drawEditor();};
+  $('#edSt').onclick=e=>{const b=e.target.closest('[data-s]'); if(!b) return; readForm(); E.status=b.dataset.s;
+    if(E.status==='encurso'&&!E.start) E.start=today();
+    if(E.status==='terminado'){ if(!E.end) E.end=today(); const p=E.prog||{};
+      if(E.type==='libro'&&p.total) p.cur=p.total; if((E.type==='serie'||E.type==='anime'||E.type==='podcast')&&p.total) p.ep=p.total; }
+    drawEditor();};
+  $('#edRate').onclick=e=>{const b=e.target.closest('[data-r]'); if(!b) return; readForm(); const n=+b.dataset.r; E.rating = E.rating===n?0:n; drawEditor();};
+  $('#edCov').onclick=()=>{readForm(); $('#coverFile').click();};
+  if($('#edCovDel')) $('#edCovDel').onclick=()=>{readForm(); E.cover=''; drawEditor();};
+  $('#qAdd').onclick=()=>{ const tx=$('#qTx').value.trim(); if(!tx) return; readForm(); E.quotes=E.quotes||[]; E.quotes.push({text:tx,where:$('#qWh').value.trim()}); drawEditor(); toast('Cita añadida'); };
+  $('#qList').onclick=e=>{const b=e.target.closest('[data-dq]'); if(!b) return; readForm(); E.quotes.splice(+b.dataset.dq,1); drawEditor();};
+  if($('#vAdd')){
+    const add=()=>{ const jp=$('#vJp').value.trim(); if(!jp){$('#vJp').focus();return;} readForm(); E.vocab=E.vocab||[];
+      E.vocab.push({id:uid(),jp,kana:$('#vKa').value.trim(),es:$('#vEs').value.trim(),ep:$('#vEp').value.trim(),ex:$('#vEx').value.trim(),known:false,date:today()});
+      drawEditor(); toast('Palabra añadida'); setTimeout(()=>{const n=$('#vJp'); if(n) n.focus();},50); };
+    $('#vAdd').onclick=add; ['vJp','vKa','vEs','vEp'].forEach(id=>$('#'+id).onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();add();}});
+    sh.querySelectorAll('[data-dv]').forEach(b=>b.onclick=()=>{readForm(); E.vocab.splice(+b.dataset.dv,1); drawEditor();});
+  }
+  if($('#edDel')) $('#edDel').onclick=async()=>{ if(await ask(`¿Borrar «${E.title}» de tu estantería? No se puede deshacer.`)){ S.items=S.items.filter(i=>i.id!==E.id); save(); $('#ov').classList.remove('on'); E=null; render(); toast('Borrado'); } };
+}
+$('#coverFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f||!E) return;
+  try{ E.cover=await resizeImg(f,360,540); drawEditor(); }catch(_){ toast('No se pudo leer la imagen'); } };
+function resizeImg(file,W,H){ return new Promise((res,rej)=>{ const img=new Image(); const u=URL.createObjectURL(file);
+  img.onload=()=>{ const s=Math.min(1,Math.max(W/img.width,H/img.height)); const w=Math.round(img.width*s),h=Math.round(img.height*s);
+    const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); x.fillStyle='#efe7db'; x.fillRect(0,0,W,H);
+    const sc=Math.max(W/img.width,H/img.height); const dw=img.width*sc, dh=img.height*sc; x.drawImage(img,(W-dw)/2,(H-dh)/2,dw,dh);
+    URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg',.82)); };
+  img.onerror=rej; img.src=u; }); }
+function saveEditor(){
+  readForm(); if(!E.title){ toast('Ponle un título'); $('#edTitle').focus(); return; }
+  E.updated=Date.now();
+  const i=S.items.findIndex(x=>x.id===E.id); if(i>=0) S.items[i]=E; else S.items.push(E);
+  save(); $('#ov').classList.remove('on');
+  if(isNew && view!=='todo' && view!==E.type && !(view==='deseo'&&E.status==='deseo') && TYPES[view]) view=E.type;
+  if(isNew && view==='deseo' && E.status!=='deseo') view='todo';
+  if(isNew && TYPES[view]==null && view!=='deseo' && view!=='todo') view='todo';
+  E=null; render(); toast(isNew?'Añadido a la estantería':'Guardado');
+}
+async function closeEditor(){
+  if(E && !isNew){ const o=S.items.find(i=>i.id===E.id); readForm(); if(JSON.stringify(o)!==JSON.stringify(E)){ if(await ask('¿Guardar los cambios?')) return saveEditor(); } }
+  else if(E && isNew){ readForm(); if(E.title && await ask('¿Guardar lo que has escrito?')) return saveEditor(); }
+  $('#ov').classList.remove('on'); E=null;
+}
+$('#ov').addEventListener('click',e=>{ if(e.target.id==='ov') closeEditor(); });
+
+/* ---------- vocabulario anime ---------- */
+let VQ='', FC=null;
+function allVocab(){ return S.items.filter(i=>i.type==='anime').flatMap(i=>(i.vocab||[]).map(v=>({...v,anime:i.title,aid:i.id}))); }
+function renderVocab(){
+  const all=allVocab();
+  if(FC) return renderFC();
+  let list=all; if(VQ){const q=VQ.toLowerCase(); list=all.filter(v=>[v.jp,v.kana,v.es,v.anime,v.ex].join(' ').toLowerCase().includes(q));}
+  const known=all.filter(v=>v.known).length;
+  $('#main').innerHTML=`<h2>Vocabulario de anime <span class="jp">アニメの単語</span></h2>
+    <div class="card"><div class="row"><div style="flex:1"><b>${all.length}</b> palabras apuntadas · <b>${known}</b> ya te las sabes</div>
+      <button class="btn pri" id="fcAll" ${all.length?'':'disabled'}>Repasar todas</button><button class="btn" id="fcNew" ${all.length-known?'':'disabled'}>Solo las que no sé (${all.length-known})</button></div>
+      ${all.length?`<div class="bar" style="margin-top:10px"><i style="width:${Math.round(known/all.length*100)}%;background:var(--anime)"></i></div>`:''}</div>
+    <div class="tools"><input type="search" id="vq" placeholder="Buscar palabra, lectura, significado o anime…" value="${esc(VQ)}"></div>
+    ${list.length?`<table class="vt"><tr><th>Japonés</th><th>Lectura</th><th>Significado</th><th>Anime</th><th>✓</th></tr>${list.slice().reverse().map(v=>`<tr><td class="jp1">${esc(v.jp)}</td><td class="kn">${esc(v.kana)}</td><td>${esc(v.es)}${v.ex?`<div class="kn">${esc(v.ex)}</div>`:''}</td><td class="kn"><a href="#" data-open="${v.aid}" class="link" style="color:inherit">${esc(v.anime)}</a>${v.ep?` · cap. ${esc(v.ep)}`:''}</td><td><button class="x" data-k="${v.aid}|${v.id}" title="Me la sé">${v.known?'✅':'⬜️'}</button></td></tr>`).join('')}</table>`
+      :`<div class="empty">${all.length?'No hay coincidencias.':'Abre un anime de tu estantería y apunta palabras en «Vocabulario japonés».'}</div>`}`;
+  const vq=$('#vq'); vq.oninput=e=>{VQ=e.target.value; clearTimeout(window._vt); window._vt=setTimeout(()=>{const p=e.target.selectionStart;renderVocab();const n=$('#vq');n.focus();n.setSelectionRange(p,p);},250);};
+  $('#fcAll').onclick=()=>startFC(false); $('#fcNew').onclick=()=>startFC(true);
+  $('#main').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const [a,v]=b.dataset.k.split('|'); const w=findV(a,v); if(w){w.known=!w.known; save(); renderVocab();}});
+  $('#main').querySelectorAll('[data-open]').forEach(a=>a.onclick=e=>{e.preventDefault(); openEditor(a.dataset.open);});
+}
+function findV(aid,vid){ const it=S.items.find(i=>i.id===aid); return it&&(it.vocab||[]).find(v=>v.id===vid); }
+function startFC(onlyNew){ let d=allVocab(); if(onlyNew) d=d.filter(v=>!v.known); if(!d.length) return;
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
+  FC={deck:d,i:0,show:false,ok:0,again:[]}; renderVocab(); }
+function renderFC(){
+  const c=FC.deck[FC.i];
+  if(!c){ $('#main').innerHTML=`<div class="fc"><h2 style="justify-content:center">¡Repaso terminado! 🎉</h2><div class="card"><p>Te sabías <b>${FC.ok}</b> de ${FC.deck.length}.</p>${FC.again.length?`<p class="muted">Para repasar: ${FC.again.map(v=>esc(v.jp)).join('、')}</p>`:''}<div class="row" style="justify-content:center">${FC.again.length?`<button class="btn pri" id="fcAg">Repasar fallos</button>`:''}<button class="btn" id="fcEnd">Volver</button></div></div></div>`;
+    if($('#fcAg')) $('#fcAg').onclick=()=>{const d=FC.again; FC={deck:d,i:0,show:false,ok:0,again:[]}; renderFC();};
+    $('#fcEnd').onclick=()=>{FC=null; render();}; return; }
+  $('#main').innerHTML=`<div class="fc"><div class="row" style="justify-content:space-between;margin:14px 0 6px"><button class="btn sm" id="fcX">✕ Salir</button><span class="muted">${FC.i+1} / ${FC.deck.length}</span></div>
+    <div class="fcard" id="fcC"><div class="w">${esc(c.jp)}</div>${FC.show?`<div class="r">${esc(c.kana)}</div><div class="s">${esc(c.es)}</div>${c.ex?`<div class="o">${esc(c.ex)}</div>`:''}<div class="o">${esc(c.anime)}${c.ep?' · cap. '+esc(c.ep):''}</div>`:'<div class="o">Toca para ver la respuesta</div>'}</div>
+    ${FC.show?`<div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="fcNo" style="min-width:130px">🔁 Repasar</button><button class="btn pri" id="fcOk" style="min-width:130px">✓ Me la sé</button></div>`:''}</div>`;
+  $('#fcC').onclick=()=>{FC.show=true; renderFC();};
+  $('#fcX').onclick=()=>{FC=null; render();};
+  if(FC.show){ $('#fcOk').onclick=()=>{const w=findV(c.aid,c.id); if(w){w.known=true; save();} FC.ok++; FC.i++; FC.show=false; renderFC();};
+    $('#fcNo').onclick=()=>{const w=findV(c.aid,c.id); if(w){w.known=false; save();} FC.again.push(c); FC.i++; FC.show=false; renderFC();}; }
+}
+
+/* ---------- retos anuales ---------- */
+let Y=new Date().getFullYear();
+function years(){ const s=new Set([new Date().getFullYear()]); S.items.forEach(i=>{const y=yearOf(i); if(y) s.add(+y);}); Object.keys(S.goals||{}).forEach(y=>s.add(+y)); return [...s].sort((a,b)=>b-a); }
+function yearSel(){ return `<select id="ysel" style="border:1px solid var(--line);background:var(--card);border-radius:12px;padding:6px 10px;font-size:15px">${years().map(y=>`<option ${y===Y?'selected':''}>${y}</option>`).join('')}</select>`; }
+function bindYear(fn){ $('#ysel').onchange=e=>{Y=+e.target.value; fn();}; }
+function renderRetos(){
+  const g=(S.goals[Y]=S.goals[Y]||{});
+  const now=new Date(); const frac = Y<now.getFullYear()?1: Y>now.getFullYear()?0 : ((now-new Date(Y,0,1))/(new Date(Y+1,0,1)-new Date(Y,0,1)));
+  const done=t=>S.items.filter(i=>i.type===t&&i.status==='terminado'&&yearOf(i)===String(Y)).length;
+  $('#main').innerHTML=`<h2>Retos de ${yearSel()} <span class="jp">今年の目標</span></h2>
+    <p class="muted" style="margin-top:-4px">Escribe tu objetivo para cada tipo. Cuenta lo que marques como terminado con fecha de este año.</p>
+    <div class="goals">${TK.map(t=>{const T=TYPES[t]; const n=done(t); const goal=+g[t]||0; const pct=goal?Math.min(1,n/goal):0; const exp=Math.round(goal*frac);
+      let msg=''; if(goal){ if(n>=goal) msg='¡Reto conseguido! 🎉'; else if(Y===now.getFullYear()) msg = n>=exp?`Vas bien: llevas ${n-exp>0?n-exp+' por delante':'el ritmo justo'}`:`Para ir al día deberías llevar ${exp}`; else msg=`Te faltan ${goal-n}`; }
+      return `<div class="card goal"><div class="hd"><span style="font-size:22px">${T.em}</span><b>${T.pl}</b><span class="muted">Meta</span><input inputmode="numeric" data-g="${t}" value="${goal||''}" placeholder="—"></div>
+        <div class="big" style="color:${color(t)}">${n}${goal?`<span class="muted" style="font-size:16px;font-weight:400"> / ${goal}</span>`:''}</div>
+        <div class="bar"><i style="width:${Math.round(pct*100)}%;background:${color(t)}"></i></div>
+        <div class="muted">${goal?msg:'Sin meta todavía'}</div></div>`;}).join('')}</div>`;
+  bindYear(renderRetos);
+  $('#main').querySelectorAll('[data-g]').forEach(i=>i.onchange=()=>{ const v=num(i.value); if(v) g[i.dataset.g]=v; else delete g[i.dataset.g]; save(); renderRetos(); toast('Meta guardada'); });
+}
+
+/* ---------- estadísticas ---------- */
+function renderStats(){
+  const fin=S.items.filter(i=>i.status==='terminado'&&yearOf(i)===String(Y));
+  const months=MES.map((m,k)=>{const mm=String(k+1).padStart(2,'0'); const by={}; TK.forEach(t=>by[t]=fin.filter(i=>i.type===t&&i.end.slice(5,7)===mm).length); return {m,by,tot:TK.reduce((a,t)=>a+by[t],0)};});
+  const max=Math.max(1,...months.map(x=>x.tot));
+  const rated=fin.filter(i=>i.rating); const avg=rated.length?(rated.reduce((a,i)=>a+i.rating,0)/rated.length):0;
+  const pages=fin.filter(i=>i.type==='libro').reduce((a,i)=>a+(+i.prog?.total||0),0);
+  const eps=fin.filter(i=>i.type==='serie'||i.type==='anime').reduce((a,i)=>a+(+i.prog?.total||+i.prog?.ep||0),0);
+  const gen={}; fin.forEach(i=>(i.genre||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean).forEach(g=>gen[g]=(gen[g]||0)+1));
+  const topG=Object.entries(gen).sort((a,b)=>b[1]-a[1]).slice(0,6); const gmax=Math.max(1,...topG.map(x=>x[1]));
+  const byT=TK.map(t=>[t,fin.filter(i=>i.type===t).length]); const tmax=Math.max(1,...byT.map(x=>x[1]));
+  const best=fin.filter(i=>i.rating===5).slice(0,8);
+  const now=S.items.filter(i=>i.status==='encurso');
+  const vocabY=allVocab().filter(v=>(v.date||'').startsWith(String(Y))).length;
+  $('#main').innerHTML=`<h2>Estadísticas de ${yearSel()} <span class="jp">記録</span></h2>
+    <div class="kpis">
+      <div class="card kpi"><div class="l">Terminados</div><div class="v">${fin.length}</div></div>
+      <div class="card kpi"><div class="l">Valoración media</div><div class="v">${avg?avg.toFixed(1)+' <span style="color:var(--star)">★</span>':'—'}</div></div>
+      <div class="card kpi"><div class="l">Páginas leídas</div><div class="v">${pages.toLocaleString('es')}</div></div>
+      <div class="card kpi"><div class="l">Capítulos vistos</div><div class="v">${eps.toLocaleString('es')}</div></div>
+    </div>
+    <h2>Por mes</h2>
+    <div class="card"><div class="chart">${months.map(x=>`<div class="col"><span class="nn">${x.tot||''}</span><div class="stk" style="height:${x.tot?Math.max(4,x.tot/max*100):1.5}%">${TK.filter(t=>x.by[t]).map(t=>`<i style="height:${x.by[t]/x.tot*100}%;background:${color(t)}"></i>`).join('')}</div><span class="m">${x.m}</span></div>`).join('')}</div>
+      <div class="legend">${TK.map(t=>`<span><i style="background:${color(t)}"></i>${TYPES[t].pl}</span>`).join('')}</div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px">
+      <div class="card"><b>Por tipo</b>${byT.map(([t,n])=>`<div class="hb"><span class="nm">${TYPES[t].em} ${TYPES[t].pl}</span><div class="bar"><i style="width:${n/tmax*100}%;background:${color(t)}"></i></div><span class="n">${n}</span></div>`).join('')}</div>
+      <div class="card"><b>Géneros favoritos</b>${topG.length?topG.map(([g,n])=>`<div class="hb"><span class="nm">${esc(g)}</span><div class="bar"><i style="width:${n/gmax*100}%"></i></div><span class="n">${n}</span></div>`).join(''):'<p class="muted">Añade géneros a lo que termines para verlos aquí.</p>'}</div>
+    </div>
+    <div class="card" style="margin-top:12px"><b>Ahora mismo</b> <span class="muted">· ${now.length} en curso · ${S.items.filter(i=>i.status==='deseo').length} en la lista de deseos · ${vocabY} palabras de anime apuntadas este año</span>
+      ${best.length?`<p style="margin:12px 0 4px"><b>Tus 5 estrellas del año</b></p><div class="muted">${best.map(i=>`${TYPES[i.type].em} ${esc(i.title)}`).join(' · ')}</div>`:''}</div>`;
+  bindYear(renderStats);
+}
+
+/* ---------- copia de seguridad ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(S)],{type:'application/json'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=`mi-estanteria-${today()}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast('Copia descargada');
+}
+$('#importFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const d=JSON.parse(await f.text()); if(!Array.isArray(d.items)) throw 0;
+    if(await ask(`La copia tiene ${d.items.length} elementos. ¿Sustituir tu estantería actual por la copia?`)){ S=Object.assign({items:[],goals:{}},d); save(); render(); toast('Copia restaurada'); } }
+  catch(_){ toast('Ese archivo no es una copia válida'); } };
+
+/* ---------- inicio ---------- */
+load().then(render);
+</script>
+</body>
+</html>
