@@ -12,7 +12,9 @@
 
   const PFX = 'masync:';
   const API = 'https://api.github.com';
-  const MAX_BLOB = 40 * 1024 * 1024; // archivos de más de 40 MB no se sincronizan
+  const MAX_BLOB = 25 * 1024 * 1024; // archivos de más de 25 MB no se sincronizan
+  const BIG_STR = 150 * 1024;          // textos más largos (dibujos, fotos en texto) van en archivos aparte
+  const MAX_UNIT = 30 * 1024 * 1024;
   const LS = window.localStorage;
   const SP = Storage.prototype;
   const S_get = SP.getItem, S_set = SP.setItem, S_rem = SP.removeItem, S_clear = SP.clear, S_key = SP.key;
@@ -128,7 +130,8 @@
   /* ---------- convertir valores a JSON y de vuelta ---------- */
   function encode(v, blobs) {
     if (v === undefined) return { __u: 1 };
-    if (v === null || typeof v === 'string' || typeof v === 'boolean') return v;
+    if (typeof v === 'string') { if (v.length > BIG_STR) { const ref = { __str: null, s: v.length }; blobs.push({ str: v, ref }); return ref; } return v; }
+    if (v === null || typeof v === 'boolean') return v;
     if (typeof v === 'number') return isFinite(v) ? v : { __n: String(v) };
     if (typeof v === 'bigint') return { __bi: String(v) };
     if (typeof v !== 'object') return null;
@@ -155,9 +158,10 @@
     if ('__n' in v) return Number(v.__n);
     if ('__bi' in v) return BigInt(v.__bi);
     if ('__d' in v) return new Date(v.__d === null ? NaN : v.__d);
+    if ('__str' in v) { const d = blobMap.get(v.__str); if (!d) throw new Error('falta un trozo'); return td.decode(d); }
     if ('__blob' in v) {
       const data = blobMap.get(v.__blob);
-      if (!data) return new Blob([], { type: v.t });
+      if (!data) throw new Error('falta un archivo');
       if (v.n != null && typeof File !== 'undefined') return new File([data], v.n, { type: v.t, lastModified: v.lm });
       return new Blob([data], { type: v.t });
     }
@@ -173,6 +177,7 @@
     if (v && typeof v === 'object') {
       if (Array.isArray(v)) v.forEach(x => blobHashes(x, out));
       else if ('__blob' in v) { if (v.__blob) out.add(v.__blob); }
+      else if ('__str' in v) { if (v.__str) out.add(v.__str); }
       else for (const k of Object.keys(v)) blobHashes(v[k], out);
     }
     return out;
@@ -260,7 +265,7 @@
     if (path.startsWith('ls/')) {
       const key = unb64u(path.slice(3, -5)); const v = lsGet(key);
       if (v === null) return null;
-      content = { kind: 'ls', key, value: v };
+      content = { kind: 'ls', key, value: encode(v, blobs) };
     } else if (path.startsWith('idb/')) {
       const name = unb64u(path.slice(4, -5));
       const d = await dumpDB(name);
@@ -268,8 +273,9 @@
       content = { kind: 'idb', name, version: d.version, stores: d.stores.map(s => ({ name: s.name, keyPath: s.keyPath, autoIncrement: s.autoIncrement, indexes: s.indexes, rows: s.rows.map(([k, v]) => [encode(k, blobs), encode(v, blobs)]) })) };
     } else return null;
     for (const b of blobs) {
-      const buf = await b.blob.arrayBuffer();
-      b.ref.__blob = await sha256hex(buf); b.buf = buf;
+      const buf = 'str' in b ? te.encode(b.str).buffer : await b.blob.arrayBuffer();
+      const h = await sha256hex(buf); b.buf = buf; b.hash = h;
+      if ('str' in b) { b.ref.__str = h; delete b.str; } else b.ref.__blob = h;
     }
     const body = JSON.stringify(content);
     const h = await sha256hex(te.encode(body));
@@ -278,12 +284,28 @@
 
   /* ---------- GitHub ---------- */
   async function gh(method, path, body, accept) {
-    const r = await fetch(API + path, {
-      method, cache: 'no-store',
-      headers: Object.assign({ 'Authorization': 'Bearer ' + cfg.token, 'Accept': accept || 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, body ? { 'Content-Type': 'application/json' } : {}),
-      body: body ? JSON.stringify(body) : undefined
-    });
-    return r;
+    const payload = body ? JSON.stringify(body) : undefined;
+    let lastErr;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const r = await fetch(API + path, {
+          method, cache: 'no-store',
+          headers: Object.assign({ 'Authorization': 'Bearer ' + cfg.token, 'Accept': accept || 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, body ? { 'Content-Type': 'application/json' } : {}),
+          body: payload
+        });
+        if ((r.status === 403 || r.status === 429) && attempt < 3 && (r.headers.get('retry-after') || r.headers.get('x-ratelimit-remaining') === '0')) {
+          const wait = Math.min(90, parseInt(r.headers.get('retry-after') || '30', 10) || 30);
+          progress(`☁️ GitHub pide una pausa… (${wait} s)`); await sleep(wait * 1000); continue;
+        }
+        if (r.status >= 500 && attempt < 3) { await sleep(2000 * (attempt + 1)); continue; }
+        return r;
+      } catch (e) {
+        lastErr = e;
+        if (attempt < 3) { await sleep([1500, 4000, 9000][attempt]); continue; }
+      }
+    }
+    const e = new Error('Se cortó la conexión con GitHub. Comprueba el wifi y que el aparato no se bloquee mientras sincroniza.');
+    e.net = true; e.cause = lastErr; throw e;
   }
   const repoPath = () => `/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`;
   async function getTree() {
@@ -318,6 +340,19 @@
     if (!r.ok && r.status !== 404) throw httpErr(r);
   }
 
+  const NAMES = { 'miagenda': 'Agendas', 'bujo-mi-agenda': 'Bullet Journal', 'bujo-state': 'Bullet Journal (ajustes)', 'cuaderno-caligrafia': 'Caligrafía', 'mi-estanteria': 'Estantería', 'miAnatomia': 'Anatomía', 'miCardiologia': 'Cardiología', 'misCuentasFotos': 'Cuentas (fotos)', 'mandalas': 'Mandalas', 'silabarios-v1': 'Silabarios' };
+  function unitLabel(path) {
+    let n = path; try { n = unb64u(path.replace(/^(ls|idb)\//, '').replace(/\.json$/, '')); } catch (e) { }
+    return NAMES[n] || n;
+  }
+  function progress(msg) {
+    const el = document.getElementById('ms-prog');
+    if (el) el.textContent = msg || '';
+    if (!document.body) return;
+    if (msg && (!cfg || !cfg.setup || document.getElementById('ms-prog') || frozen)) pill(msg);
+    if (!msg && !frozen) { const p = document.getElementById('masync-pill'); if (p) p.classList.remove('on'); }
+  }
+
   /* ---------- sincronizar ---------- */
   async function pullUnit(path, sha, tree, cache) {
     const buf = await getBlob(sha);
@@ -328,28 +363,34 @@
     for (const h of hs) {
       if (cache.has(h)) { blobMap.set(h, cache.get(h)); continue; }
       const bsha = tree['blobs/' + h];
-      if (!bsha) continue;
+      if (!bsha) throw new Error('faltan archivos en la nube (se subirán desde el otro aparato)');
       const b = await getBlob(bsha); cache.set(h, b); blobMap.set(h, b);
     }
     return { file, content: c, blobMap, h: await sha256hex(te.encode(JSON.stringify(c))) };
   }
   async function applyUnit(path, remote) {
     const c = remote.content;
-    if (c.kind === 'ls') { S_set.call(LS, c.key, c.value); return true; }
+    if (c.kind === 'ls') { S_set.call(LS, c.key, typeof c.value === 'string' ? c.value : decode(c.value, remote.blobMap)); return true; }
     if (c.kind === 'idb') return await restoreDB(c, remote.blobMap);
     return true;
   }
   async function pushUnit(path, local, sha, tree) {
+    const label = unitLabel(path);
+    let i = 0;
     for (const b of local.blobs) {
-      const p = 'blobs/' + b.ref.__blob;
+      i++;
+      const p = 'blobs/' + b.hash;
       if (tree[p] || b.done) continue;
-      if (b.buf.byteLength > MAX_BLOB) { status.warn = 'Hay archivos de más de 40 MB que no se sincronizan'; continue; }
-      tree[p] = await putFile(p, new Uint8Array(b.buf), null, 'Archivo ' + b.ref.__blob.slice(0, 8));
-      b.done = true;
+      if (b.buf.byteLength > MAX_BLOB) { const mb = Math.round(b.buf.byteLength / 1048576); status.warn = `Hay archivos de más de 25 MB (${mb} MB en «${label}») que no se sincronizan`; continue; }
+      progress(`☁️ ${label}: subiendo archivo ${i} de ${local.blobs.length}…`);
+      tree[p] = await putFile(p, new Uint8Array(b.buf), null, 'Archivo ' + b.hash.slice(0, 8));
+      b.done = true; b.buf = null;
     }
     const file = { app: 'mi-agenda', v: 1, device, updated: Date.now(), data: local.content };
-    const label = local.content.kind === 'ls' ? local.content.key : local.content.name;
-    return await putFile(path, te.encode(JSON.stringify(file)), sha, `${label} · ${device}`);
+    const bytes = te.encode(JSON.stringify(file));
+    if (bytes.byteLength > MAX_UNIT) throw new Error(`«${label}» es demasiado grande (${Math.round(bytes.byteLength / 1048576)} MB)`);
+    progress(`☁️ Guardando «${label}»…`);
+    return await putFile(path, bytes, sha, `${label} · ${device}`);
   }
 
   async function syncNow(opts) {
@@ -373,7 +414,9 @@
 
         const cache = new Map();
         const toApply = [];
+        const failed = [];
         for (const path of cand) {
+         try {
           const b = base[path], rsha = tree[path] || null;
           const isIdb = path.startsWith('idb/');
           const remoteChanged = rsha ? (!b || b.sha !== rsha) : !!(b && b.sha);
@@ -385,11 +428,11 @@
 
           if (opts.mode === 'down') {
             if (rsha) toApply.push({ path, rsha });
-            else if (local) { base[path] = { sha: await pushUnit(path, local, null, tree), h: lh }; pushed++; }
+            else if (local) { base[path] = { sha: await pushUnit(path, local, null, tree), h: lh }; pushed++; delete dirty[path]; }
             continue;
           }
           if (opts.mode === 'up') {
-            if (local) { if (!b || lh !== b.h || b.sha !== rsha) { base[path] = { sha: await pushUnit(path, local, rsha, tree), h: lh }; pushed++; } }
+            if (local) { if (!b || lh !== b.h || b.sha !== rsha) { base[path] = { sha: await pushUnit(path, local, rsha, tree), h: lh }; pushed++; } delete dirty[path]; }
             else if (rsha) toApply.push({ path, rsha });
             continue;
           }
@@ -417,28 +460,47 @@
           } else {
             toApply.push({ path, rsha, remote });
           }
+         } catch (e) {
+          if (e.status === 401 || e.status === 403 || e.status === 404) throw e;
+          failed.push(unitLabel(path) + ': ' + (e.message || e));
+         } finally { jset('base', base); jset('dirty', dirty); }
         }
 
         if (toApply.length) {
           if (sessionReloads() >= 3) throw new Error('Demasiadas recargas seguidas; vuelve a intentarlo en un minuto');
           frozen = true; showBusy(true);
           for (const t of toApply) {
-            const remote = t.remote || await pullUnit(t.path, t.rsha, tree, cache);
-            const ok = await applyUnit(t.path, remote);
-            if (ok) base[t.path] = { sha: t.rsha, h: remote.h };
-            delete dirty[t.path]; applied++;
+            try {
+              progress(`☁️ Trayendo «${unitLabel(t.path)}»…`);
+              const remote = t.remote || await pullUnit(t.path, t.rsha, tree, cache);
+              const ok = await applyUnit(t.path, remote);
+              if (ok) base[t.path] = { sha: t.rsha, h: remote.h };
+              delete dirty[t.path]; applied++;
+            } catch (e) {
+              if (e.status === 401 || e.status === 403 || e.status === 404) throw e;
+              failed.push(unitLabel(t.path) + ': ' + (e.message || e));
+            }
+            jset('base', base); jset('dirty', dirty);
           }
+          if (!applied) { frozen = false; showBusy(false); }
         }
         jset('base', base); jset('dirty', dirty);
         fullCheckDone = true;
-        status.last = Date.now(); jset('last', status.last);
-        status.err = ''; jset('err', '');
-        setStatus('ok', applied ? 'Actualizado desde tu otro aparato' : pushed ? 'Cambios guardados en la nube' : 'Todo al día');
+        progress(null);
+        if (failed.length) {
+          status.err = 'No se pudo sincronizar todo. Se volverá a intentar solo:\n• ' + failed.slice(0, 6).join('\n• ') + (failed.length > 6 ? `\n• y ${failed.length - 6} más` : '');
+          jset('err', status.err); setStatus('error', status.err);
+        } else {
+          status.last = Date.now(); jset('last', status.last);
+          status.err = ''; jset('err', '');
+          setStatus('ok', applied ? 'Actualizado desde tu otro aparato' : pushed ? 'Cambios guardados en la nube' : 'Todo al día');
+        }
         if (applied) { countReload(); sessionStorage.setItem(PFX + 'toast', '☁️ Actualizado con los cambios de tu otro aparato'); location.reload(); await sleep(5000); }
         endHold(true);
-        return { applied, pushed };
+        if (failed.length) schedulePush(60000);
+        return { applied, pushed, failed: failed.length };
       } catch (e) {
-        frozen = false; showBusy(false);
+        frozen = false; showBusy(false); progress(null);
         status.err = e.message || String(e); jset('err', status.err);
         setStatus('error', status.err);
         endHold(false);
@@ -539,8 +601,9 @@
       <h3>☁️ Sincronización</h3>
       <p class="note">Tus datos de Mi Agenda se guardan en tu almacén privado <b>${escH(cfg.owner)}/${escH(cfg.repo)}</b> de GitHub. Se sincronizan al abrir cada app y unos segundos después de cada cambio.</p>
       <div class="stat">Este aparato: <b>${escH(device)}</b><br>Última sincronización: <b id="ms-last">${fmt(status.last)}</b><br>Cambios pendientes de subir: <b>${pend}</b></div>
-      ${status.err ? `<div class="err">⚠️ ${escH(status.err)}</div>` : ''}
+      ${status.err ? `<div class="err">⚠️ ${escH(status.err).replace(/\n/g, '<br>')}</div>` : ''}
       ${status.warn ? `<div class="err">${escH(status.warn)}</div>` : ''}
+      <p class="note" id="ms-prog"></p>
       <div class="row">
         <button class="dan" id="ms-off">Desconectar este aparato</button>
         <button id="ms-close">Cerrar</button>
@@ -549,7 +612,7 @@
     d.querySelector('#ms-close').onclick = closeDlg;
     d.querySelector('#ms-now').onclick = async e => {
       e.target.disabled = true; e.target.textContent = 'Sincronizando…';
-      try { await syncNow({ apply: true, wait: true }); closeDlg(); pill('☁️ ' + status.msg, 2500); }
+      try { const r = await syncNow({ apply: true, wait: true }); if (r && r.failed) openPanel(); else { closeDlg(); pill('☁️ ' + status.msg, 2500); } }
       catch (err) { openPanel(); }
     };
     d.querySelector('#ms-off').onclick = () => {
@@ -612,10 +675,11 @@
       if (mode === 'down' && !confirm('Lo de este aparato se reemplazará por lo que hay en la nube. ¿Seguro?')) return;
       cfg = Object.assign({}, tmp, { setup: true }); jset('cfg', cfg);
       base = {}; jset('base', base);
-      dlg(`<h3>☁️ ${mode === 'up' ? 'Subiendo tus datos…' : 'Trayendo tus datos…'}</h3><p class="note">No cierres la app hasta que termine.</p>`);
+      dlg(`<h3>☁️ ${mode === 'up' ? 'Subiendo tus datos…' : 'Trayendo tus datos…'}</h3><p class="note">No cierres la app ni bloquees la pantalla hasta que termine.</p><p class="note" id="ms-prog" style="font-weight:700;color:#23263a"></p>`);
       try {
         const r = await syncNow({ mode, apply: true, wait: true });
-        closeDlg(); pill(`☁️ Listo: ${r && r.pushed ? r.pushed + ' apartados subidos' : 'todo al día'}`, 3500); updateBtn();
+        closeDlg(); updateBtn();
+        if (r && r.failed) openPanel(); else pill(`☁️ Listo: ${r && r.pushed ? r.pushed + ' apartados subidos' : 'todo al día'}`, 3500);
       } catch (err) {
         dlg(`<h3>No se pudo terminar</h3><div class="err">⚠️ ${escH(err.message || err)}</div><p class="note">Lo que ya se subió está a salvo. Vuelve a intentarlo con «Sincronizar ahora».</p><div class="row"><button class="pri" id="ms-ok">Entendido</button></div>`)
           .querySelector('#ms-ok').onclick = closeDlg;
