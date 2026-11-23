@@ -36,8 +36,8 @@
   #nav.hidden button{visibility:hidden}
 
   /* Página */
-  #stage{position:fixed;left:0;right:0;display:flex;align-items:center;justify-content:center}
-  #page{position:relative;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 30px rgba(0,0,0,.06);border-radius:6px;overflow:hidden}
+  #stage{position:fixed;left:0;right:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #page{position:relative;transform-origin:0 0;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 30px rgba(0,0,0,.06);border-radius:6px;overflow:hidden}
   #page svg,#page canvas{position:absolute;inset:0;width:100%;height:100%}
   #page canvas{touch-action:none}
 
@@ -430,6 +430,8 @@ const page = document.getElementById("page"), tpl = document.getElementById("tpl
 const base = document.getElementById("base"), live = document.getElementById("live");
 const bctx = base.getContext("2d"), lctx = live.getContext("2d");
 let scale = 1, dpr = 1, strokes = [], curKey = null, links = [];
+let zoom = 1, zr = 1, tx = 0, ty = 0, lastPen = 0, lastTap = 0, pinch = null;
+const touches = new Map();
 const undoStacks = new Map(), redoStacks = new Map();
 let tool = "pen", color = "#2b2b2b", penW = 2.4;
 const COLORS = ["#2b2b2b","#8a8a8a","#3a5a8c","#b5523b","#5f7d5a","#c9a227"];
@@ -442,10 +444,39 @@ function layout(){
   const aw = innerWidth - 24, ah = innerHeight - top - bottom - 16;
   scale = Math.min(aw / W, ah / H); dpr = window.devicePixelRatio || 1;
   page.style.width = W*scale + "px"; page.style.height = H*scale + "px";
-  [base, live].forEach(c => { c.width = Math.round(W*scale*dpr); c.height = Math.round(H*scale*dpr); });
+  applyZoom(); sharpen(true);
+}
+function setT(ctx){ const k = scale*dpr*zr; ctx.setTransform(k,0,0,k,0,0); }
+/* Zoom con dos dedos: la página se amplía con CSS y luego se vuelve a dibujar nítida */
+function applyZoom(){
+  if (zoom <= 1.01){ zoom = 1; tx = 0; ty = 0; }
+  page.style.transform = zoom === 1 ? "" : `translate(${tx}px,${ty}px) scale(${zoom})`;
+}
+function sharpen(force){
+  const cap = Math.sqrt(16e6 / (W*scale*dpr * H*scale*dpr));
+  const next = Math.max(1, Math.min(zoom, cap, 4));
+  if (!force && Math.abs(next - zr) < 0.05) return;
+  zr = next;
+  [base, live].forEach(c => { c.width = Math.round(W*scale*dpr*zr); c.height = Math.round(H*scale*dpr*zr); });
   redraw();
 }
-function setT(ctx){ ctx.setTransform(scale*dpr,0,0,scale*dpr,0,0); }
+function resetZoom(){ zoom = 1; applyZoom(); sharpen(); }
+function startPinch(){
+  if (cur){ cur = null; lctx.setTransform(1,0,0,1,0,0); lctx.clearRect(0,0,live.width,live.height); }
+  if (erasing){ erasing = false; const u = undoStacks.get(curKey) || []; if (u.length) strokes = u.pop(); redraw(); }
+  touch = null;
+  const [a, b] = [...touches.values()], r = page.getBoundingClientRect();
+  const cx = (a.x+b.x)/2, cy = (a.y+b.y)/2;
+  pinch = {d:Math.max(1, Math.hypot(a.x-b.x, a.y-b.y)), z:zoom, L:r.left - tx, T:r.top - ty,
+           ux:(cx - r.left)/zoom, uy:(cy - r.top)/zoom};
+}
+function movePinch(){
+  const [a, b] = [...touches.values()];
+  const cx = (a.x+b.x)/2, cy = (a.y+b.y)/2, d = Math.hypot(a.x-b.x, a.y-b.y);
+  zoom = Math.max(1, Math.min(4, pinch.z * d / pinch.d));
+  tx = cx - pinch.L - zoom*pinch.ux; ty = cy - pinch.T - zoom*pinch.uy;
+  applyZoom();
+}
 
 function drawStroke(ctx, s){
   const p = s.p, n = p.length/3;
@@ -477,7 +508,7 @@ function redraw(){
 const save = () => dbPut(curKey, strokes);
 function pushUndo(){ const u = undoStacks.get(curKey) || []; u.push(strokes.slice()); if (u.length > 60) u.shift(); undoStacks.set(curKey, u); redoStacks.set(curKey, []); }
 
-function toLogical(e){ const r = page.getBoundingClientRect(); return {x:(e.clientX - r.left)/scale, y:(e.clientY - r.top)/scale}; }
+function toLogical(e){ const r = page.getBoundingClientRect(); return {x:(e.clientX - r.left)*W/r.width, y:(e.clientY - r.top)*H/r.height}; }
 const penOnlyEl = document.getElementById("penonly");
 try { if (localStorage.getItem("bujo-penonly") === "0") penOnlyEl.checked = false; } catch(e){}
 penOnlyEl.onchange = () => { try{ localStorage.setItem("bujo-penonly", penOnlyEl.checked ? "1" : "0"); }catch(e){} };
@@ -491,15 +522,37 @@ function eraseAt(pt){
 }
 live.addEventListener("pointerdown", e => {
   closeMenu();
-  if (!canDraw(e)){ touch = {x:e.clientX, y:e.clientY, id:e.pointerId}; return; }
+  if (e.pointerType === "pen") lastPen = Date.now();
+  if (e.pointerType === "touch"){
+    // Una mano apoyada mientras escribes con el Apple Pencil no cuenta como gesto
+    if ((cur && cur.pen) || Date.now() - lastPen < 500) return;
+    e.preventDefault();
+    try { live.setPointerCapture(e.pointerId); } catch(err){}
+    touches.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pinch) return;
+    if (touches.size === 2){ startPinch(); return; }
+  }
+  if (!canDraw(e)){ touch = {x:e.clientX, y:e.clientY, id:e.pointerId, tx, ty, panned:false}; return; }
   e.preventDefault(); live.setPointerCapture(e.pointerId);
   const pt = toLogical(e);
   if (tool === "eraser"){ pushUndo(); erasing = true; erased = false; eraseAt(pt); return; }
   const hl = tool === "hl";
   cur = {t: hl ? "hl" : "pen", c: hl ? HL_COLORS[COLORS.indexOf(color)] || HL_COLORS[0] : color, w: hl ? 18 : penW,
          p:[+pt.x.toFixed(1), +pt.y.toFixed(1), e.pointerType === "pen" ? e.pressure : 0.5]};
+  if (e.pointerType === "pen") Object.defineProperty(cur, "pen", {value:true});
 });
 live.addEventListener("pointermove", e => {
+  if (touches.has(e.pointerId)){
+    touches.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pinch){ if (touches.size >= 2) movePinch(); return; }
+  }
+  if (e.pointerType === "pen") lastPen = Date.now();
+  if (touch && e.pointerId === touch.id){
+    // Con la página ampliada, un dedo la mueve
+    if (zoom > 1){ tx = touch.tx + e.clientX - touch.x; ty = touch.ty + e.clientY - touch.y;
+      if (Math.abs(e.clientX - touch.x) + Math.abs(e.clientY - touch.y) > 8) touch.panned = true; applyZoom(); }
+    return;
+  }
   if (erasing){ (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]).forEach(ev => eraseAt(toLogical(ev))); return; }
   if (!cur) return;
   const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
@@ -512,8 +565,16 @@ live.addEventListener("pointermove", e => {
   lctx.setTransform(1,0,0,1,0,0); lctx.clearRect(0,0,live.width,live.height); setT(lctx); drawStroke(lctx, cur);
 });
 function endStroke(e){
+  if (touches.has(e.pointerId)){
+    touches.delete(e.pointerId);
+    if (pinch){ if (touches.size < 2){ pinch = null; touch = null; applyZoom(); sharpen(); } return; }
+  }
   if (touch && e.pointerId === touch.id){
-    const dx = e.clientX - touch.x, dy = e.clientY - touch.y; touch = null;
+    const dx = e.clientX - touch.x, dy = e.clientY - touch.y, panned = touch.panned; touch = null;
+    if (panned) return;
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && zoom > 1 && Date.now() - lastTap < 350){ lastTap = 0; resetZoom(); return; }
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) lastTap = Date.now();
+    if (zoom > 1 && Math.abs(dx) > 80) return;
     if (Math.abs(dx) > 80 && Math.abs(dy) < 70){ move(dx < 0 ? 1 : -1); return; }
     if (Math.abs(dx) < 10 && Math.abs(dy) < 10){
       const pt = toLogical(e), l = links.find(l => pt.x >= l.x && pt.x <= l.x+l.w && pt.y >= l.y && pt.y <= l.y+l.h);
@@ -545,7 +606,7 @@ async function render(){
   const data = await dbGet(key);
   if (curKey !== key) return;
   strokes = Array.isArray(data) ? data : [];
-  layout();
+  zoom = 1; zr = 1; layout();
 }
 
 document.querySelectorAll("[data-tool]").forEach(b => b.onclick = () => {
