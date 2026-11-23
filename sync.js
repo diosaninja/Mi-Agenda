@@ -340,7 +340,7 @@
     if (!r.ok && r.status !== 404) throw httpErr(r);
   }
 
-  const NAMES = { 'miagenda': 'Agendas', 'bujo-mi-agenda': 'Bullet Journal', 'bujo-state': 'Bullet Journal (ajustes)', 'cuaderno-caligrafia': 'Caligrafía', 'mi-estanteria': 'Estantería', 'miAnatomia': 'Anatomía', 'miCardiologia': 'Cardiología', 'misCuentasFotos': 'Cuentas (fotos)', 'mandalas': 'Mandalas', 'silabarios-v1': 'Silabarios' };
+  const NAMES = { 'miagenda': 'Agendas', 'bujo-mi-agenda': 'Bullet Journal', 'bujo-state': 'Bullet Journal (ajustes)', 'cuaderno-caligrafia': 'Caligrafía', 'mi-estanteria': 'Estantería', 'miAnatomia': 'Anatomía', 'miCardiologia': 'Cardiología', 'misCuentasFotos': 'Cuentas (fotos)', 'mandalas': 'Mandalas', 'silabarios-v1': 'Silabarios', 'mis-enlaces': 'Enlaces' };
   function unitLabel(path) {
     let n = path; try { n = unb64u(path.replace(/^(ls|idb)\//, '').replace(/\.json$/, '')); } catch (e) { }
     return NAMES[n] || n;
@@ -354,20 +354,40 @@
   }
 
   /* ---------- sincronizar ---------- */
-  async function pullUnit(path, sha, tree, cache) {
+  // 1.º solo la ficha (pequeña); los archivos se descargan después, al aplicar
+  async function pullMeta(path, sha) {
     const buf = await getBlob(sha);
     const file = JSON.parse(td.decode(buf));
     const c = file.data;
-    const hs = [...blobHashes(c, new Set())];
-    const blobMap = new Map();
-    for (const h of hs) {
-      if (cache.has(h)) { blobMap.set(h, cache.get(h)); continue; }
-      const bsha = tree['blobs/' + h];
-      if (!bsha) throw new Error('faltan archivos en la nube (se subirán desde el otro aparato)');
-      const b = await getBlob(bsha); cache.set(h, b); blobMap.set(h, b);
-    }
-    return { file, content: c, blobMap, h: await sha256hex(te.encode(JSON.stringify(c))) };
+    const hashes = [...blobHashes(c, new Set())];
+    return { file, content: c, hashes, blobMap: null, h: await sha256hex(te.encode(JSON.stringify(c))) };
   }
+  // 2.º los archivos que falten: 4 a la vez, con aviso de cuánto queda
+  async function fetchBlobs(path, remote, tree, cache) {
+    if (remote.blobMap) return remote;
+    const label = unitLabel(path), blobMap = new Map(), todo = [];
+    for (const h of remote.hashes) {
+      if (cache.has(h)) blobMap.set(h, cache.get(h));
+      else { if (!tree['blobs/' + h]) throw new Error('faltan archivos en la nube (se subirán desde el otro aparato)'); todo.push(h); }
+    }
+    let done = 0, next = 0;
+    const total = todo.length;
+    if (total) progress(`☁️ Trayendo «${label}»: 0 de ${total} archivos…`);
+    const worker = async () => {
+      while (next < todo.length) {
+        const h = todo[next++];
+        const b = await getBlob(tree['blobs/' + h]);
+        cache.set(h, b); blobMap.set(h, b); done++;
+        progress(`☁️ Trayendo «${label}»: ${done} de ${total} archivos…`);
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    remote.blobMap = blobMap;
+    return remote;
+  }
+  async function pullUnit(path, sha, tree, cache) { return fetchBlobs(path, await pullMeta(path, sha), tree, cache); }
+  // guarda en la caché los archivos que ya tiene este aparato, para no volver a descargarlos
+  function seedCache(cache, local) { if (local && local.blobs) for (const b of local.blobs) if (b.buf && !cache.has(b.hash)) cache.set(b.hash, b.buf); }
   async function applyUnit(path, remote) {
     const c = remote.content;
     if (c.kind === 'ls') { S_set.call(LS, c.key, typeof c.value === 'string' ? c.value : decode(c.value, remote.blobMap)); return true; }
@@ -415,19 +435,23 @@
         const cache = new Map();
         const toApply = [];
         const failed = [];
-        for (const path of cand) {
+        const sizes = jget('sz', {});
+        const order = [...cand].sort((a, b) => (sizes[a] || 0) - (sizes[b] || 0));
+        for (const path of order) {
          try {
           const b = base[path], rsha = tree[path] || null;
           const isIdb = path.startsWith('idb/');
           const remoteChanged = rsha ? (!b || b.sha !== rsha) : !!(b && b.sha);
           const needLocal = !isIdb || fullIdb || remoteChanged || dirty[path] || held.has(path) || !b;
           if (!needLocal) continue;
+          if (sizes[path] > 20) progress(`☁️ Revisando «${unitLabel(path)}»…`);
           const local = await localUnit(path);
           const lh = local ? local.h : null;
+          if (local) { sizes[path] = local.blobs.length; jset('sz', sizes); }
           const localChanged = b ? lh !== b.h : lh !== null;
 
           if (opts.mode === 'down') {
-            if (rsha) toApply.push({ path, rsha });
+            if (rsha) { seedCache(cache, local); toApply.push({ path, rsha }); }
             else if (local) { base[path] = { sha: await pushUnit(path, local, null, tree), h: lh }; pushed++; delete dirty[path]; }
             continue;
           }
@@ -440,7 +464,7 @@
           if (!remoteChanged && !localChanged) { if (dirty[path]) delete dirty[path]; continue; }
           if (remoteChanged && !localChanged) {
             if (!rsha) { if (!local) delete base[path]; else if (path.startsWith('ls/')) { S_rem.call(LS, local.content.key); delete base[path]; } continue; }
-            if (opts.apply) toApply.push({ path, rsha });
+            if (opts.apply) { seedCache(cache, local); toApply.push({ path, rsha }); }
             continue;
           }
           if (localChanged && !remoteChanged) {
@@ -452,13 +476,13 @@
           }
           // cambió en los dos aparatos: gana el cambio más reciente
           if (!rsha) { if (local) { base[path] = { sha: await pushUnit(path, local, null, tree), h: lh }; pushed++; } delete dirty[path]; continue; }
-          const remote = await pullUnit(path, rsha, tree, cache);
+          const remote = await pullMeta(path, rsha);
           if (remote.h === lh) { base[path] = { sha: rsha, h: lh }; delete dirty[path]; continue; }
           const localTime = hold ? (dirtyAtStart[path] || 0) : (dirty[path] || dirtyAtStart[path] || 0);
           if (local && localTime > (remote.file.updated || 0)) {
             base[path] = { sha: await pushUnit(path, local, rsha, tree), h: lh }; pushed++; delete dirty[path];
           } else {
-            toApply.push({ path, rsha, remote });
+            seedCache(cache, local); toApply.push({ path, rsha, remote });
           }
          } catch (e) {
           if (e.status === 401 || e.status === 403 || e.status === 404) throw e;
@@ -470,10 +494,18 @@
           if (sessionReloads() >= 3) throw new Error('Demasiadas recargas seguidas; vuelve a intentarlo en un minuto');
           frozen = true; showBusy(true);
           for (const t of toApply) {
+            try { if (!t.remote) t.remote = await pullMeta(t.path, t.rsha); }
+            catch (e) { if (e.status === 401 || e.status === 403 || e.status === 404) throw e; t.err = e; }
+          }
+          toApply.sort((a, b) => ((a.remote && a.remote.hashes.length) || 0) - ((b.remote && b.remote.hashes.length) || 0));
+          for (const t of toApply) {
             try {
+              if (t.err) throw t.err;
               progress(`☁️ Trayendo «${unitLabel(t.path)}»…`);
-              const remote = t.remote || await pullUnit(t.path, t.rsha, tree, cache);
+              const remote = await fetchBlobs(t.path, t.remote, tree, cache);
+              progress(`☁️ Guardando «${unitLabel(t.path)}» en este aparato…`);
               const ok = await applyUnit(t.path, remote);
+              remote.blobMap = null; t.remote = null;
               if (ok) base[t.path] = { sha: t.rsha, h: remote.h };
               delete dirty[t.path]; applied++;
             } catch (e) {
