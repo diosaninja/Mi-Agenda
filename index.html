@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <script src="sync.js" data-boton="si"></script>
+<script>/* Portada: al abrir Mi Agenda se muestra el Dashboard (dashboard.html) */
+(function(){try{if(/[?&]biblioteca/.test(location.search))return;if(sessionStorage.getItem('ma-portada'))return;sessionStorage.setItem('ma-portada','1');
+var d=JSON.parse(localStorage.getItem('midashboard.v1')||'null');if(d&&d.settings&&d.settings.portada===false)return;location.replace('dashboard.html');}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Mi Agenda</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -215,6 +218,7 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-we
       <button class="btn primary" id="libNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nueva agenda</button>
     </div>
     <div class="lib-apps" style="display:flex;gap:10px;flex-wrap:wrap;padding:2px 28px 8px">
+      <a class="btn small" href="dashboard.html" title="Mi Dashboard: hoy, agenda, tareas, objetivos, aprendizaje, diario y estadísticas" style="text-decoration:none;color:inherit"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2"/><rect x="3.5" y="15.5" width="7" height="5" rx="2"/></svg>Dashboard</a>
       <a class="btn small" href="calendario.html" title="Mi Calendario" style="text-decoration:none;color:inherit"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg>Calendario</a>
       <a class="btn small" href="caligrafia.html" title="Cuaderno de caligrafía" style="text-decoration:none;color:inherit"><svg viewBox="0 0 24 24"><path d="M4 20l1.2-4.4L16.3 4.5a2.1 2.1 0 0 1 3 3L8.2 18.6z"/><path d="M14.5 6.3l3.2 3.2"/><path d="M13 20h7"/></svg>Caligrafía</a>
       <a class="btn small" href="cuaderno.html" title="Cuaderno de tinta: fichas de caligrafía" style="text-decoration:none;color:inherit"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/></svg>Cuaderno de tinta</a>
