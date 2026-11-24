@@ -59,6 +59,39 @@
   const idbPath = n => 'idb/' + b64u(n) + '.json';
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+  /* ---------- Apple Pencil: que iPadOS no corte los trazos ---------- */
+  // Si el sistema "se queda" con el toque del lápiz (desplazar, Escritura a mano, lupa…)
+  // el trazo se corta a mitad. Cancelamos solo los toques del lápiz que caen sobre
+  // una zona de dibujo (canvas); el dedo sigue funcionando igual.
+  let penBusyUntil = 0, penOnCanvas = false;
+  const PEN_IDLE = 5000;
+  const NO_DRAW = 'input,textarea,select,button,a,label,[contenteditable="true"],[contenteditable=""]';
+  function isDrawZone(t) {
+    if (!t || t.nodeType !== 1 || t.closest(NO_DRAW)) return false;
+    return t.tagName === 'CANVAS';
+  }
+  const hasStylus = list => { for (let i = 0; i < list.length; i++) if (list[i].touchType === 'stylus') return true; return false; };
+  document.addEventListener('touchstart', e => {
+    if (!hasStylus(e.changedTouches)) return;
+    penBusyUntil = Date.now() + PEN_IDLE;
+    penOnCanvas = isDrawZone(e.target);
+    if (penOnCanvas && e.cancelable) e.preventDefault();
+  }, { capture: true, passive: false });
+  document.addEventListener('touchmove', e => {
+    if (!hasStylus(e.touches)) return;
+    penBusyUntil = Date.now() + PEN_IDLE;
+    if (penOnCanvas && e.cancelable) e.preventDefault();
+  }, { capture: true, passive: false });
+  ['touchend', 'touchcancel'].forEach(n => document.addEventListener(n, e => {
+    if (!hasStylus(e.changedTouches)) return;
+    penBusyUntil = Date.now() + PEN_IDLE;
+    if (!hasStylus(e.touches)) penOnCanvas = false;
+  }, { capture: true, passive: true }));
+  document.addEventListener('selectstart', e => { if (penOnCanvas) e.preventDefault(); }, { capture: true });
+  ['pointerdown', 'pointermove'].forEach(n => document.addEventListener(n, e => {
+    if (e.pointerType === 'pen') penBusyUntil = Date.now() + PEN_IDLE;
+  }, { capture: true, passive: true }));
+
   /* ---------- vigilar los cambios de las apps ---------- */
   function mark(path) {
     if (hold) { held.add(path); return; }
@@ -555,7 +588,12 @@
   function schedulePush(ms) {
     if (!cfg || !cfg.setup) return;
     clearTimeout(pushT);
-    pushT = setTimeout(() => { if (navigator.onLine !== false) syncNow({ apply: false }).catch(() => { }); }, ms == null ? 4000 : ms);
+    pushT = setTimeout(() => {
+      // mientras escribes con el lápiz no se sincroniza: se espera a que pares unos segundos
+      const wait = penBusyUntil - Date.now();
+      if (wait > 0) { schedulePush(wait + 500); return; }
+      if (navigator.onLine !== false) syncNow({ apply: false }).catch(() => { });
+    }, ms == null ? 4000 : ms);
   }
 
   /* ---------- aviso y panel ---------- */
