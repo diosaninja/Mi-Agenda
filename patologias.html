@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<script src="sync.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Patologías">
+<meta name="theme-color" content="#2b7a73">
+<title>Mis Patologías y Vademécum</title>
+<style>
+:root{
+  --accent:#2b7a73; --accent2:#4fb0a5; --accent-soft:#e2f2ef;
+  --bg:#f2f4f0; --card:#ffffff; --ink:#1f2b2a; --muted:#73807e; --line:#dde5e2;
+  --radius:16px; --shadow:0 2px 10px rgba(20,50,45,.08);
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;font-size:16px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* ---------- INICIO ---------- */
+#home{height:100%;overflow:auto;padding:calc(var(--safe-top) + 14px) 18px calc(var(--safe-bottom) + 30px)}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:1100px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-size:26px;font-weight:700;letter-spacing:-.4px}
+.brand svg{width:34px;height:34px}
+.search{flex:1;min-width:180px;max-width:360px;margin-left:auto;display:flex;align-items:center;gap:6px;
+  background:var(--card);border-radius:12px;padding:9px 12px;box-shadow:var(--shadow)}
+.search input{border:0;outline:0;flex:1;background:none;min-width:0}
+.tabs{display:flex;gap:6px;max-width:1100px;margin:16px auto 6px;overflow-x:auto;padding-bottom:4px}
+.tab{padding:9px 16px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);white-space:nowrap;font-weight:600;color:var(--muted)}
+.tab.on{background:var(--accent);color:#fff}
+.panel{max-width:1100px;margin:14px auto 0}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:6px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:14px;color:var(--muted)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent2);color:var(--accent);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px}
+.nb{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;text-align:left;display:flex;flex-direction:column}
+.nb .cover{height:190px;position:relative;background:#fff;overflow:hidden;border-bottom:1px solid var(--line)}
+.nb .cover img{width:100%;height:100%;object-fit:cover;object-position:top}
+.nb .spine{position:absolute;left:0;top:0;bottom:0;width:14px}
+.nb .cover .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;opacity:.9}
+.nb .info{padding:10px 12px 12px}
+.nb .t{font-weight:700;font-size:15px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.nb .m{font-size:12px;color:var(--muted);margin-top:4px}
+.nb .dots{position:absolute;right:6px;top:6px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:var(--shadow);font-size:18px;line-height:30px}
+.nb.new{align-items:center;justify-content:center;min-height:250px;border:2px dashed #bfdcd6;background:transparent;box-shadow:none;color:var(--accent);font-weight:700;gap:8px}
+.nb.new .plus{font-size:40px;line-height:1}
+.list{display:flex;flex-direction:column;gap:10px}
+.row{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.row .ic{width:42px;height:42px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .tx small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .tx p{margin:4px 0 0;font-size:14px;color:#4b5a58}
+.btn{padding:9px 14px;border-radius:11px;background:#fff;border:1px solid var(--line);font-weight:600;font-size:14px;white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.dan{color:#c0392b}
+.btn.sm{padding:6px 10px;font-size:13px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:22px 0 8px;font-weight:700}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card h3{margin:0 0 6px;font-size:17px}
+.card p{margin:4px 0 10px;color:#4b5a58;font-size:14px;line-height:1.45}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+
+/* ---------- MODAL ---------- */
+#modal{position:fixed;inset:0;background:rgba(15,35,32,.35);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.sheet{background:#fff;border-radius:20px;max-width:560px;width:100%;max-height:calc(100% - 20px);overflow:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.sheet.wide{max-width:980px;height:calc(100% - 20px);display:flex;flex-direction:column}
+.sheet h2{margin:0 0 14px;font-size:20px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:13px;font-weight:600;color:var(--muted)}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fdfbfa;outline-color:var(--accent2)}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw button{width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.sw button.on{box-shadow:0 0 0 2px var(--ink)}
+.acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.acts .sp{flex:1}
+.papers{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.paperopt{border:2px solid var(--line);border-radius:12px;padding:6px;text-align:center;font-size:13px;background:#fff}
+.paperopt.on{border-color:var(--accent);background:var(--accent-soft)}
+.paperopt canvas{width:100%;height:auto;border-radius:6px;display:block;margin-bottom:4px;border:1px solid #eee}
+.menu{display:flex;flex-direction:column;gap:4px}
+.menu button{text-align:left;padding:12px 14px;border-radius:12px;font-weight:500}
+.menu button:hover,.menu button:active{background:var(--accent-soft)}
+.menu button.dan{color:#c0392b}
+.viewer{flex:1;min-height:0;border:1px solid var(--line);border-radius:12px;overflow:auto;background:#f3f0ee;display:flex;align-items:flex-start;justify-content:center}
+.viewer iframe{width:100%;height:100%;border:0;background:#fff}
+.viewer img{max-width:100%;height:auto}
+#toast{position:fixed;left:50%;bottom:calc(var(--safe-bottom) + 24px);transform:translateX(-50%);background:#1f2b2a;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:200;max-width:90%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+
+/* ---------- EDITOR ---------- */
+#editor{position:fixed;inset:0;display:flex;flex-direction:column;background:#e9e4e1;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.ebar{display:flex;align-items:center;gap:4px;padding:calc(var(--safe-top) + 6px) 8px 6px;background:#fff;border-bottom:1px solid var(--line);overflow-x:auto}
+.ebar .ib{min-width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;padding:0 8px;white-space:nowrap}
+.ebar .ib:active,.ebar .ib:hover{background:var(--accent-soft)}
+.ebar .ib.txt{font-size:14px;font-weight:600}
+.etitle{font-weight:700;flex:1;min-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
+.pnum{font-size:13px;color:var(--muted);white-space:nowrap;min-width:54px;text-align:center}
+.ib:disabled{opacity:.3}
+.toolbar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:#fff;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.toolbar::-webkit-scrollbar{display:none}
+.tool{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;position:relative}
+.tool svg{width:26px;height:26px}
+.tool.on{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent2)}
+.tool .tip{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:16px;height:4px;border-radius:2px}
+.sep{width:1px;height:30px;background:var(--line);margin:0 4px;flex:none}
+.col{width:28px;height:28px;border-radius:50%;flex:none;border:2px solid #fff;box-shadow:0 0 0 1px #d8cfcf}
+.col.on{box-shadow:0 0 0 2px var(--ink)}
+.colpick{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;position:relative;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);box-shadow:0 0 0 1px #d8cfcf}
+.colpick input{opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+.sz{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.sz i{display:block;border-radius:50%;background:var(--ink)}
+.sz.on{background:var(--accent-soft)}
+.range{width:110px;flex:none;accent-color:var(--accent)}
+.textbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f6fbfa;border-bottom:1px solid var(--line);overflow-x:auto}
+.textbar select{border:1px solid var(--line);border-radius:9px;padding:6px 8px;background:#fff;max-width:200px}
+.textbar input[type=number]{width:64px;border:1px solid var(--line);border-radius:9px;padding:6px 8px}
+.textbar .fb{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:#fff;font-weight:700}
+#scroller{flex:1;overflow:auto;position:relative;-webkit-overflow-scrolling:touch}
+#pageWrap{position:relative;margin:16px auto 40px;box-shadow:0 4px 24px rgba(20,50,45,.18);background:#fff}
+#pageWrap canvas{position:absolute;left:0;top:0}
+#cInk{pointer-events:none}
+#cLive{touch-action:none}
+#itemsLayer{position:absolute;left:0;top:0;transform-origin:0 0}
+#editor[data-mode=draw] #itemsLayer,#editor[data-mode=draw] #itemsLayer *{pointer-events:none}
+#editor[data-mode=items] #cLive{pointer-events:none}
+#editor[data-mode=items][data-tool=text] #itemsLayer{cursor:text}
+.item{position:absolute;touch-action:none}
+.item img{width:100%;height:100%;display:block;-webkit-user-drag:none;user-select:none}
+.item.text .tx{outline:none;white-space:pre-wrap;word-wrap:break-word;line-height:1.3;min-height:1.3em;padding:2px 4px}
+.item.text .tx[contenteditable=true]{-webkit-user-select:text;user-select:text;cursor:text;background:rgba(255,255,255,.35)}
+.item.sel{outline:2px dashed var(--accent2);outline-offset:3px}
+.item .h{position:absolute;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:18px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.3);touch-action:none}
+.item.sel .h{display:flex}
+.item .h-res{right:-20px;bottom:-20px;cursor:nwse-resize}
+.item .h-del{right:-20px;top:-20px;background:#fff;color:#c0392b}
+.item .h-move{left:calc(50% - 17px);top:-48px;background:#fff;color:var(--accent);cursor:move;font-size:20px}
+.item.text{min-width:80px}
+.vgrid{columns:2 380px;column-gap:14px}
+.vgrid .card{break-inside:avoid;-webkit-column-break-inside:avoid}
+.vtable{width:100%;border-collapse:collapse;font-size:15px}
+.vtable td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}
+.vtable td:first-child{color:#4b5a58;width:50%}
+.vtable td:nth-child(2){font-weight:600}
+.vtable tr.ed{cursor:pointer}.vtable tr.ed:hover{background:#f1f8f6}
+.vhead{display:flex;align-items:center;gap:8px}.vhead h3{flex:1}
+.fc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;padding:14px;overflow:auto;min-height:0}
+.fc .q{font-size:24px;font-weight:650;white-space:pre-wrap;max-width:720px;line-height:1.35}
+.fc .a{font-size:20px;color:var(--accent);white-space:pre-wrap;max-width:720px;border-top:2px dashed var(--line);padding-top:16px;line-height:1.4}
+.fc img{max-width:100%;max-height:42vh;border-radius:10px;box-shadow:var(--shadow)}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:4px 0 6px}.prog i{display:block;height:100%;background:var(--accent)}
+.lv{display:inline-flex;gap:3px;vertical-align:middle}.lv i{width:8px;height:8px;border-radius:50%;background:var(--line)}.lv i.on{background:var(--accent2)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:12px 16px;min-width:120px}
+.stat b{display:block;font-size:26px;color:var(--accent)}.stat span{font-size:13px;color:var(--muted)}
+.big{font-size:17px;padding:14px 22px;border-radius:14px}
+.marks{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.mark{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:8px 12px;font-size:14px;text-align:left;border-left:4px solid var(--accent)}
+.mark small{display:block;color:var(--muted);font-size:12px}
+.ib.marked{color:var(--accent);background:var(--accent-soft)}
+#printArea{display:none}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block}
+  #printArea img{width:100%;display:block;page-break-after:always;break-after:page}
+}
+@media (max-width:600px){
+  .ebar .hide-s{display:none}
+  .nb .cover{height:150px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+}
+/* ---------- patologías y vademécum ---------- */
+.tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent);margin:2px 3px 2px 0;white-space:nowrap}
+button.tag{cursor:pointer;font-size:13px;padding:5px 11px}
+.tag.g{background:#e3f4e7;color:#2e7d43}.tag.y{background:#fff3d6;color:#8a6200}.tag.r{background:#fde9e6;color:#b03a2e}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.fcard{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;text-align:left;display:flex;flex-direction:column;gap:6px;border-top:5px solid var(--accent2)}
+.fcard b{font-size:16px;line-height:1.25}.fcard small{color:var(--muted);font-size:12.5px}
+.fcard p{margin:0;font-size:14px;color:#4b5a58;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fview{overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+.fsec{border-top:1px solid var(--line);padding:11px 2px}
+.fsec h4{margin:0 0 5px;font-size:12.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}
+.fsec>div{line-height:1.55;font-size:15.5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.alert{background:#fff6e5;border:1px solid #f1d39a;border-radius:12px;padding:10px 12px;font-size:14px;margin:8px 0;line-height:1.45}
+.alert.r{background:#fdeeeb;border-color:#f1b9b0}
+.pick{display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fbfdfc}
+.pick label{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:14px;font-weight:500;color:var(--ink)}
+.pick input{accent-color:var(--accent);width:18px;height:18px;margin:0}
+.qopt{display:block;width:100%;text-align:left;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:16px;margin-bottom:8px;line-height:1.35}
+.qopt.ok{background:#e3f4e7;border-color:#7cc08a}.qopt.no{background:#fdeeeb;border-color:#ee9a92}
+.qclue{background:var(--accent-soft);border-radius:12px;padding:14px 16px;font-size:16.5px;line-height:1.5}
+.sheet.quiz{max-width:720px}
+.pficha{display:none}
+@media print{.pficha{display:block;font-family:Georgia,serif;color:#000;padding:10mm}.pficha h1{margin:0;font-size:24pt}.pficha .sub{color:#555;margin:2mm 0 6mm}.pficha h3{font-family:-apple-system,Arial,sans-serif;font-size:10.5pt;text-transform:uppercase;letter-spacing:.5px;color:#2b7a73;margin:5mm 0 1mm}.pficha p{margin:0;font-size:11.5pt;line-height:1.45}}
+@media (max-width:600px){.two{grid-template-columns:1fr;gap:0}.fgrid{grid-template-columns:1fr}.stats .stat{flex:1 1 28%;min-width:0;padding:10px 12px}.stats .stat b{font-size:22px}}
+</style>
+</head>
+<body>
+
+<!-- ================= INICIO ================= -->
+<main id="home">
+  <div class="top">
+    <a href="index.html" class="btn sm" style="text-decoration:none;color:var(--accent)" title="Volver a Mi Agenda">‹ Mi Agenda</a>
+    <div class="brand">
+      <svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" rx="16" fill="#2b7a73"/><path fill="#fff" d="M26 14h12v12h12v12H38v12H26V38H14V26h12z"/><g transform="rotate(-40 46 46)"><rect x="36" y="41" width="22" height="10" rx="5" fill="#f2b84b" stroke="#fff" stroke-width="2.4"/><path d="M47 41v10" stroke="#fff" stroke-width="2.4"/></g></svg>
+      Mis Patologías
+    </div>
+    <label class="search">🔍<input id="q" type="search" placeholder="Buscar patologías, fármacos, libretas…"></label>
+  </div>
+  <nav class="tabs">
+    <button class="tab on" data-tab="patologias">🩺 Patologías</button>
+    <button class="tab" data-tab="vademecum">💊 Vademécum</button>
+    <button class="tab" data-tab="libretas">📓 Libretas</button>
+    <button class="tab" data-tab="repaso">🃏 Repaso y quiz</button>
+    <button class="tab" data-tab="valores">🧪 Valores normales</button>
+    <button class="tab" data-tab="archivos">📎 Apuntes y archivos</button>
+    <button class="tab" data-tab="enlaces">🔗 Enlaces</button>
+    <button class="tab" data-tab="ajustes">⚙️ Ajustes</button>
+  </nav>
+  <section class="panel" id="panel"></section>
+</main>
+
+<!-- ================= EDITOR ================= -->
+<section id="editor" class="hidden" data-mode="draw" data-tool="pencil">
+  <header class="ebar">
+    <button class="ib txt" id="eBack">‹ Libretas</button>
+    <div class="etitle" id="eTitle"></div>
+    <button class="ib" id="pPrev" title="Página anterior">◀</button>
+    <span class="pnum" id="pNum"></span>
+    <button class="ib" id="pNext" title="Página siguiente">▶</button>
+    <button class="ib" id="pAdd" title="Nueva página">＋📄</button>
+    <button class="ib" id="bMark" title="Marcador en esta página">🔖</button>
+    <span class="sep"></span>
+    <button class="ib" id="bUndo" title="Deshacer (⌘Z)">↶</button>
+    <button class="ib" id="bRedo" title="Rehacer (⌘⇧Z)">↷</button>
+    <span class="sep hide-s"></span>
+    <button class="ib hide-s" id="bZoomOut" title="Alejar">−</button>
+    <button class="ib txt hide-s" id="bZoomFit" title="Ajustar">100%</button>
+    <button class="ib hide-s" id="bZoomIn" title="Acercar">＋</button>
+    <button class="ib txt" id="bPaper">Papel</button>
+    <button class="ib" id="bMore" title="Más">⋯</button>
+  </header>
+  <div class="toolbar" id="toolbar"></div>
+  <div class="textbar hidden" id="textbar">
+    <select id="tFont"></select>
+    <input type="number" id="tSize" min="8" max="160" step="1" title="Tamaño">
+    <button class="fb" data-cmd="bold">B</button>
+    <button class="fb" data-cmd="italic"><i>I</i></button>
+    <button class="fb" data-cmd="underline"><u>U</u></button>
+    <button class="fb" data-cmd="insertUnorderedList" title="Lista">•</button>
+    <span style="font-size:13px;color:var(--muted);white-space:nowrap">Toca la hoja para escribir con el teclado</span>
+  </div>
+  <div id="scroller">
+    <div id="pageWrap">
+      <canvas id="cPaper"></canvas>
+      <div id="itemsLayer"></div>
+      <canvas id="cInk"></canvas>
+      <canvas id="cLive"></canvas>
+    </div>
+  </div>
+</section>
+
+<div id="modal" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+<div id="printArea"></div>
+<input type="file" id="fileImg" accept="image/*" multiple class="hidden">
+<input type="file" id="fileAny" multiple class="hidden">
+<input type="file" id="filePdf" accept="application/pdf,.pdf" class="hidden">
+<input type="file" id="fileFont" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" multiple class="hidden">
+<input type="file" id="fileBackup" accept=".json,application/json" class="hidden">
+
+<script>
+"use strict";
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate=t=>new Date(t).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+const fmtSize=b=>b<1024?b+' B':b<1048576?(b/1024).toFixed(0)+' KB':(b/1048576).toFixed(1)+' MB';
+let toastT;
+function toast(msg,ms=2600){const t=$('#toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.add('hidden'),ms)}
+function pickFile(sel){return new Promise(res=>{const i=$(sel);i.value='';i.onchange=()=>res([...i.files]);i.click()})}
+function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+async function shareOrDownload(blob,name){
+  const file=new File([blob],name,{type:blob.type});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});return}catch(e){if(e.name==='AbortError')return}}
+  downloadBlob(blob,name);
+}
+function loadImage(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+function blobToDataURL(b){return new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)})}
+function abToB64(ab){const u=new Uint8Array(ab);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function b64ToAb(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer}
+
+/* =========================================================
+   BASE DE DATOS (IndexedDB) — todo se guarda en el dispositivo
+   ========================================================= */
+const DB={
+  db:null,
+  open(){return new Promise((res,rej)=>{const r=indexedDB.open('miPatologias',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{this.db=r.result;res()};r.onerror=()=>rej(r.error)})},
+  req(mode,fn){return new Promise((res,rej)=>{const tx=this.db.transaction('kv',mode);const st=tx.objectStore('kv');const r=fn(st);tx.oncomplete=()=>res(r&&r.result);tx.onerror=()=>rej(tx.error)})},
+  get(k){return this.req('readonly',s=>s.get(k))},
+  set(k,v){return this.req('readwrite',s=>s.put(v,k))},
+  del(k){return this.req('readwrite',s=>s.delete(k))},
+  keys(){return this.req('readonly',s=>s.getAllKeys())},
+  clear(){return this.req('readwrite',s=>s.clear())}
+};
+
+/* =========================================================
+   DATOS Y CONSTANTES
+   ========================================================= */
+/* =========================================================
+   PATOLOGÍAS Y VADEMÉCUM — datos de ejemplo
+   ========================================================= */
+const SISTEMAS=['Cardiovascular','Respiratorio','Digestivo','Hígado y vías biliares','Endocrino y metabolismo','Nefrología y urología','Neurología','Hematología','Infecciosas','Reumatología y aparato locomotor','Dermatología','Psiquiatría','Ginecología y obstetricia','Pediatría','Oncología','Otorrinolaringología','Oftalmología','Urgencias'];
+const GRUPOS=['Analgésicos y antitérmicos','AINE','Opioides','Antibióticos','Antivirales y antifúngicos','Antihipertensivos','Diuréticos','Antiarrítmicos','Anticoagulantes y antiagregantes','Hipolipemiantes','Antidiabéticos','Hormonas y tiroides','Corticoides','Broncodilatadores','Digestivos','Psicofármacos','Antiepilépticos','Antihistamínicos','Vacunas','Otros'];
+const TEMAS=['Patología general',...SISTEMAS,'Farmacología','Casos clínicos','Otros'];
+const DIS_FIELDS=[['def','Definición'],['etio','Etiología y factores de riesgo'],['fisio','Fisiopatología'],['clin','Clínica (síntomas y signos)'],['diag','Diagnóstico y pruebas'],['dd','Diagnóstico diferencial'],['trat','Tratamiento'],['comp','Complicaciones'],['prono','Pronóstico y prevención'],['mnemo','Truco para recordarlo ✨'],['notas','Mis notas']];
+const DRUG_FIELDS=[['comercial','Nombres comerciales'],['mec','Mecanismo de acción'],['ind','Indicaciones'],['pos','Posología y vía'],['ci','Contraindicaciones'],['ea','Efectos adversos'],['inter','Interacciones'],['emb','Embarazo y lactancia'],['prec','Precauciones y monitorización'],['antid','Antídoto / sobredosis'],['mnemo','Truco para recordarlo ✨'],['notas','Mis notas']];
+const ESTADOS=[['pendiente','Por estudiar','r'],['estudiando','Estudiando','y'],['dominada','Dominada','g']];
+
+const SEED_DRUGS=[
+ {k:'paracetamol',name:'Paracetamol',grupo:'Analgésicos y antitérmicos',comercial:'Gelocatil, Termalgin, Dafalgan, Doliprane',
+  mec:'Inhibe la síntesis de prostaglandinas sobre todo a nivel central (mecanismo no aclarado del todo). Analgésico y antitérmico con escasa acción antiinflamatoria.',
+  ind:'Dolor leve o moderado.\nFiebre.',ci:'Insuficiencia hepática grave.\nHipersensibilidad al paracetamol.',
+  ea:'Bien tolerado a dosis terapéuticas.\nHepatotoxicidad (necrosis hepática) en sobredosis.\nRaras: reacciones cutáneas graves.',
+  inter:'Alcohol crónico e inductores enzimáticos (carbamazepina, fenitoína, rifampicina): más riesgo de daño hepático.\nAcenocumarol / warfarina: puede subir el INR si se toma a dosis altas varios días.',
+  emb:'Analgésico de elección en el embarazo y la lactancia (dosis mínima eficaz, el menor tiempo posible).',
+  antid:'N-acetilcisteína.',with:['acenocumarol']},
+ {k:'ibuprofeno',name:'Ibuprofeno',grupo:'AINE',comercial:'Espidifen, Dalsy, Advil, Nurofen',
+  mec:'Inhibe de forma no selectiva la COX-1 y la COX-2 → menos prostaglandinas. Analgésico, antitérmico y antiinflamatorio.',
+  ind:'Dolor leve o moderado, dismenorrea.\nFiebre.\nProcesos inflamatorios y reumáticos.',
+  ci:'Úlcera péptica activa o hemorragia digestiva.\nInsuficiencia cardiaca, renal o hepática graves.\nTercer trimestre del embarazo.\nAlergia o asma inducida por AINE.',
+  ea:'Digestivos: dispepsia, úlcera, hemorragia.\nRenales: insuficiencia renal, retención de sodio y agua, edemas.\nSube la tensión arterial; aumento del riesgo cardiovascular a dosis altas mantenidas.',
+  inter:'Anticoagulantes y antiagregantes: más riesgo de sangrado.\nIECA, ARA II y diuréticos: menos efecto antihipertensivo y riesgo de fallo renal («triple whammy»).\nCorticoides: más riesgo de úlcera.\nLitio y metotrexato: suben sus niveles.',
+  emb:'Evitar desde la semana 20; contraindicado en el tercer trimestre (cierre del ductus, oligoamnios).',
+  prec:'Gastroprotección (IBP) en pacientes de riesgo.\nVigilar función renal y tensión arterial en tratamientos largos.',
+  mnemo:'AINE = «estómago, riñón y corazón».',with:['enalapril','furosemida','acenocumarol','prednisona']},
+ {k:'omeprazol',name:'Omeprazol',grupo:'Digestivos',comercial:'Losec, Mopral',
+  mec:'Inhibidor de la bomba de protones: bloquea de forma irreversible la H⁺/K⁺-ATPasa de la célula parietal → menos ácido gástrico.',
+  ind:'Enfermedad por reflujo gastroesofágico.\nÚlcera gástrica y duodenal.\nErradicación de Helicobacter pylori (en combinación).\nGastroprotección en pacientes con AINE.',
+  ci:'Hipersensibilidad.\nUso junto con nelfinavir.',
+  ea:'Cefalea, diarrea, dolor abdominal.\nUso prolongado: hipomagnesemia, déficit de vitamina B12, más riesgo de fracturas y de infección por Clostridioides difficile.',
+  inter:'Clopidogrel: reduce su activación (si hace falta un IBP, mejor pantoprazol).\nKetoconazol, itraconazol y levotiroxina: menos absorción.\nDiazepam y fenitoína: pueden subir sus niveles.',
+  prec:'Tomar antes del desayuno. Revisar periódicamente si sigue haciendo falta.',with:['levotiroxina']},
+ {k:'amoxicilina',name:'Amoxicilina',grupo:'Antibióticos',comercial:'Clamoxyl; con ácido clavulánico: Augmentine',
+  mec:'Betalactámico (aminopenicilina): se une a las PBP e impide la síntesis de la pared bacteriana. Bactericida.',
+  ind:'Otitis media aguda, sinusitis, faringoamigdalitis estreptocócica.\nNeumonía adquirida en la comunidad.\nErradicación de Helicobacter pylori (en combinación).',
+  ci:'Alergia a las penicilinas (precaución con otros betalactámicos).',
+  ea:'Diarrea, náuseas.\nExantema (muy frecuente si hay mononucleosis).\nReacciones alérgicas, incluida la anafilaxia.',
+  inter:'Metotrexato: más toxicidad.\nAlopurinol: más riesgo de exantema.\nAnticoagulantes orales: puede alterar el INR.',
+  emb:'Se considera segura en el embarazo y la lactancia.',with:['acenocumarol']},
+ {k:'enalapril',name:'Enalapril',grupo:'Antihipertensivos',comercial:'Renitec',
+  mec:'IECA: inhibe la enzima convertidora de angiotensina → menos angiotensina II y aldosterona; aumenta la bradicinina.',
+  ind:'Hipertensión arterial.\nInsuficiencia cardiaca con fracción de eyección reducida.\nDisfunción ventricular tras un infarto.\nNefropatía diabética con proteinuria.',
+  ci:'Embarazo.\nAntecedente de angioedema.\nEstenosis bilateral de arterias renales.\nJunto con sacubitrilo/valsartán (esperar 36 h).',
+  ea:'Tos seca (por la bradicinina).\nHiperpotasemia.\nHipotensión, sobre todo con la primera dosis.\nDeterioro de la función renal.\nAngioedema (raro pero grave).',
+  inter:'Diuréticos ahorradores de potasio, espironolactona, suplementos de potasio: hiperpotasemia.\nAINE: menos efecto y riesgo de fallo renal.\nLitio: suben sus niveles.',
+  emb:'Contraindicado (fetotóxico, sobre todo en el 2.º y 3.er trimestre).',
+  prec:'Control de potasio y creatinina al empezar y al subir la dosis.',
+  mnemo:'IECA → «tos y potasio».',with:['ibuprofeno']},
+ {k:'furosemida',name:'Furosemida',grupo:'Diuréticos',comercial:'Seguril, Lasilix',
+  mec:'Diurético de asa: inhibe el cotransportador Na⁺-K⁺-2Cl⁻ de la rama ascendente gruesa del asa de Henle.',
+  ind:'Edemas por insuficiencia cardiaca, cirrosis o síndrome nefrótico.\nEdema agudo de pulmón.\nHipertensión con insuficiencia renal.',
+  ci:'Anuria.\nHipovolemia o deshidratación.\nHipopotasemia o hiponatremia graves.\nEncefalopatía hepática.',
+  ea:'Hipopotasemia, hiponatremia, hipomagnesemia.\nHipovolemia e hipotensión.\nHiperuricemia (gota) e hiperglucemia.\nOtotoxicidad con dosis altas IV rápidas.',
+  inter:'Aminoglucósidos: más ototoxicidad.\nDigoxina: la hipopotasemia aumenta su toxicidad.\nLitio: suben sus niveles.\nAINE: menos efecto diurético.\nCorticoides y salbutamol: más hipopotasemia.',
+  prec:'Control de iones, función renal y peso.',with:['ibuprofeno','prednisona','salbutamol']},
+ {k:'metformina',name:'Metformina',grupo:'Antidiabéticos',comercial:'Dianben, Glucophage',
+  mec:'Biguanida: disminuye la producción hepática de glucosa (gluconeogénesis) y mejora la sensibilidad a la insulina.',
+  ind:'Diabetes mellitus tipo 2: primera línea, salvo contraindicación.',
+  ci:'Filtrado glomerular < 30 mL/min.\nCetoacidosis o acidosis.\nSituaciones de hipoxia: insuficiencia cardiaca descompensada, insuficiencia respiratoria, shock, sepsis.\nInsuficiencia hepática y alcoholismo.',
+  ea:'Digestivos: diarrea, náuseas, sabor metálico (mejoran subiendo la dosis poco a poco y tomándola con comida).\nDéficit de vitamina B12.\nAcidosis láctica (rara).\nEn monoterapia no produce hipoglucemias.',
+  inter:'Contrastes yodados: suspender antes de la prueba según la función renal.\nAlcohol: más riesgo de acidosis láctica.',
+  prec:'Ajustar la dosis si el filtrado está entre 30 y 45 mL/min. Vigilar B12 en tratamientos largos.'},
+ {k:'salbutamol',name:'Salbutamol',grupo:'Broncodilatadores',comercial:'Ventolin',
+  mec:'Agonista β2 de acción corta (SABA): relaja el músculo liso bronquial.',
+  ind:'Alivio de la crisis de asma (medicación de rescate).\nBroncoespasmo en la EPOC.\nPrevención del broncoespasmo por ejercicio.',
+  ci:'Hipersensibilidad.',
+  ea:'Temblor, nerviosismo.\nTaquicardia, palpitaciones.\nHipopotasemia (dosis altas).',
+  inter:'Betabloqueantes no selectivos (propranolol): bloquean su efecto.\nDiuréticos y corticoides: más hipopotasemia.',
+  prec:'Si se necesita a menudo, el asma no está bien controlada.',
+  mnemo:'Inhalador «azul» = rescate.',with:['furosemida']},
+ {k:'atorvastatina',name:'Atorvastatina',grupo:'Hipolipemiantes',comercial:'Cardyl, Zarator, Tahor',
+  mec:'Estatina: inhibe la HMG-CoA reductasa → menos síntesis hepática de colesterol y más receptores de LDL.',
+  ind:'Hipercolesterolemia.\nPrevención cardiovascular primaria y secundaria.',
+  ci:'Enfermedad hepática activa.\nEmbarazo y lactancia.',
+  ea:'Mialgias, miopatía; rabdomiólisis (rara).\nAumento de transaminasas.\nLigero aumento del riesgo de diabetes.',
+  inter:'Inhibidores del CYP3A4 (claritromicina, itraconazol, algunos antivirales, mucho zumo de pomelo), ciclosporina y gemfibrozilo: más riesgo de miopatía.',
+  emb:'Contraindicada.',prec:'Perfil lipídico y transaminasas al inicio; CK si aparecen dolores musculares.'},
+ {k:'levotiroxina',name:'Levotiroxina',grupo:'Hormonas y tiroides',comercial:'Eutirox, Levothyrox',
+  mec:'Tiroxina (T4) sintética: sustituye a la hormona que falta.',
+  ind:'Hipotiroidismo.\nSupresión de TSH en algunos cánceres de tiroides.',
+  ci:'Hipertiroidismo no tratado.\nInfarto agudo de miocardio.\nInsuficiencia suprarrenal no corregida.',
+  ea:'Si la dosis es excesiva: síntomas de hipertiroidismo (palpitaciones, taquicardia, temblor, insomnio, pérdida de peso).',
+  inter:'Calcio, hierro, antiácidos e IBP: menos absorción (separar unas 4 h).\nAnticoagulantes orales: aumenta su efecto.',
+  emb:'Se mantiene en el embarazo; suele hacer falta subir la dosis.',
+  prec:'En ayunas, 30-60 min antes del desayuno. Control con TSH a las 6-8 semanas de cada cambio.',with:['omeprazol','acenocumarol']},
+ {k:'prednisona',name:'Prednisona',grupo:'Corticoides',comercial:'Dacortin, Cortancyl',
+  mec:'Glucocorticoide: acción antiinflamatoria e inmunosupresora (regula la transcripción de genes de la inflamación).',
+  ind:'Crisis de asma y EPOC agudizada.\nEnfermedades autoinmunes y reumáticas.\nReacciones alérgicas graves.',
+  ci:'Infección sistémica no tratada.\nPrecaución: úlcera péptica, diabetes, hipertensión, osteoporosis.',
+  ea:'Hiperglucemia, hipertensión, retención de líquidos.\nOsteoporosis, miopatía.\nInsomnio y cambios de humor.\nSíndrome de Cushing e insuficiencia suprarrenal si se retira de golpe tras un uso prolongado.',
+  inter:'AINE: más riesgo de úlcera.\nDiuréticos y salbutamol: más hipopotasemia.\nAntidiabéticos: menos efecto.',
+  prec:'Por la mañana. Retirada gradual si se ha tomado más de 2-3 semanas.',with:['ibuprofeno','furosemida']},
+ {k:'acenocumarol',name:'Acenocumarol',grupo:'Anticoagulantes y antiagregantes',comercial:'Sintrom',
+  mec:'Antagonista de la vitamina K: impide la síntesis de los factores II, VII, IX y X.',
+  ind:'Fibrilación auricular.\nTrombosis venosa profunda y tromboembolismo pulmonar.\nPrótesis valvulares mecánicas.',
+  ci:'Hemorragia activa.\nEmbarazo.\nHipertensión grave no controlada.',
+  ea:'Hemorragias.\nNecrosis cutánea (rara).',
+  inter:'Muchísimas: AINE y antiagregantes (sangrado), antibióticos, amiodarona, paracetamol a dosis altas mantenidas, levotiroxina… suben el INR. Inductores (rifampicina, carbamazepina) lo bajan.\nCambios bruscos de verduras ricas en vitamina K.',
+  emb:'Contraindicado (teratógeno, sobre todo en el primer trimestre).',
+  prec:'Control periódico del INR (objetivo habitual 2-3).',
+  antid:'Vitamina K; en hemorragia grave, complejo protrombínico.',with:['ibuprofeno','paracetamol','amoxicilina','levotiroxina']}
+];
+
+const SEED_DISEASES=[
+ {name:'Hipertensión arterial esencial',tema:'Cardiovascular',cie:'I10',drugs:['enalapril','furosemida'],
+  def:'Elevación mantenida de la presión arterial (≥ 140/90 mmHg en consulta) sin una causa secundaria identificable.',
+  etio:'Multifactorial: genética, edad, obesidad, sal, alcohol, sedentarismo, estrés.',
+  clin:'Suele ser asintomática («asesino silencioso»). A veces cefalea, mareo o epistaxis.',
+  diag:'Varias tomas en consulta en días distintos; confirmar con AMPA o MAPA.\nEstudio de órgano diana: ECG, analítica con creatinina, iones, glucosa, lípidos y orina (albuminuria), fondo de ojo.',
+  dd:'HTA secundaria (renal, hiperaldosteronismo, feocromocitoma, coartación aórtica…), HTA de bata blanca.',
+  trat:'Cambios en el estilo de vida: menos sal, peso, ejercicio, menos alcohol, dejar de fumar.\nFármacos: IECA o ARA II, calcioantagonistas, diuréticos tiazídicos (a menudo combinados).',
+  comp:'Hipertrofia ventricular izquierda, insuficiencia cardiaca, cardiopatía isquémica, ictus, enfermedad renal crónica, retinopatía.',
+  mnemo:'Órganos diana: «corazón, cerebro, riñón y ojo».'},
+ {name:'Diabetes mellitus tipo 2',tema:'Endocrino y metabolismo',cie:'E11',drugs:['metformina','atorvastatina'],
+  def:'Hiperglucemia crónica por resistencia a la insulina con déficit relativo de su secreción.',
+  etio:'Obesidad (sobre todo abdominal), sedentarismo, antecedentes familiares, edad, diabetes gestacional previa.',
+  fisio:'Resistencia a la insulina en músculo, hígado y tejido adiposo → al principio hiperinsulinemia compensadora; después fallo progresivo de la célula β.',
+  clin:'A menudo asintomática. Poliuria, polidipsia, polifagia, pérdida de peso, infecciones de repetición, visión borrosa.',
+  diag:'Glucemia en ayunas ≥ 126 mg/dL, HbA1c ≥ 6,5 % o glucemia a las 2 h de la SOG ≥ 200 mg/dL (confirmar con una segunda determinación).\nGlucemia al azar ≥ 200 mg/dL con síntomas.',
+  trat:'Dieta, ejercicio y pérdida de peso.\nMetformina de primera línea; añadir iSGLT2 o arGLP-1 según riesgo cardiovascular y renal; insulina si hace falta.\nControl de los demás factores de riesgo (tensión, lípidos, tabaco).',
+  comp:'Microvasculares: retinopatía, nefropatía, neuropatía.\nMacrovasculares: cardiopatía isquémica, ictus, arteriopatía periférica.\nPie diabético. Agudas: hipoglucemia, estado hiperosmolar.',
+  mnemo:'Las 3 P: poliuria, polidipsia, polifagia.'},
+ {name:'Asma bronquial',tema:'Respiratorio',cie:'J45',drugs:['salbutamol','prednisona'],
+  def:'Enfermedad inflamatoria crónica de las vías respiratorias con hiperrespuesta bronquial y obstrucción variable y reversible.',
+  etio:'Atopia, alérgenos (ácaros, pólenes, epitelios), infecciones víricas, ejercicio, frío, tabaco, AINE en algunos pacientes.',
+  clin:'Sibilancias, disnea, tos (a menudo nocturna) y opresión torácica, de forma variable y en episodios.',
+  diag:'Espirometría con prueba broncodilatadora positiva (aumento del FEV1 ≥ 12 % y ≥ 200 mL).\nVariabilidad del pico de flujo; prueba de provocación si la espirometría es normal; FeNO.',
+  dd:'EPOC, insuficiencia cardiaca, disfunción de cuerdas vocales, cuerpo extraño, bronquiectasias.',
+  trat:'Evitar desencadenantes.\nCorticoide inhalado como base del tratamiento de mantenimiento, con β2 de acción larga si hace falta.\nRescate: SABA o la combinación budesonida-formoterol.\nCrisis: broncodilatadores, oxígeno y corticoide sistémico.',
+  comp:'Crisis grave y estatus asmático, insuficiencia respiratoria.',
+  mnemo:'Asma = obstrucción REVERSIBLE (EPOC = no del todo reversible).'},
+ {name:'Enfermedad por reflujo gastroesofágico',tema:'Digestivo',cie:'K21',drugs:['omeprazol'],
+  def:'Paso del contenido gástrico al esófago que produce síntomas molestos o lesiones.',
+  etio:'Relajaciones transitorias del esfínter esofágico inferior, hernia de hiato, obesidad, embarazo, tabaco, alcohol, comidas copiosas.',
+  clin:'Pirosis y regurgitación.\nAtípicos: tos crónica, ronquera, dolor torácico no cardiaco.',
+  diag:'Clínico; prueba terapéutica con IBP.\nEndoscopia si hay síntomas de alarma (disfagia, pérdida de peso, anemia, vómitos, hemorragia) o > 50 años con síntomas nuevos.\npH-impedanciometría en casos dudosos.',
+  trat:'Medidas higiénico-dietéticas: perder peso, elevar el cabecero, no cenar tarde.\nIBP 4-8 semanas; después la dosis mínima eficaz o a demanda.\nCirugía (funduplicatura) en casos seleccionados.',
+  comp:'Esofagitis, estenosis péptica, esófago de Barrett, adenocarcinoma de esófago.'},
+ {name:'Hipotiroidismo primario',tema:'Endocrino y metabolismo',cie:'E03',drugs:['levotiroxina'],
+  def:'Déficit de hormonas tiroideas por fallo de la propia glándula tiroides.',
+  etio:'Tiroiditis de Hashimoto (la más frecuente en zonas con suficiente yodo), tras cirugía o yodo radiactivo, déficit de yodo, fármacos (amiodarona, litio).',
+  clin:'Cansancio, intolerancia al frío, aumento de peso, estreñimiento, piel seca, caída del pelo, bradicardia, alteraciones menstruales, bradipsiquia.',
+  diag:'TSH alta y T4 libre baja (subclínico: TSH alta con T4 libre normal).\nAnticuerpos antiTPO para Hashimoto.',
+  trat:'Levotiroxina en ayunas; ajustar con TSH. Empezar con dosis bajas en ancianos y cardiópatas.',
+  comp:'Coma mixedematoso (raro, grave). Dislipemia. En el embarazo, riesgo para el desarrollo fetal.',
+  mnemo:'Todo «va lento»: frío, peso, estreñimiento, bradicardia.'},
+ {name:'Neumonía adquirida en la comunidad',tema:'Infecciosas',cie:'J18',drugs:['amoxicilina','paracetamol'],
+  def:'Infección aguda del parénquima pulmonar adquirida fuera del hospital.',
+  etio:'Streptococcus pneumoniae (el más frecuente), Haemophilus influenzae, Mycoplasma pneumoniae, Legionella, virus respiratorios.',
+  clin:'Fiebre, tos con o sin expectoración, disnea, dolor torácico pleurítico.\nCrepitantes a la auscultación. En ancianos puede presentarse solo con confusión.',
+  diag:'Radiografía de tórax (infiltrado nuevo).\nAnalítica, PCR o procalcitonina; antígenos en orina (neumococo, Legionella) y cultivos en casos graves.\nEscalas de gravedad: CURB-65, PSI (Fine).',
+  dd:'Insuficiencia cardiaca, tromboembolismo pulmonar, cáncer de pulmón, tuberculosis.',
+  trat:'Ambulatoria sin factores de riesgo: amoxicilina a dosis altas (o un macrólido o doxiciclina según la guía).\nIngreso: betalactámico más macrólido, o una quinolona respiratoria.\nAntitérmicos, hidratación y oxígeno si hace falta.',
+  comp:'Derrame pleural, empiema, absceso, sepsis, insuficiencia respiratoria.',
+  mnemo:'CURB-65: Confusión, Urea, Respiración ≥ 30, presión Baja, edad ≥ 65.'}
+];
+
+const DEFAULT_VALUES=[
+ {title:'Constantes vitales (adulto)',rows:[
+  ['Frecuencia cardiaca','60–100 lpm'],['Frecuencia respiratoria','12–20 rpm'],['Temperatura','36–37,5 °C'],
+  ['Saturación de O₂','≥ 95 % (en EPOC, objetivo 88–92 %)'],['Presión arterial óptima','< 120/80 mmHg'],['Glucemia capilar en ayunas','70–99 mg/dL']]},
+ {title:'Hemograma',rows:[
+  ['Hemoglobina','Hombres 13–17 g/dL · Mujeres 12–16 g/dL'],['Hematocrito','Hombres 40–50 % · Mujeres 36–46 %'],
+  ['VCM','80–100 fL'],['Leucocitos','4.000–11.000 /µL'],['Neutrófilos','1.800–7.500 /µL'],['Linfocitos','1.000–4.000 /µL'],
+  ['Plaquetas','150.000–400.000 /µL'],['VSG','< 20 mm/h (aumenta con la edad)']]},
+ {title:'Bioquímica',rows:[
+  ['Glucosa en ayunas','70–99 mg/dL · 100–125 alterada · ≥ 126 diabetes'],['HbA1c','< 5,7 % normal · ≥ 6,5 % diabetes'],
+  ['Urea','15–45 mg/dL'],['Creatinina','0,6–1,2 mg/dL (aprox.)'],['Filtrado glomerular','≥ 90 mL/min/1,73 m² · < 60 = ERC si dura > 3 meses'],
+  ['Ácido úrico','< 7 mg/dL (aprox.)'],['Colesterol total','< 200 mg/dL'],['Triglicéridos','< 150 mg/dL'],
+  ['ALT (GPT) / AST (GOT)','< 40 U/L (aprox.)'],['GGT','< 50 U/L (aprox.)'],['Bilirrubina total','0,3–1,2 mg/dL'],
+  ['Albúmina','3,5–5 g/dL'],['PCR','< 5 mg/L'],['TSH','0,4–4,0 mU/L (aprox.)'],['T4 libre','0,8–1,8 ng/dL (aprox.)']]},
+ {title:'Iones',rows:[
+  ['Sodio','135–145 mEq/L'],['Potasio','3,5–5,0 mEq/L'],['Cloro','98–107 mEq/L'],['Calcio total','8,5–10,5 mg/dL'],['Magnesio','1,7–2,4 mg/dL'],['Fósforo','2,5–4,5 mg/dL']]},
+ {title:'Gasometría arterial',rows:[
+  ['pH','7,35–7,45'],['pCO₂','35–45 mmHg'],['pO₂','80–100 mmHg'],['HCO₃⁻','22–26 mEq/L'],['Exceso de bases','−2 a +2'],['Lactato','< 2 mmol/L'],
+  ['Anión gap','8–12 mEq/L (aprox.)']]},
+ {title:'Coagulación',rows:[
+  ['INR','0,8–1,2 · anticoagulados: objetivo habitual 2–3'],['Tiempo de protrombina','11–13,5 s'],['TTPa','25–35 s'],['Fibrinógeno','200–400 mg/dL'],['Dímero D','< 500 ng/mL'] ]},
+ {title:'Orina',rows:[
+  ['Densidad','1,005–1,030'],['pH','4,5–8'],['Diuresis','0,5–1 mL/kg/h · oliguria < 400 mL/día'],['Cociente albúmina/creatinina','< 30 mg/g']]}];
+
+const COVERS=['#2b7a73','#4fb0a5','#f08a5d','#e9b949','#5fa777','#3c8d93','#4a74c9','#7b5cc4','#c25b9c','#6d5d57'];
+const PAPERS=[['blanco','Blanco'],['rayado','Rayado'],['cuadricula','Cuadrícula'],['puntos','Puntos'],['ecg','Papel ECG'],['cornell','Cornell'],['milimetrado','Milimetrado']];
+const TINTS={blanco:{n:'Blanco',bg:'#ffffff',line:'#d6dbe2',margin:'#f1a3ad',ecg1:'#f8ccd2',ecg2:'#ec96a2',txt:'#b9b0b3'},
+             crema:{n:'Crema',bg:'#fbf6ea',line:'#e0d5bf',margin:'#e7a59f',ecg1:'#f3cfc8',ecg2:'#e39a92',txt:'#b8ab95'},
+             rosa:{n:'Rosa',bg:'#fff4f5',line:'#efd0d6',margin:'#e595a3',ecg1:'#f6c7cf',ecg2:'#e88e9d',txt:'#c4a3aa'},
+             oscuro:{n:'Pizarra',bg:'#20282b',line:'#3a474c',margin:'#7c3b46',ecg1:'#3a2d31',ecg2:'#6c3a44',txt:'#5d6b70'}};
+const PALETTE=['#1d1d1f','#6b6b70','#ffffff','#2b7a73','#e11d48','#f97316','#facc15','#84cc16','#16a34a','#0d9488','#38bdf8','#2563eb','#7c3aed','#db2777','#8b5a2b'];
+const BASE_FONTS=[['-apple-system, system-ui, sans-serif','Sistema'],['"Avenir Next", Avenir, sans-serif','Avenir'],['Georgia, serif','Georgia'],['"Marker Felt", "Comic Sans MS", cursive','Marker Felt'],['Noteworthy, "Comic Sans MS", cursive','Noteworthy'],['"Bradley Hand", "Segoe Script", cursive','Bradley Hand'],['"Chalkboard SE", "Comic Sans MS", cursive','Chalkboard'],['"Courier New", monospace','Courier'],['"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif','Hiragino (japonés)']];
+const SIZES={pencil:[1.5,3,6],marker:[2.5,5,10],highlighter:[12,20,32],eraser:[10,24,50],text:[18,28,44]};
+const RANGES={pencil:[0.5,20],marker:[1,30],highlighter:[6,60],eraser:[4,90],text:[10,120]};
+
+const freshValues=()=>DEFAULT_VALUES.map(s=>({id:uid(),title:s.title,rows:s.rows.map(r=>[...r])}));
+const INTERVALS=[0,1,3,7,14,30]; // días por nivel (sistema Leitner)
+const DAY=864e5;
+let state={notebooks:[],files:[],links:[],fonts:[],cards:[],values:[],diseases:[],drugs:[],studyDays:[],settings:{fingerPan:false,penSeen:false}};
+let ui={tab:'patologias',tema:null,q:'',est:null};
+
+async function loadState(){
+  state.notebooks=await DB.get('notebooks')||[];
+  state.files=await DB.get('files')||[];
+  state.links=await DB.get('links');
+  state.fonts=await DB.get('fonts')||[];
+  state.cards=await DB.get('cards')||[];
+  state.values=await DB.get('values');
+  if(!state.values){state.values=freshValues();await DB.set('values',state.values)}
+  state.notebooks.forEach(n=>{if(!n.marks)n.marks=[]});
+  state.diseases=await DB.get('diseases');state.drugs=await DB.get('drugs');state.studyDays=await DB.get('studyDays')||[];
+  if(!state.diseases||!state.drugs){await seedMedical()}
+  state.drugs.forEach(d=>{if(!d.interWith)d.interWith=[]});state.diseases.forEach(d=>{if(!d.drugs)d.drugs=[]});
+  state.settings=Object.assign({fingerPan:false,penSeen:false},await DB.get('settings')||{});
+  if(!state.links){
+    state.links=[
+      {id:uid(),title:'CIMA — fichas técnicas (AEMPS)',url:'https://cima.aemps.es/',tema:'Farmacología',note:'Centro de información de medicamentos de España: fichas técnicas y prospectos oficiales',date:Date.now()},
+      {id:uid(),title:'Base de données publique des médicaments',url:'https://base-donnees-publique.medicaments.gouv.fr/',tema:'Farmacología',note:'Base oficial de medicamentos de Francia',date:Date.now()},
+      {id:uid(),title:'Manual MSD — versión para profesionales',url:'https://www.msdmanuals.com/es/professional',tema:'Patología general',note:'Patologías explicadas por sistemas, en español',date:Date.now()},
+      {id:uid(),title:'Fisterra',url:'https://www.fisterra.com/',tema:'Patología general',note:'Guías clínicas de atención primaria (parte del contenido es de pago)',date:Date.now()},
+      {id:uid(),title:'Comprobador de interacciones — Drugs.com',url:'https://www.drugs.com/drug_interactions.html',tema:'Farmacología',note:'En inglés',date:Date.now()}];
+    await DB.set('links',state.links);
+  }
+  if(!state.notebooks.length && !(await DB.get('started'))){
+    await DB.set('started',true);
+    await createNotebook({title:'Patología general',tema:'Patología general',color:COVERS[5],paper:'rayado',tint:'crema',orient:'v'});
+    await createNotebook({title:'Farmacología — mis apuntes',tema:'Farmacología',color:COVERS[3],paper:'cuadricula',tint:'blanco',orient:'v'});
+    await createNotebook({title:'Casos clínicos',tema:'Casos clínicos',color:COVERS[7],paper:'blanco',tint:'blanco',orient:'v',pages:[templatePage('caso','blanco')]});
+  }
+  writeSummary();
+  for(const f of state.fonts){try{await registerFont(f)}catch(e){console.warn('fuente',f.family,e)}}
+}
+const saveNotebooks=()=>DB.set('notebooks',state.notebooks);
+const saveFiles=()=>DB.set('files',state.files);
+const saveLinks=()=>DB.set('links',state.links);
+const saveSettings=()=>DB.set('settings',state.settings);
+const saveCards=()=>{writeSummary();return DB.set('cards',state.cards)};
+const saveValues=()=>DB.set('values',state.values);
+
+function newPage(o={}){
+  const orient=o.orient||'v';
+  return {id:uid(),w:o.w||(orient==='h'?1414:1000),h:o.h||(orient==='h'?1000:1414),paper:o.paper||'rayado',tint:o.tint||'blanco',bg:o.bg||null,strokes:[],items:[]};
+}
+async function createNotebook({title,tema,color,paper,tint,orient,pages}){
+  const nb={id:uid(),title:title||'Libreta sin título',tema:tema||'',color:color||COVERS[0],created:Date.now(),updated:Date.now(),pages:[],thumb:null,marks:[]};
+  const list=pages&&pages.length?pages:[newPage({paper,tint,orient})];
+  for(const p of list){await DB.set('page:'+p.id,p);nb.pages.push(p.id)}
+  state.notebooks.unshift(nb);await saveNotebooks();
+  return nb;
+}
+
+/* =========================================================
+   PAPEL
+   ========================================================= */
+function drawPaper(ctx,page,bgImg){
+  const {w,h}=page, t=TINTS[page.tint]||TINTS.blanco;
+  ctx.fillStyle=t.bg;ctx.fillRect(0,0,w,h);
+  if(bgImg){ctx.drawImage(bgImg,0,0,w,h);return}
+  const hl=(y,c,lw=1,x0=0,x1=w)=>{ctx.strokeStyle=c;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke()};
+  const vl=(x,c,lw=1,y0=0,y1=h)=>{ctx.strokeStyle=c;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x,y0);ctx.lineTo(x,y1);ctx.stroke()};
+  switch(page.paper){
+    case 'rayado':
+      for(let y=110;y<h-30;y+=36)hl(y,t.line,1.1);
+      vl(90,t.margin,1.6);break;
+    case 'cuadricula':
+      for(let x=25;x<w;x+=25)vl(x,t.line,1);for(let y=25;y<h;y+=25)hl(y,t.line,1);break;
+    case 'milimetrado':
+      for(let x=0;x<w;x+=10)vl(x,t.line,x%50===0?1.3:.5);for(let y=0;y<h;y+=10)hl(y,t.line,y%50===0?1.3:.5);break;
+    case 'puntos':
+      ctx.fillStyle=t.line;
+      for(let x=25;x<w;x+=25)for(let y=25;y<h;y+=25){ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill()}break;
+    case 'ecg':
+      for(let x=0;x<=w;x+=8)if(x%40)vl(x,t.ecg1,.8);for(let y=0;y<=h;y+=8)if(y%40)hl(y,t.ecg1,.8);
+      for(let x=0;x<=w;x+=40)vl(x,t.ecg2,1.4);for(let y=0;y<=h;y+=40)hl(y,t.ecg2,1.4);break;
+    case 'cornell':{
+      const top=110,cue=Math.round(w*.28),sum=h-Math.round(h*.18);
+      for(let y=top+36;y<sum;y+=36)hl(y,t.line,1,cue,w);
+      hl(top,t.margin,2);vl(cue,t.margin,2,top,sum);hl(sum,t.margin,2);
+      ctx.fillStyle=t.txt;ctx.font='600 17px -apple-system,sans-serif';
+      ctx.fillText('Tema · Fecha',24,70);ctx.fillText('Ideas clave / preguntas',18,top+28);
+      ctx.fillText('Notas',cue+18,top+28);ctx.fillText('Resumen',24,sum+30);break}
+  }
+}
+
+/* =========================================================
+   TRAZOS
+   ========================================================= */
+function tracePath(ctx,p){
+  const n=p.length/3;ctx.beginPath();ctx.moveTo(p[0],p[1]);
+  if(n===1){ctx.lineTo(p[0]+.01,p[1]);return}
+  if(n===2){ctx.lineTo(p[3],p[4]);return}
+  for(let i=1;i<n-1;i++){const x=p[i*3],y=p[i*3+1],nx=p[i*3+3],ny=p[i*3+4];ctx.quadraticCurveTo(x,y,(x+nx)/2,(y+ny)/2)}
+  ctx.lineTo(p[(n-1)*3],p[(n-1)*3+1]);
+}
+function drawStroke(ctx,s){
+  const p=s.pts,n=p.length/3;if(!n)return;
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=s.color;
+  if(s.tool==='highlighter'){
+    ctx.globalAlpha=.36;ctx.lineCap=s.line?'butt':'round';ctx.lineWidth=s.size;tracePath(ctx,p);ctx.stroke();
+  }else if(s.tool==='pencil'&&n>2&&!s.line){
+    let px=p[0],py=p[1];
+    for(let i=1;i<n-1;i++){
+      const x=p[i*3],y=p[i*3+1],nx=(x+p[i*3+3])/2,ny=(y+p[i*3+4])/2,pr=p[i*3+2];
+      ctx.lineWidth=s.size*(.3+pr*1.25);ctx.beginPath();ctx.moveTo(px,py);ctx.quadraticCurveTo(x,y,nx,ny);ctx.stroke();px=nx;py=ny;
+    }
+    ctx.lineWidth=s.size*(.3+p[(n-1)*3+2]*1.25);ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(p[(n-1)*3],p[(n-1)*3+1]);ctx.stroke();
+  }else{
+    ctx.lineWidth=s.size;tracePath(ctx,p);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawAllStrokes(ctx,strokes){
+  for(const s of strokes)if(s.tool==='highlighter')drawStroke(ctx,s);
+  for(const s of strokes)if(s.tool!=='highlighter')drawStroke(ctx,s);
+}
+
+/* =========================================================
+   COMPONER PÁGINA COMO IMAGEN (miniaturas, exportar, imprimir)
+   ========================================================= */
+function htmlToLines(html){
+  const d=document.createElement('div');
+  d.innerHTML=String(html||'').replace(/<br\s*\/?>/gi,'\n').replace(/<\/(div|p|li)>/gi,'\n').replace(/<li>/gi,'• ');
+  return d.textContent.replace(/\n$/,'').split('\n');
+}
+async function composePage(page,scale=1.5){
+  const c=document.createElement('canvas');c.width=Math.round(page.w*scale);c.height=Math.round(page.h*scale);
+  const ctx=c.getContext('2d');ctx.scale(scale,scale);
+  let bg=null;if(page.bg){try{bg=await loadImage(page.bg)}catch(e){}}
+  drawPaper(ctx,page,bg);
+  for(const it of page.items){
+    if(it.type==='img'){try{const im=await loadImage(it.src);ctx.drawImage(im,it.x,it.y,it.w,it.h)}catch(e){}}
+    else if(it.type==='text'){
+      ctx.fillStyle=it.color;ctx.font=`${it.size}px ${it.font}`;ctx.textBaseline='top';
+      const lh=it.size*1.3;let y=it.y+2;
+      for(const raw of htmlToLines(it.html)){
+        const words=raw.split(' ');let line='';
+        for(const wd of words){const test=line?line+' '+wd:wd;if(ctx.measureText(test).width>it.w-8&&line){ctx.fillText(line,it.x+4,y);y+=lh;line=wd}else line=test}
+        ctx.fillText(line,it.x+4,y);y+=lh;
+      }
+    }
+  }
+  drawAllStrokes(ctx,page.strokes);
+  return c;
+}
+
+/* =========================================================
+   TIPOGRAFÍAS
+   ========================================================= */
+async function registerFont(f){
+  const buf=await DB.get('fontdata:'+f.id);if(!buf)return;
+  const ff=new FontFace(f.family,buf);await ff.load();document.fonts.add(ff);
+}
+function fontOptions(){
+  return [...BASE_FONTS,...state.fonts.map(f=>[`"${f.family}"`,f.family+' ★'])];
+}
+
+/* =========================================================
+   PANTALLA DE INICIO
+   ========================================================= */
+$$('.tab').forEach(b=>b.onclick=()=>{ui.tab=b.dataset.tab;ui.tema=null;ui.est=null;$$('.tab').forEach(x=>x.classList.toggle('on',x===b));renderHome()});
+$('#q').oninput=e=>{ui.q=e.target.value.trim().toLowerCase();renderHome()};
+const match=(...f)=>!ui.q||f.some(x=>String(x||'').toLowerCase().includes(ui.q));
+
+function temaChips(items){
+  const temas=[...new Set(items.map(i=>i.tema).filter(Boolean))];
+  if(!temas.length)return'';
+  return `<div class="chips"><button class="chip ${!ui.tema?'on':''}" data-tema="">Todos</button>${temas.map(t=>`<button class="chip ${ui.tema===t?'on':''}" data-tema="${esc(t)}">${esc(t)}</button>`).join('')}</div>`;
+}
+function bindChips(){$$('.chip[data-tema]').forEach(c=>c.onclick=()=>{ui.tema=c.dataset.tema||null;renderHome()})}
+
+function renderHome(){
+  const P=$('#panel');
+  if(ui.tab==='patologias')return renderDiseases(P);
+  if(ui.tab==='vademecum')return renderDrugs(P);
+  if(ui.tab==='libretas'){
+    const list=state.notebooks.filter(n=>(!ui.tema||n.tema===ui.tema)&&match(n.title,n.tema));
+    const marks=[];state.notebooks.forEach(n=>(n.marks||[]).forEach(m=>{const pi=n.pages.indexOf(m.pageId);if(pi>=0&&(!ui.tema||n.tema===ui.tema)&&match(m.label,n.title,n.tema))marks.push({n,m,pi})}));
+    P.innerHTML=temaChips(state.notebooks)+(marks.length?`<div class="h2">🔖 Marcadores</div><div class="marks">${marks.map(({n,m,pi})=>`<button class="mark" style="border-left-color:${n.color}" data-mnb="${n.id}" data-mpg="${m.pageId}">${esc(m.label)}<small>${esc(n.title)} · pág. ${pi+1}</small></button>`).join('')}</div><div class="h2">📓 Libretas</div>`:'')+`<div class="grid">
+      <button class="nb new" id="newNb"><span class="plus">＋</span>Nueva libreta</button>
+      ${list.map(n=>`<div class="nb" data-id="${n.id}">
+        <div class="cover">${n.thumb?`<img src="${n.thumb}" alt="">`:`<div class="ph">📓</div>`}<div class="spine" style="background:${n.color}"></div></div>
+        <div class="info"><div class="t">${esc(n.title)}</div><div class="m">${esc(n.tema||'Sin tema')} · ${n.pages.length} pág.</div><div class="m">${fmtDate(n.updated)}</div></div>
+        <button class="dots" data-edit="${n.id}" aria-label="Opciones">⋯</button></div>`).join('')}
+    </div>`;
+    $('#newNb').onclick=()=>notebookForm();
+    $$('.nb[data-id]').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-edit]'))return;openNotebook(el.dataset.id)});
+    $$('[data-edit]').forEach(b=>b.onclick=()=>notebookForm(state.notebooks.find(n=>n.id===b.dataset.edit)));
+    $$('[data-mnb]').forEach(b=>b.onclick=()=>openNotebook(b.dataset.mnb,b.dataset.mpg));
+    bindChips();
+  }
+  else if(ui.tab==='repaso'){
+    const now=Date.now(),pool=state.cards.filter(c=>!ui.tema||c.tema===ui.tema);
+    const due=pool.filter(c=>c.due<=now).length,fail=pool.filter(c=>c.lastWrong).length,mast=pool.filter(c=>c.box>=4).length;
+    const list=pool.filter(c=>match(c.front,c.back,c.tema)).sort((a,b)=>a.due-b.due);
+    P.innerHTML=`<div class="stats"><div class="stat"><b>${due}</b><span>Para repasar hoy</span></div><div class="stat"><b>${fail}</b><span>Falladas</span></div><div class="stat"><b>${mast}</b><span>Dominadas</span></div><div class="stat"><b>${pool.length}</b><span>Tarjetas${ui.tema?' de '+esc(ui.tema):''}</span></div></div>
+      <div class="bar"><button class="btn pri big" id="stDue" ${due?'':'disabled style="opacity:.5"'}>▶ Repasar hoy (${due})</button>
+      <button class="btn" id="stFail" ${fail?'':'disabled style="opacity:.5"'}>🔁 Repasar falladas (${fail})</button>
+      <button class="btn" id="stAll" ${pool.length?'':'disabled style="opacity:.5"'}>🔀 Todas</button>
+      <button class="btn" id="qzD">🎯 Quiz patologías</button><button class="btn" id="qzM">🎯 Quiz fármacos</button>
+      <span style="flex:1"></span><button class="btn" id="addC">＋ Nueva tarjeta</button></div>
+      ${temaChips(state.cards)}
+      ${list.length?`<div class="list">${list.map(c=>`<div class="row" data-cid="${c.id}">${c.img?`<img src="${c.img}" style="width:52px;height:42px;object-fit:cover;border-radius:8px;flex:none">`:'<div class="ic">🃏</div>'}
+        <div class="tx"><b>${esc(c.front||'(imagen)')}</b><small>${esc(c.tema||'Sin tema')} · ${c.due<=now?'toca hoy':'próximo repaso '+fmtDate(c.due)} ${c.lastWrong?'· ❌ fallada':''}</small></div>
+        <span class="lv" title="Nivel ${c.box}/5">${[1,2,3,4,5].map(i=>`<i class="${c.box>=i?'on':''}"></i>`).join('')}</span></div>`).join('')}</div>`
+      :`<div class="empty">Crea tus tarjetas de pregunta y respuesta.<br>Las que aciertes volverán cada vez más tarde (1, 3, 7, 14 y 30 días); las que falles se repiten en la misma sesión y quedan en «Falladas».<br><br>Crea tarjetas automáticas desde cualquier ficha de patología o fármaco (botón «🃏 Crear tarjetas»), o con una página de tus libretas (menú ⋯ dentro de la libreta).</div>`}`;
+    $('#addC').onclick=()=>cardForm();$('#qzD').onclick=()=>quizMenu('pato');$('#qzM').onclick=()=>quizMenu('farm');
+    $('#stDue').onclick=()=>study('due');$('#stFail').onclick=()=>study('fail');$('#stAll').onclick=()=>study('all');
+    $$('[data-cid]').forEach(r=>r.onclick=()=>cardForm(state.cards.find(c=>c.id===r.dataset.cid)));
+    bindChips();
+  }
+  else if(ui.tab==='valores'){
+    const secs=state.values.map(s=>({...s,rows:s.rows.map((r,i)=>({r,i})).filter(({r})=>match(r[0],r[1],s.title))})).filter(s=>s.rows.length||!ui.q);
+    P.innerHTML=`<div class="bar"><button class="btn" id="vEdit">${ui.vedit?'✓ Terminar de editar':'✏️ Editar valores'}</button>${ui.vedit?'<button class="btn" id="vAddS">＋ Nueva sección</button><button class="btn dan" id="vReset">Restaurar valores de ejemplo</button>':''}</div>
+      <p style="font-size:13px;color:var(--muted);margin:-4px 0 14px">Valores de referencia orientativos en adultos: cambian según el laboratorio y la guía. Compruébalos con tus apuntes; puedes editarlos y añadir los tuyos.</p>
+      <div class="vgrid">${secs.map(s=>`<div class="card"><div class="vhead"><h3>${esc(s.title)}</h3>${ui.vedit?`<button class="btn sm" data-vs="${s.id}">Renombrar</button><button class="btn sm" data-va="${s.id}">＋ Fila</button>`:''}</div>
+        <table class="vtable">${s.rows.map(({r,i})=>`<tr class="${ui.vedit?'ed':''}" data-vr="${s.id}:${i}"><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table></div>`).join('')}</div>`;
+    $('#vEdit').onclick=()=>{ui.vedit=!ui.vedit;renderHome()};
+    if(ui.vedit){
+      $('#vAddS').onclick=()=>{const t=prompt('Nombre de la sección:');if(!t)return;state.values.push({id:uid(),title:t.trim(),rows:[]});saveValues();renderHome()};
+      $('#vReset').onclick=()=>{if(!confirm('¿Volver a los valores de ejemplo? Perderás los cambios que hayas hecho aquí.'))return;state.values=freshValues();saveValues();renderHome()};
+      $$('[data-vs]').forEach(b=>b.onclick=()=>{const s=state.values.find(x=>x.id===b.dataset.vs);const t=prompt('Nombre de la sección (déjalo vacío para eliminarla):',s.title);if(t===null)return;if(!t.trim()){if(confirm('¿Eliminar la sección «'+s.title+'»?'))state.values=state.values.filter(x=>x!==s)}else s.title=t.trim();saveValues();renderHome()});
+      $$('[data-va]').forEach(b=>b.onclick=()=>valueForm(state.values.find(x=>x.id===b.dataset.va)));
+      $$('[data-vr]').forEach(tr=>tr.onclick=()=>{const [sid,i]=tr.dataset.vr.split(':');valueForm(state.values.find(x=>x.id===sid),+i)});
+    }
+  }
+  else if(ui.tab==='archivos'){
+    const list=state.files.filter(f=>(!ui.tema||f.tema===ui.tema)&&match(f.name,f.tema,f.note));
+    P.innerHTML=`<div class="bar"><button class="btn pri" id="upF">⬆︎ Subir apuntes (PDF, imágenes, Word…)</button></div>
+      ${temaChips(state.files)}
+      ${list.length?`<div class="list">${list.map(f=>{const ext=(f.name.split('.').pop()||'').slice(0,4).toUpperCase();
+        return `<div class="row" data-id="${f.id}"><div class="ic">${esc(ext)}</div><div class="tx"><b>${esc(f.name)}</b><small>${esc(f.tema||'Sin tema')} · ${fmtSize(f.size)} · ${fmtDate(f.date)}</small></div><button class="btn sm" data-open="${f.id}">Abrir</button></div>`}).join('')}</div>`
+      :`<div class="empty">Aún no has subido apuntes.<br>Sube tus PDF, diapositivas o fotos de clase. Los PDF se pueden convertir en libreta para escribir encima con el Apple Pencil.</div>`}`;
+    $('#upF').onclick=uploadFiles;
+    $$('[data-open]').forEach(b=>b.onclick=()=>openFile(b.dataset.open));
+    $$('.row[data-id]').forEach(r=>r.onclick=e=>{if(!e.target.closest('button'))openFile(r.dataset.id)});
+    bindChips();
+  }
+  else if(ui.tab==='enlaces'){
+    const list=state.links.filter(l=>(!ui.tema||l.tema===ui.tema)&&match(l.title,l.url,l.note,l.tema));
+    P.innerHTML=`<div class="bar"><button class="btn pri" id="addL">＋ Añadir enlace</button></div>${temaChips(state.links)}
+      ${list.length?`<div class="list">${list.map(l=>{let host='';try{host=new URL(l.url).hostname.replace('www.','')}catch(e){}
+        return `<div class="row"><div class="ic">🔗</div><div class="tx"><b>${esc(l.title)}</b><small>${esc(host)}${l.tema?' · '+esc(l.tema):''}</small>${l.note?`<p>${esc(l.note)}</p>`:''}</div>
+        <a class="btn sm pri" href="${esc(l.url)}" target="_blank" rel="noopener">Abrir</a><button class="btn sm" data-le="${l.id}">Editar</button></div>`}).join('')}</div>`
+      :`<div class="empty">No hay enlaces todavía.</div>`}`;
+    $('#addL').onclick=()=>linkForm();
+    $$('[data-le]').forEach(b=>b.onclick=()=>linkForm(state.links.find(l=>l.id===b.dataset.le)));
+    bindChips();
+  }
+  else{
+    P.innerHTML=`
+    <div class="card"><h3>✏️ Apple Pencil</h3>
+      <label class="switch"><span>Solo el Apple Pencil dibuja; con el dedo te desplazas por la página</span><input type="checkbox" id="sFinger" ${state.settings.fingerPan?'checked':''}></label>
+      <p>Se activa sola la primera vez que uses el Pencil. En el iPhone, déjala apagada para dibujar con el dedo (con dos dedos siempre te desplazas).</p></div>
+    <div class="card"><h3>🔤 Tipografías</h3><p>Importa tus fuentes (.ttf, .otf, .woff). Aparecerán con ★ en la herramienta de texto.</p>
+      <div class="list" style="margin-bottom:10px">${state.fonts.map(f=>`<div class="row"><div class="tx"><b style="font-family:'${esc(f.family)}';font-size:22px;font-weight:400">${esc(f.family)} — Patología 病気 123</b></div><button class="btn sm dan" data-fdel="${f.id}">Quitar</button></div>`).join('')||'<div style="color:var(--muted);font-size:14px">No hay fuentes importadas.</div>'}</div>
+      <button class="btn pri" id="addFont">＋ Importar tipografía</button></div>
+    <div class="card"><h3>💾 Copia de seguridad</h3>
+      <p>Todo se guarda en este dispositivo (iPad, iPhone o Mac por separado). Para pasar tus libretas de uno a otro, crea una copia aquí y ábrela en el otro con «Restaurar».</p>
+      <div class="bar"><button class="btn pri" id="bkExp">Crear copia</button><button class="btn" id="bkImp">Restaurar copia…</button></div>
+      <p id="usage" style="font-size:13px;color:var(--muted)"></p></div>
+    <div class="card"><h3>⌨️ Atajos de teclado</h3><p>P lápiz · M rotulador · H subrayador · E goma · R regla · T texto · V mover · ⌘Z deshacer · ⌘⇧Z rehacer · ⌘V pegar imagen · ← → cambiar de página</p></div>`;
+    $('#sFinger').onchange=e=>{state.settings.fingerPan=e.target.checked;saveSettings()};
+    $('#addFont').onclick=importFonts;
+    $$('[data-fdel]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Quitar esta tipografía?'))return;state.fonts=state.fonts.filter(f=>f.id!==b.dataset.fdel);await DB.del('fontdata:'+b.dataset.fdel);await DB.set('fonts',state.fonts);renderHome()});
+    $('#bkExp').onclick=exportBackup;$('#bkImp').onclick=importBackup;
+    if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const u=$('#usage');if(u)u.textContent=`Espacio usado: ${fmtSize(e.usage||0)}`});
+  }
+}
+
+/* ---------- Modal ---------- */
+function modal(html,cls=''){const m=$('#modal');m.innerHTML=`<div class="sheet ${cls}">${html}</div>`;m.classList.remove('hidden');m.onclick=e=>{if(e.target===m)closeModal()};return m.firstElementChild}
+function closeModal(){const m=$('#modal');m.classList.add('hidden');m.innerHTML='';if(m._onclose){m._onclose();m._onclose=null}}
+const temaDatalist=()=>`<datalist id="temasDL">${TEMAS.map(t=>`<option value="${esc(t)}">`).join('')}</datalist>`;
+
+function notebookForm(nb){
+  const isNew=!nb;let color=nb?nb.color:COVERS[Math.floor(Math.random()*COVERS.length)];
+  const s=modal(`<h2>${isNew?'Nueva libreta':'Editar libreta'}</h2>
+    <div class="field"><label>Título</label><input id="fT" value="${esc(nb?nb.title:'')}" placeholder="Ej.: Neumología"></div>
+    <div class="field"><label>Tema</label><input id="fTe" list="temasDL" value="${esc(nb?nb.tema:'')}" placeholder="Elige o escribe un tema">${temaDatalist()}</div>
+    <div class="field"><label>Color de la tapa</label><div class="sw" id="fC">${COVERS.map(c=>`<button data-c="${c}" style="background:${c}" class="${c===color?'on':''}"></button>`).join('')}</div></div>
+    ${isNew?`<div class="field"><label>Papel</label><select id="fP">${PAPERS.map(([k,n])=>`<option value="${k}" ${k==='rayado'?'selected':''}>${n}</option>`).join('')}<optgroup label="Empezar con plantilla">${Object.entries(TEMPLATES).map(([k,t])=>`<option value="tpl:${k}">${t.n}</option>`).join('')}</optgroup></select></div>
+    <div class="field"><label>Color del papel</label><select id="fTi">${Object.entries(TINTS).map(([k,t])=>`<option value="${k}">${t.n}</option>`).join('')}</select></div>
+    <div class="field"><label>Orientación</label><select id="fO"><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>`:''}
+    <div class="acts">${!isNew?'<button class="btn dan" id="fDel">Eliminar</button>':''}<span class="sp"></span><button class="btn" id="fX">Cancelar</button><button class="btn pri" id="fOk">${isNew?'Crear':'Guardar'}</button></div>`);
+  s.querySelectorAll('#fC button').forEach(b=>b.onclick=()=>{color=b.dataset.c;s.querySelectorAll('#fC button').forEach(x=>x.classList.toggle('on',x===b))});
+  $('#fX').onclick=closeModal;
+  $('#fOk').onclick=async()=>{
+    const title=$('#fT').value.trim()||'Libreta sin título',tema=$('#fTe').value.trim();
+    if(isNew){const pv=$('#fP').value,tint=$('#fTi').value;
+      const n=await createNotebook({title,tema,color,paper:pv,tint,orient:$('#fO').value,pages:pv.startsWith('tpl:')?[templatePage(pv.slice(4),tint)]:null});closeModal();openNotebook(n.id)}
+    else{nb.title=title;nb.tema=tema;nb.color=color;nb.updated=Date.now();await saveNotebooks();closeModal();if(ed.nb===nb)$('#eTitle').textContent=title;else renderHome()}
+  };
+  if(!isNew)$('#fDel').onclick=async()=>{
+    if(!confirm(`¿Eliminar la libreta «${nb.title}» y todas sus páginas? No se puede deshacer.`))return;
+    for(const p of nb.pages)await DB.del('page:'+p);
+    state.notebooks=state.notebooks.filter(n=>n!==nb);await saveNotebooks();closeModal();
+    if(ed.nb===nb){ed.nb=null;ed.page=null;$('#editor').classList.add('hidden');$('#home').classList.remove('hidden')}
+    renderHome();
+  };
+  if(isNew)setTimeout(()=>$('#fT').focus(),50);
+}
+
+function linkForm(l){
+  const isNew=!l;
+  modal(`<h2>${isNew?'Nuevo enlace':'Editar enlace'}</h2>
+    <div class="field"><label>Dirección (URL)</label><input id="lU" type="url" value="${esc(l?l.url:'')}" placeholder="https://…"></div>
+    <div class="field"><label>Título</label><input id="lT" value="${esc(l?l.title:'')}" placeholder="Ej.: Vídeo sobre asma"></div>
+    <div class="field"><label>Tema</label><input id="lTe" list="temasDL" value="${esc(l?l.tema:'')}">${temaDatalist()}</div>
+    <div class="field"><label>Nota</label><textarea id="lN" rows="3">${esc(l?l.note:'')}</textarea></div>
+    <div class="acts">${!isNew?'<button class="btn dan" id="lDel">Eliminar</button>':''}<span class="sp"></span><button class="btn" id="lX">Cancelar</button><button class="btn pri" id="lOk">Guardar</button></div>`);
+  $('#lX').onclick=closeModal;
+  $('#lOk').onclick=async()=>{
+    let url=$('#lU').value.trim();if(!url)return toast('Escribe la dirección');if(!/^[a-z]+:\/\//i.test(url))url='https://'+url;
+    let title=$('#lT').value.trim();if(!title){try{title=new URL(url).hostname}catch(e){title=url}}
+    const data={url,title,tema:$('#lTe').value.trim(),note:$('#lN').value.trim()};
+    if(isNew)state.links.unshift({id:uid(),date:Date.now(),...data});else Object.assign(l,data);
+    await saveLinks();closeModal();renderHome();
+  };
+  if(!isNew)$('#lDel').onclick=async()=>{if(!confirm('¿Eliminar este enlace?'))return;state.links=state.links.filter(x=>x!==l);await saveLinks();closeModal();renderHome()};
+}
+
+/* ---------- Valores normales ---------- */
+function valueForm(sec,i){
+  const isNew=i===undefined,r=isNew?['','']:sec.rows[i];
+  modal(`<h2>${isNew?'Nueva fila':'Editar fila'} · ${esc(sec.title)}</h2>
+    <div class="field"><label>Parámetro</label><input id="vk" value="${esc(r[0])}"></div>
+    <div class="field"><label>Valor</label><textarea id="vv" rows="2">${esc(r[1])}</textarea></div>
+    <div class="acts">${!isNew?'<button class="btn dan" id="vDel">Eliminar</button>':''}<span class="sp"></span><button class="btn" id="vX">Cancelar</button><button class="btn pri" id="vOk">Guardar</button></div>`);
+  $('#vX').onclick=closeModal;
+  $('#vOk').onclick=()=>{const k=$('#vk').value.trim(),v=$('#vv').value.trim();if(!k)return toast('Escribe el parámetro');if(isNew)sec.rows.push([k,v]);else sec.rows[i]=[k,v];saveValues();closeModal();renderHome()};
+  if(!isNew)$('#vDel').onclick=()=>{sec.rows.splice(i,1);saveValues();closeModal();renderHome()};
+  setTimeout(()=>$('#vk').focus(),50);
+}
+
+/* ---------- Tarjetas de repaso ---------- */
+function cardForm(c,preset={}){
+  const isNew=!c;let img=c?c.img:(preset.img||null);
+  const s=modal(`<h2>${isNew?'Nueva tarjeta':'Editar tarjeta'}</h2>
+    <div class="field"><label>Pregunta (anverso)</label><textarea id="cF" rows="3" placeholder="Ej.: ¿Criterios diagnósticos de la diabetes?">${esc(c?c.front:'')}</textarea></div>
+    <div class="field"><label>Imagen en la pregunta (opcional: un esquema, una radiografía…)</label>
+      <div id="cImgBox">${img?`<img src="${img}" style="max-width:100%;max-height:200px;border-radius:10px;display:block;margin-bottom:6px">`:''}</div>
+      <div class="bar" style="margin:0"><button class="btn sm" id="cImgAdd">${img?'Cambiar imagen':'＋ Añadir imagen'}</button>${img?'<button class="btn sm dan" id="cImgDel">Quitar imagen</button>':''}</div></div>
+    <div class="field"><label>Respuesta (reverso)</label><textarea id="cB" rows="4">${esc(c?c.back:'')}</textarea></div>
+    <div class="field"><label>Tema</label><input id="cT" list="temasDL" value="${esc(c?c.tema:(preset.tema||ui.tema||''))}">${temaDatalist()}</div>
+    ${!isNew?`<p style="font-size:13px;color:var(--muted)">Nivel ${c.box}/5 · ${c.ok||0} aciertos · ${c.fail||0} fallos</p>`:''}
+    <div class="acts">${!isNew?'<button class="btn dan" id="cDel">Eliminar</button><button class="btn" id="cRes">Reiniciar nivel</button>':''}<span class="sp"></span><button class="btn" id="cX">Cancelar</button>${isNew?'<button class="btn" id="cOkMore">Guardar y otra</button>':''}<button class="btn pri" id="cOk">Guardar</button></div>`);
+  const refreshImg=()=>{$('#cImgBox').innerHTML=img?`<img src="${img}" style="max-width:100%;max-height:200px;border-radius:10px;display:block;margin-bottom:6px">`:'';$('#cImgAdd').textContent=img?'Cambiar imagen':'＋ Añadir imagen';const d=$('#cImgDel');if(d)d.style.display=img?'':'none'};
+  $('#cImgAdd').onclick=async()=>{const [f]=await pickFile('#fileImg');if(f){img=await shrinkImage(f,1400);refreshImg()}};
+  if($('#cImgDel'))$('#cImgDel').onclick=()=>{img=null;refreshImg()};
+  $('#cX').onclick=closeModal;
+  const doSave=async(again)=>{
+    const front=$('#cF').value.trim(),back=$('#cB').value.trim(),tema=$('#cT').value.trim();
+    if(!front&&!img)return toast('Escribe la pregunta o añade una imagen');
+    if(isNew)state.cards.unshift({id:uid(),front,back,tema,img,box:0,due:Date.now(),created:Date.now(),ok:0,fail:0,lastWrong:false});
+    else Object.assign(c,{front,back,tema,img});
+    await saveCards();
+    if(again){if(!$('#home').classList.contains('hidden'))renderHome();cardForm(null,{tema});toast('Tarjeta guardada',1200)}else{closeModal();if(!$('#home').classList.contains('hidden'))renderHome();else toast('Tarjeta creada en Repaso')}
+  };
+  $('#cOk').onclick=()=>doSave(false);
+  if($('#cOkMore'))$('#cOkMore').onclick=()=>doSave(true);
+  if(!isNew){
+    $('#cDel').onclick=async()=>{if(!confirm('¿Eliminar esta tarjeta?'))return;state.cards=state.cards.filter(x=>x!==c);await saveCards();closeModal();renderHome()};
+    $('#cRes').onclick=async()=>{c.box=0;c.due=Date.now();await saveCards();closeModal();renderHome()};
+  }
+  setTimeout(()=>$('#cF').focus(),50);
+}
+function study(mode){
+  const now=Date.now();
+  let pool=state.cards.filter(c=>!ui.tema||c.tema===ui.tema);
+  if(mode==='due')pool=pool.filter(c=>c.due<=now);else if(mode==='fail')pool=pool.filter(c=>c.lastWrong);
+  if(!pool.length)return toast('No hay tarjetas para repasar');
+  const queue=pool.sort(()=>Math.random()-.5),total=queue.length,again=new Set(),res={ok:0,fail:0};let done=0;
+  const show=()=>{
+    if(!queue.length){
+      markStudy();
+      modal(`<h2>¡Sesión terminada! 🎉</h2><div class="stats"><div class="stat"><b>${res.ok}</b><span>Acertadas</span></div><div class="stat"><b>${res.fail}</b><span>Falladas</span></div></div>
+        <p style="color:#4b5a58">${res.fail?'Las falladas te esperan en «Repasar falladas». ':'¡Todo acertado! '}Las acertadas volverán cuando toque.</p>
+        <div class="acts"><button class="btn pri" id="sEnd">Cerrar</button></div>`);
+      $('#sEnd').onclick=()=>{closeModal();renderHome()};$('#modal')._onclose=renderHome;return;
+    }
+    const c=queue[0];
+    const s=modal(`<div style="display:flex;align-items:center;gap:10px"><b style="flex:1">${esc(c.tema||'Repaso')}</b><span style="font-size:13px;color:var(--muted)">${done} / ${total}${again.size?' · repetir: '+again.size:''}</span><button class="btn sm" id="sX">Salir</button></div>
+      <div class="prog"><i style="width:${Math.round(done/total*100)}%"></i></div>
+      <div class="fc">${c.img?`<img src="${c.img}">`:''}${c.front?`<div class="q">${esc(c.front)}</div>`:''}<div class="a hidden" id="sA">${esc(c.back||'(sin respuesta)')}</div></div>
+      <div class="acts" id="sBtns"><span class="sp"></span><button class="btn pri big" id="sShow">Ver respuesta</button><span class="sp"></span></div>`,'wide');
+    $('#sX').onclick=()=>{closeModal();renderHome()};
+    $('#sShow').onclick=()=>{
+      $('#sA').classList.remove('hidden');
+      $('#sBtns').innerHTML=`<button class="btn big dan" id="sNo" style="flex:1">❌ No la sabía</button><button class="btn big pri" id="sYes" style="flex:1">✅ La sabía</button>`;
+      $('#sNo').onclick=()=>answer(false);$('#sYes').onclick=()=>answer(true);
+    };
+    const answer=async ok=>{
+      queue.shift();
+      if(ok){c.box=Math.min(5,(again.has(c.id)?0:c.box)+1);c.due=Date.now()+INTERVALS[c.box]*DAY;c.lastWrong=false;c.ok=(c.ok||0)+1;res.ok++;done++;again.delete(c.id)}
+      else{c.box=0;c.due=Date.now();c.lastWrong=true;c.fail=(c.fail||0)+1;res.fail++;if(!again.has(c.id)){again.add(c.id);queue.push(c)}else done++}
+      await saveCards();show();
+    };
+  };
+  show();
+}
+
+/* ---------- Archivos ---------- */
+async function uploadFiles(){
+  const files=await pickFile('#fileAny');if(!files.length)return;
+  const s=modal(`<h2>Subir ${files.length} archivo(s)</h2><div class="field"><label>Tema</label><input id="uTe" list="temasDL" placeholder="Opcional">${temaDatalist()}</div>
+    <div class="acts"><button class="btn" id="uX">Cancelar</button><button class="btn pri" id="uOk">Subir</button></div>`);
+  $('#uX').onclick=closeModal;
+  $('#uOk').onclick=async()=>{
+    const tema=$('#uTe').value.trim();closeModal();toast('Guardando…');
+    for(const f of files){const id=uid();await DB.set('filedata:'+id,await f.arrayBuffer());state.files.unshift({id,name:f.name,type:f.type||'',size:f.size,date:Date.now(),tema})}
+    await saveFiles();renderHome();toast('Archivos guardados');
+  };
+}
+async function fileBlob(f){const ab=await DB.get('filedata:'+f.id);return new Blob([ab],{type:f.type||'application/octet-stream'})}
+const isPdf=f=>/pdf/i.test(f.type)||/\.pdf$/i.test(f.name);
+const isImg=f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp|heic)$/i.test(f.name);
+async function openFile(id){
+  const f=state.files.find(x=>x.id===id);if(!f)return;
+  const blob=await fileBlob(f),url=URL.createObjectURL(blob);
+  const s=modal(`<h2 style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</h2>
+    <div class="viewer">${isPdf(f)?`<iframe src="${url}"></iframe>`:isImg(f)?`<img src="${url}">`:`<div class="empty">Vista previa no disponible.<br>Usa «Descargar / compartir» para abrirlo con otra app.</div>`}</div>
+    <div class="acts"><button class="btn dan" id="vDel">Eliminar</button><span class="sp"></span>
+    <button class="btn" id="vTab">Abrir aparte</button><button class="btn" id="vDl">Descargar / compartir</button>
+    ${isPdf(f)||isImg(f)?'<button class="btn pri" id="vNb">✏️ Convertir en libreta</button>':''}<button class="btn" id="vX">Cerrar</button></div>`,'wide');
+  $('#modal')._onclose=()=>setTimeout(()=>URL.revokeObjectURL(url),60000);
+  $('#vX').onclick=closeModal;
+  $('#vTab').onclick=()=>window.open(url,'_blank');
+  $('#vDl').onclick=()=>shareOrDownload(blob,f.name);
+  $('#vDel').onclick=async()=>{if(!confirm('¿Eliminar este archivo?'))return;await DB.del('filedata:'+f.id);state.files=state.files.filter(x=>x!==f);await saveFiles();closeModal();renderHome()};
+  const nbBtn=$('#vNb');if(nbBtn)nbBtn.onclick=async()=>{
+    closeModal();
+    try{
+      const pages=isPdf(f)?await pdfToPages(await blob.arrayBuffer()):[await imageToPage(blob)];
+      const nb=await createNotebook({title:f.name.replace(/\.[^.]+$/,''),tema:f.tema,color:COVERS[1],pages});
+      openNotebook(nb.id);
+    }catch(e){console.error(e);toast('No se pudo convertir: '+(e.message||e))}
+  };
+}
+
+/* ---------- PDF → páginas (pdf.js) ---------- */
+async function loadPdfJs(){
+  if(window.pdfjsLib)return;
+  await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=res;s.onerror=()=>rej(new Error('necesitas conexión a internet la primera vez'));document.head.appendChild(s)});
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+async function pdfToPages(ab){
+  toast('Preparando PDF…',60000);await loadPdfJs();
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(ab.slice(0))}).promise;const pages=[];
+  for(let i=1;i<=pdf.numPages;i++){
+    toast(`Convirtiendo página ${i} de ${pdf.numPages}…`,60000);
+    const pg=await pdf.getPage(i),vp0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:1600/vp0.width});
+    const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+    await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    pages.push(newPage({w:1000,h:Math.round(1000*vp0.height/vp0.width),paper:'blanco',bg:c.toDataURL('image/jpeg',.85)}));
+  }
+  toast(`PDF convertido: ${pages.length} páginas`);return pages;
+}
+async function imageToPage(blob){
+  const src=await shrinkImage(blob,1800);const im=await loadImage(src);
+  return newPage({w:1000,h:Math.round(1000*im.naturalHeight/im.naturalWidth),paper:'blanco',bg:src});
+}
+async function shrinkImage(blob,max=1600){
+  const url=URL.createObjectURL(blob);
+  try{
+    const im=await loadImage(url);let {naturalWidth:w,naturalHeight:h}=im;
+    const k=Math.min(1,max/Math.max(w,h));const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    return /png|gif|webp/.test(blob.type)?c.toDataURL('image/png'):c.toDataURL('image/jpeg',.88);
+  }finally{URL.revokeObjectURL(url)}
+}
+
+/* ---------- Tipografías ---------- */
+async function importFonts(){
+  const files=await pickFile('#fileFont');let ok=0;
+  for(const f of files){
+    try{
+      const buf=await f.arrayBuffer();const family=f.name.replace(/\.[^.]+$/,'').replace(/[^\p{L}\p{N} _-]/gu,' ').trim()||'Fuente';
+      const ff=new FontFace(family,buf);await ff.load();document.fonts.add(ff);
+      const id=uid();await DB.set('fontdata:'+id,buf);state.fonts.push({id,family});ok++;
+    }catch(e){toast('No se pudo leer '+f.name)}
+  }
+  await DB.set('fonts',state.fonts);renderHome();if(ok)toast(`${ok} tipografía(s) añadida(s)`);
+}
+
+/* ---------- Copia de seguridad ---------- */
+async function exportBackup(){
+  toast('Creando copia…',30000);
+  const keys=await DB.keys(),data={};
+  for(const k of keys){const v=await DB.get(k);data[k]=v instanceof ArrayBuffer?{__ab:abToB64(v)}:v}
+  const blob=new Blob([JSON.stringify({app:'miPatologias',v:1,date:Date.now(),data})],{type:'application/json'});
+  const d=new Date();await shareOrDownload(blob,`patologias-copia-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`);
+  toast('Copia creada');
+}
+async function importBackup(){
+  const [f]=await pickFile('#fileBackup');if(!f)return;
+  try{
+    const j=JSON.parse(await f.text());if(j.app!=='miPatologias')throw new Error('no es una copia de esta app');
+    if(!confirm('Esto sustituirá lo que hay ahora en este dispositivo por la copia. ¿Continuar?'))return;
+    await DB.clear();
+    for(const [k,v] of Object.entries(j.data))await DB.set(k,v&&v.__ab!==undefined?b64ToAb(v.__ab):v);
+    await loadState();renderHome();toast('Copia restaurada');
+  }catch(e){toast('No se pudo restaurar: '+e.message)}
+}
+
+/* =========================================================
+   PATOLOGÍAS · VADEMÉCUM · INTERACCIONES · QUIZ
+   ========================================================= */
+const todayYmd=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const saveDiseases=()=>{writeSummary();return DB.set('diseases',state.diseases)};
+const saveDrugs=()=>{writeSummary();return DB.set('drugs',state.drugs)};
+const byName=(a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'});
+const drugById=id=>state.drugs.find(d=>d.id===id);
+const disById=id=>state.diseases.find(d=>d.id===id);
+const estadoTag=e=>{const x=ESTADOS.find(s=>s[0]===e)||ESTADOS[0];return `<span class="tag ${x[2]}">${x[1]}</span>`};
+const nl=s=>esc(s).replace(/\n/g,'<br>');
+async function markStudy(){
+  const t=todayYmd();if(!state.studyDays.includes(t)){state.studyDays.push(t);state.studyDays=state.studyDays.slice(-400);await DB.set('studyDays',state.studyDays)}
+  writeSummary();
+}
+function studyStreak(){
+  const set=new Set(state.studyDays);const d=new Date();let n=0;
+  const k=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  if(!set.has(k(d)))d.setDate(d.getDate()-1);
+  while(set.has(k(d))&&n<5000){n++;d.setDate(d.getDate()-1)}
+  return n;
+}
+/* resumen que lee el Dashboard de Mi Agenda */
+function writeSummary(){
+  try{
+    localStorage.setItem('patologias-resumen',JSON.stringify({v:1,updated:Date.now(),
+      diseases:state.diseases.length,dominadas:state.diseases.filter(d=>d.estado==='dominada').length,
+      estudiando:state.diseases.filter(d=>d.estado==='estudiando').length,drugs:state.drugs.length,
+      cards:state.cards.length,dues:state.cards.map(c=>c.due),fail:state.cards.filter(c=>c.lastWrong).length,
+      notebooks:state.notebooks.length,days:state.studyDays.slice(-120)}));
+  }catch(e){}
+}
+
+async function seedMedical(){
+  const ids={};
+  state.drugs=SEED_DRUGS.map(s=>{const id=uid();ids[s.k]=id;const o={id,name:s.name,grupo:s.grupo,estado:'pendiente',fav:false,created:Date.now(),updated:Date.now(),interWith:[]};
+    DRUG_FIELDS.forEach(([k])=>o[k]=s[k]||'');return o});
+  SEED_DRUGS.forEach(s=>{const d=drugById(ids[s.k]);(s.with||[]).forEach(w=>{const o=drugById(ids[w]);if(!o)return;
+    if(!d.interWith.includes(o.id))d.interWith.push(o.id);if(!o.interWith.includes(d.id))o.interWith.push(d.id)})});
+  state.diseases=SEED_DISEASES.map(s=>{const o={id:uid(),name:s.name,tema:s.tema,cie:s.cie||'',estado:'pendiente',fav:false,img:null,created:Date.now(),updated:Date.now(),
+    drugs:(s.drugs||[]).map(k=>ids[k]).filter(Boolean)};DIS_FIELDS.forEach(([k])=>o[k]=s[k]||'');return o});
+  await DB.set('drugs',state.drugs);await DB.set('diseases',state.diseases);
+}
+
+/* ---------- pestaña PATOLOGÍAS ---------- */
+function renderDiseases(P){
+  const all=state.diseases;
+  const list=all.filter(d=>(!ui.tema||d.tema===ui.tema)&&(!ui.est||d.estado===ui.est||(ui.est==='fav'&&d.fav))&&match(d.name,d.tema,d.cie,...DIS_FIELDS.map(([k])=>d[k]))).sort((a,b)=>(b.fav-a.fav)||byName(a,b));
+  const n=e=>all.filter(d=>d.estado===e).length;
+  P.innerHTML=`<div class="stats"><div class="stat"><b>${all.length}</b><span>Patologías</span></div><div class="stat"><b>${n('estudiando')}</b><span>Estudiando</span></div><div class="stat"><b>${n('dominada')}</b><span>Dominadas</span></div><div class="stat"><b>${studyStreak()}</b><span>🔥 Días seguidos</span></div></div>
+    <div class="bar"><button class="btn pri" id="addD">＋ Nueva patología</button><button class="btn" id="qD">🎯 Quiz de patologías</button></div>
+    <div class="chips">${[['','Todas'],...ESTADOS.map(e=>[e[0],e[1]]),['fav','★ Favoritas']].map(([k,t])=>`<button class="chip ${(ui.est||'')===k?'on':''}" data-est="${k}">${t}</button>`).join('')}</div>
+    ${temaChips(all)}
+    ${list.length?`<div class="fgrid">${list.map(d=>`<button class="fcard" data-did="${d.id}">
+      <div style="display:flex;gap:6px;align-items:start"><b style="flex:1">${d.fav?'★ ':''}${esc(d.name)}</b>${estadoTag(d.estado)}</div>
+      <small>${esc(d.tema||'Sin sistema')}${d.cie?' · CIE '+esc(d.cie):''}${d.drugs&&d.drugs.length?' · 💊 '+d.drugs.length:''}</small>
+      ${d.def?`<p>${esc(d.def)}</p>`:''}</button>`).join('')}</div>`
+    :`<div class="empty">${all.length?'Nada coincide con el filtro.':'Crea tu primera ficha de patología.'}</div>`}`;
+  $('#addD').onclick=()=>diseaseForm();$('#qD').onclick=()=>quizMenu('pato');
+  $$('[data-did]').forEach(b=>b.onclick=()=>diseaseView(disById(b.dataset.did)));
+  $$('[data-est]').forEach(c=>c.onclick=()=>{ui.est=c.dataset.est||null;renderHome()});
+  bindChips();
+}
+
+/* ---------- pestaña VADEMÉCUM ---------- */
+function renderDrugs(P){
+  const all=state.drugs.map(d=>({...d,tema:d.grupo}));
+  const list=state.drugs.filter(d=>(!ui.tema||d.grupo===ui.tema)&&(ui.est!=='fav'||d.fav)&&match(d.name,d.grupo,...DRUG_FIELDS.map(([k])=>d[k]))).sort(byName);
+  let L='';
+  P.innerHTML=`<div class="stats"><div class="stat"><b>${state.drugs.length}</b><span>Fármacos</span></div><div class="stat"><b>${new Set(state.drugs.map(d=>d.grupo).filter(Boolean)).size}</b><span>Grupos</span></div><div class="stat"><b>${state.drugs.filter(d=>d.estado==='dominada').length}</b><span>Dominados</span></div></div>
+    <div class="bar"><button class="btn pri" id="addM">＋ Nuevo fármaco</button><button class="btn" id="chkI">⚠️ Comprobar interacciones</button><button class="btn" id="qM">🎯 Quiz de fármacos</button>
+      <button class="btn ${ui.est==='fav'?'pri':''}" id="favM">★ Favoritos</button></div>
+    ${temaChips(all)}
+    ${list.length?`<div class="list">${list.map(d=>{const l=d.name[0].toUpperCase();const h=l!==L?`<div class="h2" style="margin:10px 0 0">${l}</div>`:'';L=l;
+      return h+`<div class="row" data-mid="${d.id}" style="cursor:pointer"><div class="ic">💊</div><div class="tx"><b>${d.fav?'★ ':''}${esc(d.name)}</b><small>${esc(d.grupo||'Sin grupo')}${d.comercial?' · '+esc(d.comercial):''}</small></div>${estadoTag(d.estado)}</div>`}).join('')}</div>`
+    :`<div class="empty">${state.drugs.length?'Nada coincide con la búsqueda.':'Tu vademécum está vacío. Añade tu primer fármaco.'}</div>`}
+    <p style="font-size:13px;color:var(--muted);margin-top:16px">Vademécum para estudiar: compruébalo siempre con la ficha técnica oficial (CIMA en España, base de datos pública de medicamentos en Francia).</p>`;
+  $('#addM').onclick=()=>drugForm();$('#chkI').onclick=()=>interactionChecker();$('#qM').onclick=()=>quizMenu('farm');
+  $('#favM').onclick=()=>{ui.est=ui.est==='fav'?null:'fav';renderHome()};
+  $$('[data-mid]').forEach(r=>r.onclick=()=>drugView(drugById(r.dataset.mid)));
+  bindChips();
+}
+
+/* ---------- formularios ---------- */
+const pickList=(items,sel,name)=>items.length?`<div class="pick">${items.map(x=>`<label><input type="checkbox" name="${name}" value="${x.id}" ${sel.includes(x.id)?'checked':''}>${esc(x.name)}</label>`).join('')}</div>`:'<div style="font-size:14px;color:var(--muted)">Aún no tienes fármacos en el vademécum.</div>';
+const dl=(id,arr)=>`<datalist id="${id}">${arr.map(t=>`<option value="${esc(t)}">`).join('')}</datalist>`;
+
+function diseaseForm(d,after){
+  const isNew=!d;let img=d?d.img:null;
+  const s=modal(`<h2>${isNew?'Nueva patología':'Editar patología'}</h2>
+    <div class="fview">
+    <div class="field"><label>Nombre</label><input id="dN" value="${esc(d?d.name:'')}" placeholder="Ej.: Insuficiencia cardiaca"></div>
+    <div class="two"><div class="field"><label>Sistema / especialidad</label><input id="dT" list="sisDL" value="${esc(d?d.tema:(ui.tema||''))}">${dl('sisDL',SISTEMAS)}</div>
+      <div class="field"><label>Código CIE (opcional)</label><input id="dC" value="${esc(d?d.cie:'')}" placeholder="Ej.: I50"></div></div>
+    <div class="field"><label>Estado</label><select id="dE">${ESTADOS.map(e=>`<option value="${e[0]}" ${(d?d.estado:'pendiente')===e[0]?'selected':''}>${e[1]}</option>`).join('')}</select></div>
+    ${DIS_FIELDS.map(([k,l])=>`<div class="field"><label>${l}</label><textarea data-k="${k}" rows="${k==='def'||k==='mnemo'?2:3}">${esc(d?d[k]:'')}</textarea></div>`).join('')}
+    <div class="field"><label>Fármacos del tratamiento (de tu vademécum)</label>${pickList([...state.drugs].sort(byName),d?d.drugs||[]:[],'dDr')}</div>
+    <div class="field"><label>Imagen (esquema, foto de tus apuntes…)</label><div id="dImgBox">${img?`<img src="${img}" style="max-width:100%;max-height:200px;border-radius:10px">`:''}</div>
+      <div class="bar" style="margin:6px 0 0"><button class="btn sm" id="dImg">${img?'Cambiar imagen':'＋ Añadir imagen'}</button><button class="btn sm dan" id="dImgDel" style="${img?'':'display:none'}">Quitar</button></div></div>
+    </div>
+    <div class="acts">${!isNew?'<button class="btn dan" id="dDel">Eliminar</button>':''}<span class="sp"></span><button class="btn" id="dX">Cancelar</button><button class="btn pri" id="dOk">Guardar</button></div>`,'wide');
+  const refresh=()=>{$('#dImgBox').innerHTML=img?`<img src="${img}" style="max-width:100%;max-height:200px;border-radius:10px">`:'';$('#dImgDel').style.display=img?'':'none'};
+  $('#dImg').onclick=async()=>{const [f]=await pickFile('#fileImg');if(f){img=await shrinkImage(f,1600);refresh()}};
+  $('#dImgDel').onclick=()=>{img=null;refresh()};
+  $('#dX').onclick=()=>{closeModal();if(d&&after)after()};
+  $('#dOk').onclick=async()=>{
+    const name=$('#dN').value.trim();if(!name)return toast('Escribe el nombre');
+    const o=d||{id:uid(),created:Date.now(),fav:false};
+    Object.assign(o,{name,tema:$('#dT').value.trim(),cie:$('#dC').value.trim(),estado:$('#dE').value,img,updated:Date.now(),
+      drugs:$$('input[name=dDr]:checked').map(i=>i.value)});
+    s.querySelectorAll('textarea[data-k]').forEach(t=>o[t.dataset.k]=t.value.trim());
+    if(isNew)state.diseases.push(o);await saveDiseases();await markStudy();closeModal();renderHome();diseaseView(o);
+  };
+  if(!isNew)$('#dDel').onclick=async()=>{if(!confirm(`¿Eliminar la ficha «${d.name}»?`))return;state.diseases=state.diseases.filter(x=>x!==d);await saveDiseases();closeModal();renderHome()};
+  if(isNew)setTimeout(()=>$('#dN').focus(),50);
+}
+
+function drugForm(d,after){
+  const isNew=!d;
+  const others=[...state.drugs].filter(x=>x!==d).sort(byName);
+  const s=modal(`<h2>${isNew?'Nuevo fármaco':'Editar fármaco'}</h2>
+    <div class="fview">
+    <div class="two"><div class="field"><label>Principio activo</label><input id="mN" value="${esc(d?d.name:'')}" placeholder="Ej.: Bisoprolol"></div>
+      <div class="field"><label>Grupo farmacológico</label><input id="mG" list="grpDL" value="${esc(d?d.grupo:(ui.tema||''))}">${dl('grpDL',GRUPOS)}</div></div>
+    <div class="field"><label>Estado</label><select id="mE">${ESTADOS.map(e=>`<option value="${e[0]}" ${(d?d.estado:'pendiente')===e[0]?'selected':''}>${e[1]}</option>`).join('')}</select></div>
+    ${DRUG_FIELDS.map(([k,l])=>`<div class="field"><label>${l}</label>${k==='comercial'?`<input data-k="${k}" value="${esc(d?d[k]:'')}">`:`<textarea data-k="${k}" rows="3">${esc(d?d[k]:'')}</textarea>`}</div>`).join('')}
+    <div class="field"><label>Interacciona con… (fármacos de tu vademécum)</label>${pickList(others,d?d.interWith||[]:[],'mIw')}</div>
+    </div>
+    <div class="acts">${!isNew?'<button class="btn dan" id="mDel">Eliminar</button>':''}<span class="sp"></span><button class="btn" id="mX">Cancelar</button><button class="btn pri" id="mOk">Guardar</button></div>`,'wide');
+  $('#mX').onclick=()=>{closeModal();if(d&&after)after()};
+  $('#mOk').onclick=async()=>{
+    const name=$('#mN').value.trim();if(!name)return toast('Escribe el principio activo');
+    const o=d||{id:uid(),created:Date.now(),fav:false,interWith:[]};
+    const iw=$$('input[name=mIw]:checked').map(i=>i.value);
+    Object.assign(o,{name,grupo:$('#mG').value.trim(),estado:$('#mE').value,updated:Date.now(),interWith:iw});
+    s.querySelectorAll('[data-k]').forEach(t=>o[t.dataset.k]=t.value.trim());
+    if(isNew)state.drugs.push(o);
+    state.drugs.forEach(x=>{if(x===o)return;x.interWith=x.interWith||[];const has=x.interWith.includes(o.id);if(iw.includes(x.id)&&!has)x.interWith.push(o.id);if(!iw.includes(x.id)&&has)x.interWith=x.interWith.filter(i=>i!==o.id)});
+    await saveDrugs();await markStudy();closeModal();renderHome();drugView(o);
+  };
+  if(!isNew)$('#mDel').onclick=async()=>{if(!confirm(`¿Eliminar «${d.name}» del vademécum?`))return;
+    state.drugs=state.drugs.filter(x=>x!==d);state.drugs.forEach(x=>x.interWith=(x.interWith||[]).filter(i=>i!==d.id));
+    state.diseases.forEach(x=>x.drugs=(x.drugs||[]).filter(i=>i!==d.id));await saveDrugs();await saveDiseases();closeModal();renderHome()};
+  if(isNew)setTimeout(()=>$('#mN').focus(),50);
+}
+
+/* ---------- fichas (lectura) ---------- */
+function fichaSecs(o,fields){return fields.filter(([k])=>o[k]).map(([k,l])=>`<div class="fsec"><h4>${l}</h4><div>${nl(o[k])}</div></div>`).join('')||'<div class="empty">Ficha vacía: toca «Editar» para rellenarla.</div>'}
+function estadoBtns(o){return `<div class="chips" style="margin:6px 0 4px">${ESTADOS.map(e=>`<button class="chip ${o.estado===e[0]?'on':''}" data-setest="${e[0]}">${e[1]}</button>`).join('')}<button class="chip ${o.fav?'on':''}" data-fav="1">${o.fav?'★ Favorita':'☆ Favorita'}</button></div>`}
+function bindEstado(o,save,reopen){
+  $$('[data-setest]').forEach(b=>b.onclick=async()=>{o.estado=b.dataset.setest;o.updated=Date.now();await save();await markStudy();reopen()});
+  $$('[data-fav]').forEach(b=>b.onclick=async()=>{o.fav=!o.fav;await save();reopen()});
+}
+function diseaseView(d){
+  if(!d)return;
+  const drugs=(d.drugs||[]).map(drugById).filter(Boolean);
+  modal(`<div style="display:flex;gap:10px;align-items:start"><div style="flex:1"><h2 style="margin:0">${esc(d.name)}</h2>
+      <div style="color:var(--muted);font-size:14px;margin-top:4px">${esc(d.tema||'Sin sistema')}${d.cie?' · CIE '+esc(d.cie):''}</div></div><button class="btn" id="vX">Cerrar</button></div>
+    ${estadoBtns(d)}
+    <div class="fview">
+      ${d.img?`<img src="${d.img}" style="max-width:100%;max-height:300px;border-radius:12px;margin:8px 0">`:''}
+      ${fichaSecs(d,DIS_FIELDS)}
+      ${drugs.length?`<div class="fsec"><h4>💊 Fármacos de tu vademécum</h4><div>${drugs.map(m=>`<button class="tag" data-gomed="${m.id}">${esc(m.name)}</button>`).join(' ')}</div>
+        ${drugs.length>1?'<button class="btn sm" id="vInt" style="margin-top:8px">⚠️ Ver interacciones entre ellos</button>':''}</div>`:''}
+    </div>
+    <div class="acts"><button class="btn" id="vCards">🃏 Crear tarjetas</button><button class="btn" id="vPrint">🖨️ Imprimir / PDF</button><span class="sp"></span><button class="btn pri" id="vEd">✏️ Editar</button></div>`,'wide');
+  const reopen=()=>{renderHome();diseaseView(d)};
+  bindEstado(d,saveDiseases,reopen);
+  $('#vX').onclick=closeModal;$('#vEd').onclick=()=>diseaseForm(d,()=>diseaseView(d));
+  $('#vCards').onclick=()=>autoCards(d,DIS_FIELDS,d.tema);
+  $('#vPrint').onclick=()=>printFicha(d.name,`${esc(d.tema||'')}${d.cie?' · CIE '+esc(d.cie):''}`,d,DIS_FIELDS,drugs.map(m=>m.name));
+  $$('[data-gomed]').forEach(b=>b.onclick=()=>drugView(drugById(b.dataset.gomed),()=>diseaseView(d)));
+  if($('#vInt'))$('#vInt').onclick=()=>interactionChecker(drugs.map(m=>m.id));
+}
+function drugView(d,back){
+  if(!d)return;
+  const iw=(d.interWith||[]).map(drugById).filter(Boolean);
+  const used=state.diseases.filter(x=>(x.drugs||[]).includes(d.id));
+  const q=encodeURIComponent(d.name);
+  modal(`<div style="display:flex;gap:10px;align-items:start"><div style="flex:1"><h2 style="margin:0">💊 ${esc(d.name)}</h2>
+      <div style="color:var(--muted);font-size:14px;margin-top:4px">${esc(d.grupo||'Sin grupo')}</div></div>${back?'<button class="btn" id="vBack">‹ Volver</button>':''}<button class="btn" id="vX">Cerrar</button></div>
+    ${estadoBtns(d)}
+    <div class="fview">
+      ${fichaSecs(d,DRUG_FIELDS)}
+      ${iw.length?`<div class="fsec"><h4>⚠️ Interacciona con</h4><div>${iw.map(m=>`<button class="tag r" data-gomed="${m.id}">${esc(m.name)}</button>`).join(' ')}</div></div>`:''}
+      ${used.length?`<div class="fsec"><h4>🩺 Lo usas en</h4><div>${used.map(x=>`<button class="tag" data-gopat="${x.id}">${esc(x.name)}</button>`).join(' ')}</div></div>`:''}
+      <div class="fsec"><h4>🔎 Ficha técnica oficial</h4><div><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/search?q=${q}+ficha+t%C3%A9cnica+site%3Acima.aemps.es">Buscar en CIMA (España)</a>
+        <a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/search?q=${q}+site%3Abase-donnees-publique.medicaments.gouv.fr">Buscar en la base pública de Francia</a></div></div>
+    </div>
+    <div class="acts"><button class="btn" id="vCards">🃏 Crear tarjetas</button><button class="btn" id="vPrint">🖨️ Imprimir / PDF</button><span class="sp"></span><button class="btn pri" id="vEd">✏️ Editar</button></div>`,'wide');
+  const reopen=()=>{renderHome();drugView(d,back)};
+  bindEstado(d,saveDrugs,reopen);
+  $('#vX').onclick=closeModal;if($('#vBack'))$('#vBack').onclick=back;
+  $('#vEd').onclick=()=>drugForm(d,()=>drugView(d,back));
+  $('#vCards').onclick=()=>autoCards(d,DRUG_FIELDS.filter(([k])=>k!=='comercial'),d.grupo||'Farmacología');
+  $('#vPrint').onclick=()=>printFicha(d.name,esc(d.grupo||''),d,DRUG_FIELDS,iw.map(m=>'Interacciona con: '+m.name));
+  $$('[data-gomed]').forEach(b=>b.onclick=()=>drugView(drugById(b.dataset.gomed),()=>drugView(d,back)));
+  $$('[data-gopat]').forEach(b=>b.onclick=()=>diseaseView(disById(b.dataset.gopat)));
+}
+function printFicha(title,sub,o,fields,extra){
+  const pa=$('#printArea');
+  pa.innerHTML=`<div class="pficha"><h1>${esc(title)}</h1><p class="sub">${sub}</p>${fields.filter(([k])=>o[k]).map(([k,l])=>`<h3>${l}</h3><p>${nl(o[k])}</p>`).join('')}${extra&&extra.length?`<h3>Relacionado</h3><p>${extra.map(esc).join('<br>')}</p>`:''}</div>`;
+  closeModal();setTimeout(()=>window.print(),300);
+}
+
+/* ---------- tarjetas automáticas desde una ficha ---------- */
+async function autoCards(o,fields,tema){
+  const skip=['notas'];let n=0;
+  for(const [k,l] of fields){
+    if(skip.includes(k)||!o[k])continue;
+    const src=o.id+':'+k;const lab=l.replace(/ ✨$/,'').replace(/\s*\(.*\)$/,'');
+    const ex=state.cards.find(c=>c.src===src);
+    if(ex){if(ex.back!==o[k]){ex.back=o[k];ex.front=`${o.name}\n¿${lab}?`}continue}
+    state.cards.unshift({id:uid(),front:`${o.name}\n¿${lab}?`,back:o[k],tema:tema||'',img:null,box:0,due:Date.now(),created:Date.now(),ok:0,fail:0,lastWrong:false,src});n++;
+  }
+  await saveCards();writeSummary();
+  toast(n?`${n} tarjeta(s) nuevas en Repaso 🃏`:'Las tarjetas de esta ficha ya estaban creadas (las he actualizado)',2600);
+}
+
+/* ---------- comprobador de interacciones ---------- */
+function interactionChecker(pre){
+  let sel=new Set(pre||[]);
+  const draw=()=>{
+    const ds=[...sel].map(drugById).filter(Boolean);
+    const out=[];
+    const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    for(let i=0;i<ds.length;i++)for(let j=i+1;j<ds.length;j++){
+      const a=ds[i],b=ds[j];
+      const marked=(a.interWith||[]).includes(b.id)||(b.interWith||[]).includes(a.id);
+      const ta=norm(a.inter),tb=norm(b.inter);
+      const lines=[],glines=[];
+      const findLines=(txt,who,other)=>String(txt||'').split('\n').forEach(l=>{const n=norm(l);
+        if(n.includes(norm(other.name)))lines.push(`<b>${esc(who.name)}:</b> ${esc(l)}`);
+        else if(other.grupo&&n.includes(norm(other.grupo)))glines.push(`<b>${esc(who.name)}:</b> ${esc(l)} <span class="tag y">menciona el grupo «${esc(other.grupo)}»: revisa si se aplica a ${esc(other.name)}</span>`)});
+      findLines(a.inter,a,b);findLines(b.inter,b,a);
+      const same=a.grupo&&a.grupo===b.grupo;
+      if(marked||lines.length||glines.length||same)out.push(`<div class="alert ${marked||lines.length?'r':''}"><b>${esc(a.name)} + ${esc(b.name)}</b>${marked?' · <span class="tag r">marcada en tus fichas</span>':''}${same?' · <span class="tag y">mismo grupo: posible duplicidad</span>':''}
+        ${lines.length||glines.length?`<div style="margin-top:6px">${[...lines,...glines].join('<br>')}</div>`:''}</div>`);
+    }
+    $('#iRes').innerHTML=ds.length<2?'<div class="empty" style="padding:20px">Elige dos o más fármacos.</div>'
+      :(out.length?out.join(''):'<div class="alert" style="background:#e6f4ea;border-color:#9fd3aa">No hay interacciones apuntadas en tus fichas entre estos fármacos.</div>')
+       +`<div class="h2">Interacciones de cada uno</div>${ds.map(d=>`<div class="fsec"><h4>${esc(d.name)}</h4><div>${d.inter?nl(d.inter):'<span style="color:var(--muted)">Sin apuntar</span>'}</div></div>`).join('')}`;
+  };
+  modal(`<div style="display:flex;align-items:center;gap:10px"><h2 style="margin:0;flex:1">⚠️ Comprobar interacciones</h2><button class="btn" id="iX">Cerrar</button></div>
+    <p style="font-size:13px;color:var(--muted);margin:6px 0 10px">Compara solo lo que tienes apuntado en tu vademécum. Es una ayuda para estudiar: no sustituye a una base de datos de interacciones ni a la ficha técnica.</p>
+    <div class="pick" id="iPick" style="max-height:150px">${[...state.drugs].sort(byName).map(d=>`<label><input type="checkbox" value="${d.id}" ${sel.has(d.id)?'checked':''}>${esc(d.name)}</label>`).join('')}</div>
+    <div class="fview" id="iRes" style="margin-top:10px"></div>`,'wide');
+  $('#iX').onclick=closeModal;
+  $$('#iPick input').forEach(i=>i.onchange=()=>{i.checked?sel.add(i.value):sel.delete(i.value);draw()});
+  draw();
+}
+
+/* ---------- QUIZ ---------- */
+const QUIZ={
+  farm:[['mec','¿Qué fármaco es?','Mecanismo de acción'],['ind','¿Qué fármaco tiene estas indicaciones?','Indicaciones'],['ea','¿De qué fármaco son estos efectos adversos?','Efectos adversos'],['grupo','¿A qué grupo pertenece?','Grupo farmacológico']],
+  pato:[['clin','¿Qué patología es?','Clínica'],['def','¿Qué patología es?','Definición'],['diag','¿A qué patología corresponde este diagnóstico?','Diagnóstico'],['drug','¿Qué fármaco de tu vademécum se usa en…?','Tratamiento']]
+};
+function quizMenu(kind){
+  const opts=QUIZ[kind].map(([k,q,l])=>{const n=quizPool(kind,k).length;return `<button class="qopt" data-qk="${k}" ${n<2?'disabled style="opacity:.45"':''}><b>${l}</b><br><small style="color:var(--muted)">${n<2?'Necesitas al menos 2 fichas con este dato':n+' preguntas posibles'}</small></button>`}).join('');
+  modal(`<h2>🎯 Quiz de ${kind==='farm'?'fármacos':'patologías'}</h2><p style="font-size:14px;color:var(--muted);margin-top:-6px">Se hace con tus propias fichas. Elige qué quieres practicar:</p>${opts}
+    <button class="qopt" data-qk="mix"><b>🔀 Mezclado</b></button>
+    <div class="acts"><button class="btn" id="qX">Cancelar</button></div>`);
+  $('#qX').onclick=closeModal;
+  $$('[data-qk]').forEach(b=>b.onclick=()=>runQuiz(kind,b.dataset.qk));
+}
+function quizPool(kind,k){
+  if(kind==='farm')return k==='grupo'?state.drugs.filter(d=>d.grupo):state.drugs.filter(d=>d[k]);
+  if(k==='drug')return state.diseases.filter(d=>(d.drugs||[]).some(drugById));
+  return state.diseases.filter(d=>d[k]);
+}
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function makeQuestion(kind,k){
+  const pool=quizPool(kind,k);if(pool.length<2)return null;
+  const item=pool[Math.floor(Math.random()*pool.length)];const def=QUIZ[kind].find(x=>x[0]===k);
+  if(kind==='farm'&&k==='grupo'){
+    const groups=[...new Set([...state.drugs.map(d=>d.grupo).filter(Boolean),...GRUPOS])].filter(g=>g!==item.grupo);
+    return{q:def[1],clue:item.name,label:'Fármaco',right:item.grupo,opts:shuffle([item.grupo,...shuffle(groups).slice(0,3)]),ref:item,refKind:'farm'};
+  }
+  if(k==='drug'){
+    const good=(item.drugs||[]).map(drugById).filter(Boolean);const right=good[Math.floor(Math.random()*good.length)];
+    const wrong=shuffle(state.drugs.filter(d=>!(item.drugs||[]).includes(d.id))).slice(0,3);
+    if(!wrong.length)return null;
+    return{q:def[1],clue:item.name,label:'Patología',right:right.name,opts:shuffle([right.name,...wrong.map(w=>w.name)]),ref:item,refKind:'pato'};
+  }
+  const others=shuffle((kind==='farm'?state.drugs:state.diseases).filter(x=>x!==item)).slice(0,3);
+  let clue=item[k];if(clue.length>420)clue=clue.slice(0,420)+'…';
+  const rx=new RegExp(item.name.split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  return{q:def[1],clue:clue.replace(rx,'▢▢▢'),label:def[2],right:item.name,opts:shuffle([item.name,...others.map(o=>o.name)]),ref:item,refKind:kind};
+}
+function runQuiz(kind,mode,total=10){
+  const keys=mode==='mix'?QUIZ[kind].map(x=>x[0]).filter(k=>quizPool(kind,k).length>=2):[mode];
+  if(!keys.length)return toast('Necesitas más fichas para el quiz');
+  let n=0,ok=0;const wrong=[];
+  const next=()=>{
+    if(n>=total){
+      markStudy();
+      modal(`<h2>Quiz terminado 🎉</h2><div class="stats"><div class="stat"><b>${ok}/${total}</b><span>Aciertos</span></div><div class="stat"><b>${Math.round(ok/total*100)}%</b><span>Nota</span></div></div>
+        ${wrong.length?`<div class="h2">Para repasar</div>${[...new Map(wrong.map(w=>[w.ref.id,w])).values()].map(w=>`<button class="tag r" data-rv="${w.ref.id}" data-rk="${w.refKind}">${esc(w.ref.name)}</button>`).join(' ')}`:'<p>¡Perfecto, todo acertado! ✨</p>'}
+        <div class="acts"><button class="btn" id="qAg">Otra vez</button><button class="btn pri" id="qEnd">Cerrar</button></div>`);
+      $('#qEnd').onclick=()=>{closeModal();renderHome()};$('#qAg').onclick=()=>runQuiz(kind,mode,total);
+      $$('[data-rv]').forEach(b=>b.onclick=()=>b.dataset.rk==='farm'?drugView(drugById(b.dataset.rv)):diseaseView(disById(b.dataset.rv)));
+      return;
+    }
+    let Q=null;for(let t=0;t<12&&!Q;t++)Q=makeQuestion(kind,keys[Math.floor(Math.random()*keys.length)]);
+    if(!Q)return toast('No hay suficientes datos para el quiz');
+    modal(`<div style="display:flex;align-items:center;gap:10px"><b style="flex:1">🎯 Pregunta ${n+1} de ${total}</b><span style="font-size:13px;color:var(--muted)">✅ ${ok}</span><button class="btn sm" id="qX">Salir</button></div>
+      <div class="prog"><i style="width:${n/total*100}%"></i></div>
+      <div class="h2" style="margin-top:12px">${esc(Q.label)}</div><div class="qclue">${nl(Q.clue)}</div>
+      <div style="font-weight:700;margin:12px 0 8px">${esc(Q.q)}</div>
+      ${Q.opts.map(o=>`<button class="qopt" data-o="${esc(o)}">${esc(o)}</button>`).join('')}
+      <div class="acts hidden" id="qNext"><span class="sp"></span><button class="btn pri big" id="qGo">Siguiente ›</button></div>`,'quiz');
+    $('#qX').onclick=()=>{closeModal();renderHome()};
+    $$('.qopt').forEach(b=>b.onclick=()=>{
+      if(!$('#qNext').classList.contains('hidden'))return;
+      const good=b.dataset.o===Q.right;if(good)ok++;else wrong.push(Q);
+      $$('.qopt').forEach(x=>{if(x.dataset.o===Q.right)x.classList.add('ok');else if(x===b)x.classList.add('no')});
+      $('#qNext').classList.remove('hidden');n++;
+      $('#qGo').onclick=next;
+    });
+  };
+  next();
+}
+
+/* =========================================================
+   EDITOR
+   ========================================================= */
+const ed={nb:null,idx:0,page:null,bgImg:null,tool:'pencil',lastPen:'pencil',ruler:false,zoom:1,scale:1,k:1,undo:[],redo:[],sel:null,editing:null};
+const toolCfg={pencil:{color:'#1d1d1f',size:3},marker:{color:'#2563eb',size:5},highlighter:{color:'#facc15',size:20},eraser:{size:24},
+  text:{color:'#1d1d1f',size:28,font:BASE_FONTS[0][0]}};
+try{Object.assign(toolCfg,JSON.parse(localStorage.getItem('patoTools')||'{}'))}catch(e){}
+const saveTools=()=>{try{localStorage.setItem('patoTools',JSON.stringify(toolCfg))}catch(e){}};
+
+const cPaper=$('#cPaper'),cInk=$('#cInk'),cLive=$('#cLive'),layer=$('#itemsLayer'),wrap=$('#pageWrap'),sc=$('#scroller');
+const xPaper=cPaper.getContext('2d'),xInk=cInk.getContext('2d'),xLive=cLive.getContext('2d');
+
+const ICONS={
+  hand:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11m0-6.5a1.5 1.5 0 0 1 3 0V11m0-5a1.5 1.5 0 0 1 3 0v6m0-3a1.5 1.5 0 0 1 3 0v5c0 4-3 7-7 7h-1c-2.5 0-4-1-5.5-3L3 14.5a1.6 1.6 0 0 1 2.4-2L8 15"/></svg>',
+  pencil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 20l1.2-4.5L16 4.7a2 2 0 0 1 2.8 0l.5.5a2 2 0 0 1 0 2.8L8.5 18.8z"/><path d="M14.5 6.2l3.3 3.3M4 20l3-.8"/></svg>',
+  marker:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 15l-3 3-2 2 .5-3L7 14"/><path d="M7 14l8.5-8.5a2.5 2.5 0 0 1 3.5 3.5L10.5 17.5z"/><path d="M13.5 7.5l3 3"/></svg>',
+  highlighter:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M14 4l6 6-8 8H8v-4z"/><path d="M8 14l-4 4v2h5l3-2"/><path d="M11 7l6 6"/></svg>',
+  eraser:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M16 4l5 5-10 10H6l-3-3z"/><path d="M10 9.5l5 5M6 19h14"/></svg>',
+  ruler:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 16.5L16.5 3 21 7.5 7.5 21z"/><path d="M7 12.5l1.8 1.8M10 9.5l1.2 1.2M13 6.5l1.8 1.8M8.5 11l1 1M11.5 8l1 1"/></svg>',
+  text:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg>',
+  image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 8.5"/></svg>',
+  move:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 3l13 6.5-5.5 1.5L10 17z"/><path d="M13 12l5 5"/></svg>'};
+
+function buildToolbar(){
+  const tb=$('#toolbar');
+  const tools=[['hand','Mano (desplazar)'],['pencil','Lápiz (P)'],['marker','Rotulador (M)'],['highlighter','Subrayador (H)'],['eraser','Goma (E)']];
+  tb.innerHTML=tools.map(([t,n])=>`<button class="tool" data-tool="${t}" title="${n}">${ICONS[t]}${toolCfg[t]&&toolCfg[t].color?`<span class="tip" style="background:${toolCfg[t].color}"></span>`:''}</button>`).join('')+
+    `<button class="tool" id="tRuler" title="Regla: líneas rectas (R)">${ICONS.ruler}</button>
+     <button class="tool" data-tool="text" title="Texto con teclado (T)">${ICONS.text}</button>
+     <button class="tool" id="tImg" title="Insertar imagen">${ICONS.image}</button>
+     <button class="tool" data-tool="move" title="Mover / redimensionar imágenes y textos (V)">${ICONS.move}</button>
+     <span class="sep"></span>
+     ${PALETTE.map(c=>`<button class="col" data-col="${c}" style="background:${c}" title="${c}"></button>`).join('')}
+     <label class="colpick" title="Más colores"><input type="color" id="tColor"></label>
+     <span class="sep"></span>
+     <div id="sizes" style="display:flex;gap:2px"></div>
+     <input type="range" class="range" id="tRange" step="0.5">`;
+  tb.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+  tb.querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>setColor(b.dataset.col));
+  $('#tColor').oninput=e=>setColor(e.target.value);
+  $('#tRuler').onclick=()=>{ed.ruler=!ed.ruler;refreshToolbar();toast(ed.ruler?'Regla activada: lápiz, rotulador y subrayador trazan líneas rectas':'Regla desactivada',1600)};
+  $('#tImg').onclick=imageMenu;
+  $('#tRange').oninput=e=>setSize(+e.target.value);
+  const fs=$('#tFont');fs.innerHTML=fontOptions().map(([v,n])=>`<option value='${esc(v)}' style='font-family:${esc(v)}'>${esc(n)}</option>`).join('');
+}
+function curCfg(){return toolCfg[ed.tool]||toolCfg[ed.lastPen]}
+function refreshToolbar(){
+  $$('#toolbar [data-tool]').forEach(b=>{b.classList.toggle('on',b.dataset.tool===ed.tool);const tip=b.querySelector('.tip');if(tip)tip.style.background=toolCfg[b.dataset.tool].color});
+  $('#tRuler').classList.toggle('on',ed.ruler);
+  const selText=ed.sel&&ed.sel.type==='text'?ed.sel:null;
+  const cfgKey=selText?'text':(toolCfg[ed.tool]?ed.tool:ed.lastPen);
+  const cfg=toolCfg[cfgKey];
+  const color=selText?selText.color:cfg.color;
+  $$('#toolbar [data-col]').forEach(b=>b.classList.toggle('on',b.dataset.col.toLowerCase()===(color||'').toLowerCase()));
+  if(color)$('#tColor').value=color.length===7?color:'#000000';
+  const sizes=SIZES[cfgKey],cur=selText?selText.size:cfg.size;
+  $('#sizes').innerHTML=sizes.map((v,i)=>`<button class="sz ${Math.abs(v-cur)<.01?'on':''}" data-sz="${v}" title="${['Fino','Medio','Grueso'][i]}"><i style="width:${6+i*6}px;height:${6+i*6}px;background:${cfgKey==='eraser'?'#bbb':(color||'#333')}"></i></button>`).join('');
+  $$('#sizes [data-sz]').forEach(b=>b.onclick=()=>setSize(+b.dataset.sz));
+  const r=$('#tRange');r.min=RANGES[cfgKey][0];r.max=RANGES[cfgKey][1];r.value=cur;
+  const showText=ed.tool==='text'||!!selText;
+  $('#textbar').classList.toggle('hidden',!showText);
+  if(showText){const src=selText||toolCfg.text;$('#tFont').value=src.font;$('#tSize').value=Math.round(src.size)}
+  const ed_=$('#editor');ed_.dataset.tool=ed.tool;ed_.dataset.mode=(ed.tool==='text'||ed.tool==='move')?'items':'draw';
+}
+function setTool(t){
+  if(ed.editing)stopEditing();
+  if(t!=='move'&&t!=='text')selectItem(null);
+  ed.tool=t;if(['pencil','marker','highlighter'].includes(t))ed.lastPen=t;
+  refreshToolbar();
+}
+function setColor(c){
+  if(ed.sel&&ed.sel.type==='text'){
+    if(ed.editing&&hasSelection()){document.execCommand('foreColor',false,c);syncEditing();return}
+    pushUndo();ed.sel.color=c;{const el=itemEl(ed.sel);if(el)styleText(el,ed.sel)}save();toolCfg.text.color=c;
+  }else{
+    if(!toolCfg[ed.tool]||ed.tool==='eraser')setTool(ed.lastPen);
+    toolCfg[ed.tool].color=c;
+  }
+  saveTools();refreshToolbar();
+}
+function setSize(v){
+  if(ed.sel&&ed.sel.type==='text'){pushUndo();ed.sel.size=v;toolCfg.text.size=v;{const el=itemEl(ed.sel);if(el)styleText(el,ed.sel)}save()}
+  else{if(!toolCfg[ed.tool])setTool(ed.lastPen);toolCfg[ed.tool].size=v}
+  saveTools();refreshToolbar();
+}
+function hasSelection(){const s=getSelection();return s&&!s.isCollapsed&&ed.editing&&ed.editing.contains(s.anchorNode)}
+
+/* ---------- Abrir / cerrar ---------- */
+async function openNotebook(id,pageId){
+  const nb=state.notebooks.find(n=>n.id===id);if(!nb)return;
+  if(!nb.marks)nb.marks=[];
+  ed.nb=nb;ed.zoom=1;$('#eTitle').textContent=nb.title;
+  $('#home').classList.add('hidden');$('#editor').classList.remove('hidden');
+  buildToolbar();refreshToolbar();
+  await loadPage(Math.max(0,pageId?nb.pages.indexOf(pageId):0));
+}
+const pageMark=()=>ed.nb&&ed.page?ed.nb.marks.find(m=>m.pageId===ed.page.id):null;
+function updateMarkBtn(){const m=pageMark();const b=$('#bMark');b.classList.toggle('marked',!!m);b.title=m?'Marcador: '+m.label:'Añadir marcador a esta página'}
+$('#bMark').onclick=()=>{
+  const m=pageMark();
+  modal(`<h2>🔖 ${m?'Marcador':'Nuevo marcador'}</h2>
+    <div class="field"><label>Nombre del marcador</label><input id="mkL" value="${esc(m?m.label:'')}" placeholder="Ej.: Criterios de Sgarbossa"></div>
+    ${ed.nb.marks.length?`<div class="h2" style="margin-top:6px">Marcadores de esta libreta</div><div class="menu">${ed.nb.marks.map(x=>`<button data-go="${x.pageId}">🔖 ${esc(x.label)} · pág. ${ed.nb.pages.indexOf(x.pageId)+1}</button>`).join('')}</div>`:''}
+    <div class="acts">${m?'<button class="btn dan" id="mkDel">Quitar marcador</button>':''}<span class="sp"></span><button class="btn" id="mkX">Cerrar</button><button class="btn pri" id="mkOk">Guardar</button></div>`);
+  $('#mkX').onclick=closeModal;
+  $('#mkOk').onclick=async()=>{const l=$('#mkL').value.trim()||`Página ${ed.idx+1}`;if(m)m.label=l;else ed.nb.marks.push({pageId:ed.page.id,label:l});await saveNotebooks();closeModal();updateMarkBtn();toast('Marcador guardado',1300)};
+  if(m)$('#mkDel').onclick=async()=>{ed.nb.marks=ed.nb.marks.filter(x=>x!==m);await saveNotebooks();closeModal();updateMarkBtn()};
+  $$('[data-go]').forEach(b=>b.onclick=()=>{closeModal();loadPage(ed.nb.pages.indexOf(b.dataset.go))});
+  setTimeout(()=>$('#mkL').focus(),50);
+};
+
+/* ---------- Plantillas ---------- */
+const TEMPLATES={
+  pato:{n:'🩺 Ficha de patología',paper:'rayado',title:'PATOLOGÍA:',secs:['Definición','Etiología y factores de riesgo','Fisiopatología','Clínica','Diagnóstico','Diagnóstico diferencial','Tratamiento','Complicaciones','Truco para recordarlo ✨']},
+  farmaco:{n:'💊 Ficha de fármaco',paper:'rayado',title:'FÁRMACO:',secs:['Grupo','Mecanismo de acción','Indicaciones','Dosis y vía','Contraindicaciones','Efectos adversos','Interacciones','Monitorización','Truco para recordarlo ✨']},
+  caso:{n:'📋 Caso clínico',paper:'rayado',title:'CASO CLÍNICO',secs:['Paciente (edad, sexo, antecedentes)','Motivo de consulta','Medicación habitual','Exploración física','Pruebas complementarias','Diagnóstico diferencial','Diagnóstico','Tratamiento','Perla clínica ✨']},
+  compara:{n:'⚖️ Comparar dos patologías',paper:'cuadricula',title:'A  vs  B',secs:['Definición','Causas','Clínica','Diagnóstico','Tratamiento','Diferencia clave ✨']}
+};
+function templatePage(key,tint){
+  const T=TEMPLATES[key],p=newPage({paper:T.paper,tint:tint||'blanco'});
+  const top=70,avail=p.h-top-110-40,step=avail/T.secs.length;
+  p.items.push({id:uid(),type:'text',x:60,y:top,w:880,html:`<b>${T.title}</b>`,font:BASE_FONTS[1][0],size:40,color:'#2b7a73'});
+  T.secs.forEach((s,i)=>{const y=top+90+i*step;
+    p.items.push({id:uid(),type:'text',x:60,y,w:880,html:`<b>${esc(s)}</b>`,font:BASE_FONTS[1][0],size:24,color:'#1d5b55'});
+    p.strokes.push({tool:'marker',color:'#a9d6cf',size:2,pts:[60,y+40,.5,940,y+40,.5],line:true});
+  });
+  return p;
+}
+async function addTemplatePage(key){
+  await flushSave();const p=templatePage(key,ed.page.tint);
+  await DB.set('page:'+p.id,p);ed.nb.pages.splice(ed.idx+1,0,p.id);await saveNotebooks();await loadPage(ed.idx+1);
+  toast('Plantilla añadida: escribe a mano o toca con la herramienta T',2200);
+}
+async function closeEditor(){
+  if(ed.editing)stopEditing();
+  await flushSave();
+  const nb=ed.nb;
+  try{const p0=await DB.get('page:'+nb.pages[0]);if(p0){const c=await composePage(p0,.3);nb.thumb=c.toDataURL('image/jpeg',.7);await saveNotebooks()}}catch(e){console.warn(e)}
+  ed.nb=null;ed.page=null;
+  $('#editor').classList.add('hidden');$('#home').classList.remove('hidden');renderHome();
+}
+async function loadPage(i){
+  if(ed.editing)stopEditing();
+  if(ed.page)await flushSave();
+  const nb=ed.nb;i=Math.max(0,Math.min(nb.pages.length-1,i));ed.idx=i;
+  let p=await DB.get('page:'+nb.pages[i]);
+  if(!p){p=newPage();p.id=nb.pages[i];}
+  ed.page=p;ed.undo=[];ed.redo=[];ed.sel=null;ed.bgImg=null;
+  if(p.bg){try{ed.bgImg=await loadImage(p.bg)}catch(e){}}
+  $('#pNum').textContent=`${i+1} / ${nb.pages.length}`;
+  $('#pPrev').disabled=i===0;$('#pNext').disabled=i===nb.pages.length-1;
+  layout();sc.scrollTop=0;sc.scrollLeft=0;updateUndoBtns();updateMarkBtn();
+}
+function layout(){
+  const p=ed.page;if(!p)return;
+  const avail=Math.max(200,sc.clientWidth-(sc.clientWidth<600?16:40));
+  const fit=Math.min(avail/p.w,1.25);ed.scale=fit*ed.zoom;
+  const cw=Math.round(p.w*ed.scale),ch=Math.round(p.h*ed.scale);
+  wrap.style.width=cw+'px';wrap.style.height=ch+'px';
+  const dpr=window.devicePixelRatio||1;
+  ed.k=Math.min(dpr*ed.scale,Math.sqrt(9e6/(p.w*p.h)));
+  for(const c of [cPaper,cInk,cLive]){c.width=Math.round(p.w*ed.k);c.height=Math.round(p.h*ed.k);c.style.width=cw+'px';c.style.height=ch+'px';c.getContext('2d').setTransform(ed.k,0,0,ed.k,0,0)}
+  layer.style.width=p.w+'px';layer.style.height=p.h+'px';layer.style.transform=`scale(${ed.scale})`;
+  $('#bZoomFit').textContent=Math.round(ed.zoom*100)+'%';
+  renderPaper();renderItems();renderInk();lastW=sc.clientWidth;
+}
+function renderPaper(){xPaper.clearRect(0,0,ed.page.w,ed.page.h);drawPaper(xPaper,ed.page,ed.bgImg)}
+function renderInk(){xInk.clearRect(0,0,ed.page.w,ed.page.h);drawAllStrokes(xInk,ed.page.strokes)}
+function clearLive(){xLive.clearRect(0,0,ed.page.w,ed.page.h)}
+
+/* ---------- Guardar / deshacer ---------- */
+let saveT=null;
+function save(){clearTimeout(saveT);saveT=setTimeout(flushSave,500)}
+async function flushSave(){
+  clearTimeout(saveT);saveT=null;if(!ed.page||!ed.nb)return;
+  await DB.set('page:'+ed.page.id,ed.page);ed.nb.updated=Date.now();await saveNotebooks();
+}
+const snap=()=>({strokes:ed.page.strokes.slice(),items:ed.page.items.map(i=>({...i}))});
+function pushUndo(){ed.undo.push(snap());if(ed.undo.length>60)ed.undo.shift();ed.redo=[];updateUndoBtns()}
+function restore(s){ed.page.strokes=s.strokes;ed.page.items=s.items;ed.sel=null;renderInk();renderItems();refreshToolbar();save()}
+function undo(){if(ed.editing)stopEditing();if(!ed.undo.length)return;ed.redo.push(snap());restore(ed.undo.pop());updateUndoBtns()}
+function redo(){if(ed.editing)stopEditing();if(!ed.redo.length)return;ed.undo.push(snap());restore(ed.redo.pop());updateUndoBtns()}
+function updateUndoBtns(){$('#bUndo').disabled=!ed.undo.length;$('#bRedo').disabled=!ed.redo.length}
+
+/* ---------- Dibujo ---------- */
+let cur=null,panning=false,rafId=0;const ptrs=new Map();
+function toLogical(e){const r=cLive.getBoundingClientRect();return{x:(e.clientX-r.left)/ed.scale,y:(e.clientY-r.top)/ed.scale,p:e.pointerType==='pen'?(e.pressure||.5):.5}}
+cLive.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(e.pointerType==='pen'&&!state.settings.penSeen){state.settings.penSeen=true;state.settings.fingerPan=true;saveSettings();toast('Apple Pencil detectado: ahora el dedo desplaza la página y el Pencil dibuja')}
+  if(cur&&cur.pointerType==='pen'&&e.pointerType==='touch')return; // ignorar la palma
+  try{cLive.setPointerCapture(e.pointerId)}catch(_){}
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,type:e.pointerType});
+  const touchCount=[...ptrs.values()].filter(p=>p.type==='touch').length;
+  const pan=ed.tool==='hand'||(e.pointerType==='touch'&&(state.settings.fingerPan||touchCount>=2));
+  if(pan){if(cur&&cur.pointerType==='touch'){if(cur.eraser&&!cur.changed)ed.undo.pop();cur=null;clearLive()}panning=true;return}
+  if(cur)return;
+  const pt=toLogical(e);
+  if(ed.tool==='eraser'){pushUndo();cur={eraser:true,id:e.pointerId,pointerType:e.pointerType,changed:false};eraseAt(pt);drawEraserCursor(pt);return}
+  const t=toolCfg[ed.tool]?ed.tool:ed.lastPen,cfg=toolCfg[t];
+  cur={id:e.pointerId,pointerType:e.pointerType,s:{tool:t,color:cfg.color,size:cfg.size,pts:[pt.x,pt.y,pt.p],line:ed.ruler||undefined}};
+  if(ed.ruler)cur.s.pts.push(pt.x,pt.y,pt.p);
+  queueLive();
+});
+cLive.addEventListener('pointermove',e=>{
+  if(panning&&ptrs.has(e.pointerId)&&(!cur||cur.id!==e.pointerId)){
+    const t=ptrs.get(e.pointerId),n=[...ptrs.values()].filter(p=>ed.tool==='hand'||p.type==='touch').length||1;
+    sc.scrollLeft-=(e.clientX-t.x)/n;sc.scrollTop-=(e.clientY-t.y)/n;t.x=e.clientX;t.y=e.clientY;return;
+  }
+  if(!cur){if(ed.tool==='eraser'&&e.pointerType!=='touch'){clearLive();drawEraserCursor(toLogical(e))}return}
+  if(e.pointerId!==cur.id)return;
+  const evs=(e.getCoalescedEvents&&e.getCoalescedEvents())||[];const list=evs.length?evs:[e];
+  if(cur.eraser){for(const ev of list)eraseAt(toLogical(ev));clearLive();drawEraserCursor(toLogical(e));return}
+  const P=cur.s.pts;
+  if(cur.s.line){
+    const pt=toLogical(e),x0=P[0],y0=P[1];let dx=pt.x-x0,dy=pt.y-y0;
+    const len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx),step=Math.PI/4,snapA=Math.round(ang/step)*step;
+    if(Math.abs(ang-snapA)<.07){dx=Math.cos(snapA)*len;dy=Math.sin(snapA)*len}
+    P[3]=x0+dx;P[4]=y0+dy;P[5]=pt.p;
+  }else{
+    for(const ev of list){const pt=toLogical(ev),lx=P[P.length-3],ly=P[P.length-2];if(Math.hypot(pt.x-lx,pt.y-ly)<.6)continue;P.push(pt.x,pt.y,pt.p)}
+  }
+  queueLive();
+});
+function endPointer(e){
+  ptrs.delete(e.pointerId);if(!ptrs.size)panning=false;
+  if(!cur||e.pointerId!==cur.id)return;
+  if(cur.eraser){if(!cur.changed){ed.undo.pop();updateUndoBtns()}else save();cur=null;clearLive();return}
+  const s=cur.s;cur=null;cancelAnimationFrame(rafId);clearLive();
+  pushUndo();ed.page.strokes.push(s);drawAllStrokesIncremental(s);save();
+}
+cLive.addEventListener('pointerup',endPointer);
+cLive.addEventListener('pointercancel',endPointer);
+cLive.addEventListener('pointerleave',e=>{if(!cur&&ed.tool==='eraser')clearLive()});
+function drawAllStrokesIncremental(s){if(s.tool==='highlighter')renderInk();else drawStroke(xInk,s)}
+function queueLive(){cancelAnimationFrame(rafId);rafId=requestAnimationFrame(()=>{clearLive();if(cur&&cur.s)drawStroke(xLive,cur.s)})}
+function drawEraserCursor(pt){const r=toolCfg.eraser.size/2;xLive.save();xLive.strokeStyle='rgba(120,120,120,.8)';xLive.lineWidth=1.5/ed.scale;xLive.fillStyle='rgba(255,255,255,.35)';xLive.beginPath();xLive.arc(pt.x,pt.y,r,0,Math.PI*2);xLive.fill();xLive.stroke();xLive.restore()}
+function segDist(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;let t=l?((px-ax)*dx+(py-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(ax+t*dx),py-(ay+t*dy))}
+function eraseAt(pt){
+  const r=toolCfg.eraser.size/2,S=ed.page.strokes;let removed=false;
+  for(let j=S.length-1;j>=0;j--){
+    const s=S[j],p=s.pts,n=p.length/3,lim=r+s.size/2;let hit=false;
+    if(n===1)hit=Math.hypot(pt.x-p[0],pt.y-p[1])<lim;
+    else for(let i=1;i<n;i++){if(segDist(pt.x,pt.y,p[i*3-3],p[i*3-2],p[i*3],p[i*3+1])<lim){hit=true;break}}
+    if(hit){S.splice(j,1);removed=true}
+  }
+  if(removed){cur.changed=true;renderInk()}
+}
+
+/* ---------- Elementos: imágenes y textos ---------- */
+function renderItems(){
+  // si estamos escribiendo en un cuadro, lo conservamos al redibujar
+  const editId=ed.editing&&ed.editing.isConnected!==undefined?(ed.editing.closest('.item')||{}).dataset?.id:null;
+  layer.innerHTML='';
+  for(const it of ed.page.items){
+    const el=document.createElement('div');el.className='item '+(it.type==='text'?'text':'img')+(ed.sel===it?' sel':'');el.dataset.id=it.id;
+    el.style.left=it.x+'px';el.style.top=it.y+'px';el.style.width=it.w+'px';
+    if(it.type==='img'){el.style.height=it.h+'px';const im=document.createElement('img');im.src=it.src;im.draggable=false;el.appendChild(im)}
+    else{const tx=document.createElement('div');tx.className='tx';tx.innerHTML=it.html||'';tx.contentEditable='false';el.appendChild(tx);styleText(el,it)}
+    const k=1/ed.scale,h=`style="transform:scale(${k});transform-origin:center"`;
+    el.insertAdjacentHTML('beforeend',`<div class="h h-move" ${h} title="Mover">✥</div><div class="h h-del" ${h} title="Borrar">✕</div><div class="h h-res" ${h} title="Cambiar tamaño">⤡</div>`);
+    layer.appendChild(el);
+  }
+  if(editId){
+    const el=layer.querySelector(`.item[data-id="${editId}"]`);
+    if(el){const tx=el.querySelector('.tx');ed.editing=tx;tx.contentEditable='true';tx.oninput=syncEditing;
+      if(document.activeElement!==tx){tx.focus({preventScroll:true});caretEnd(tx)}}
+    else ed.editing=null;
+  }
+}
+function styleText(el,it){const tx=el.querySelector('.tx');tx.style.fontFamily=it.font;tx.style.fontSize=it.size+'px';tx.style.color=it.color;tx.style.minHeight=it.h?it.h+'px':''}
+function caretEnd(tx){try{const r=document.createRange();r.selectNodeContents(tx);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r)}catch(e){}}
+const itemEl=it=>layer.querySelector(`.item[data-id="${it.id}"]`);
+function selectItem(it){
+  ed.sel=it;$$('#itemsLayer .item').forEach(el=>el.classList.toggle('sel',!!it&&el.dataset.id===it.id));refreshToolbar();
+}
+function visibleCenter(){const r=wrap.getBoundingClientRect(),sr=sc.getBoundingClientRect();
+  return{x:Math.max(40,Math.min(ed.page.w-40,((sr.left+sr.width/2)-r.left)/ed.scale)),y:Math.max(40,Math.min(ed.page.h-40,((sr.top+sr.height/2)-r.top)/ed.scale))}}
+
+layer.addEventListener('pointerdown',e=>{
+  const el=e.target.closest('.item');
+  if(!el){return}
+  const it=ed.page.items.find(i=>i.id===el.dataset.id);if(!it)return;
+  const cls=e.target.classList;
+  if(cls.contains('h-del')){e.preventDefault();e.stopPropagation();pushUndo();
+    if(ed.editing&&ed.editing.closest('.item')===el)ed.editing=null;
+    ed.page.items=ed.page.items.filter(i=>i!==it);ed.sel=null;renderItems();refreshToolbar();save();return}
+  const handle=cls.contains('h-res')?'res':cls.contains('h-move')?'move':null;
+  if(!handle){
+    if(ed.editing&&ed.editing.closest('.item')===el)return; // escribiendo: dejar colocar el cursor
+    if(ed.tool==='text'&&it.type==='text'){selectItem(it);startEditing(it);return}
+    if(ed.editing)stopEditing();
+  }
+  // asas (mover / tamaño): funcionan siempre, incluso mientras escribes, sin cerrar el teclado
+  e.preventDefault();e.stopPropagation();
+  if(ed.sel!==it)selectItem(it);
+  const resize=handle==='res';
+  const el0=itemEl(it);
+  const sx=e.clientX,sy=e.clientY,ox=it.x,oy=it.y,ow=it.w,oh=it.h||(el0?el0.offsetHeight:40),before=snap();let moved=false;
+  const mv=ev=>{
+    ev.preventDefault();
+    const elx=itemEl(it);if(!elx)return; // se busca cada vez por si la hoja se ha redibujado
+    const dx=(ev.clientX-sx)/ed.scale,dy=(ev.clientY-sy)/ed.scale;if(Math.abs(dx)+Math.abs(dy)>1)moved=true;
+    if(resize){
+      if(it.type==='img'){const nw=Math.max(30,ow+dx);it.w=nw;it.h=nw*oh/ow;elx.style.height=it.h+'px'}
+      else{it.w=Math.max(80,Math.min(ed.page.w-it.x,ow+dx));it.h=Math.max(it.size*1.4,Math.min(ed.page.h-it.y,oh+dy));elx.querySelector('.tx').style.minHeight=it.h+'px'}
+      elx.style.width=it.w+'px';
+    }else{
+      it.x=Math.max(-it.w+40,Math.min(ed.page.w-40,ox+dx));it.y=Math.max(0,Math.min(ed.page.h-30,oy+dy));
+      elx.style.left=it.x+'px';elx.style.top=it.y+'px';
+    }
+  };
+  const up=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+    if(moved){ed.undo.push(before);ed.redo=[];updateUndoBtns();save()}};
+  window.addEventListener('pointermove',mv,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+});
+layer.addEventListener('dblclick',e=>{const el=e.target.closest('.item.text');if(!el)return;const it=ed.page.items.find(i=>i.id===el.dataset.id);if(it){selectItem(it);startEditing(it)}});
+layer.addEventListener('click',e=>{
+  if(e.target!==layer)return;
+  if(ed.editing){stopEditing();selectItem(null);return}
+  if(ed.tool==='text'){
+    const r=wrap.getBoundingClientRect(),c=toolCfg.text;
+    let x=(e.clientX-r.left)/ed.scale,y=(e.clientY-r.top)/ed.scale;
+    // cuadro amplio: si tocas cerca del borde derecho, se desplaza a la izquierda para que quepa
+    const w=Math.min(620,ed.page.w-80);
+    x=Math.max(30,Math.min(x-4,ed.page.w-w-30));y=Math.max(10,y-c.size*.6);
+    pushUndo();const it={id:uid(),type:'text',x,y,w,h:Math.round(c.size*3),html:'',font:c.font,size:c.size,color:c.color};
+    ed.page.items.push(it);renderItems();selectItem(it);startEditing(it,true);
+  }else selectItem(null);
+});
+function startEditing(it,fresh){
+  const el=itemEl(it);if(!el)return;const tx=el.querySelector('.tx');
+  if(!fresh&&ed.editing!==tx){ed.undo.push(snap());ed.redo=[];updateUndoBtns()}
+  ed.editing=tx;tx.contentEditable='true';tx.focus({preventScroll:true});
+  if(!fresh)caretEnd(tx);
+  tx.oninput=syncEditing;
+}
+function syncEditing(){if(!ed.editing)return;const id=ed.editing.closest('.item').dataset.id;const it=ed.page.items.find(i=>i.id===id);if(it){it.html=ed.editing.innerHTML;save()}}
+function stopEditing(){
+  const tx=ed.editing;if(!tx)return;ed.editing=null;tx.contentEditable='false';tx.blur();
+  const id=tx.closest('.item').dataset.id,it=ed.page.items.find(i=>i.id===id);
+  if(it){it.html=tx.innerHTML;if(!tx.textContent.trim()&&!/<img/i.test(it.html)){ed.page.items=ed.page.items.filter(i=>i!==it);if(ed.sel===it)ed.sel=null;renderItems();refreshToolbar()}}
+  save();
+}
+$('#tFont').onchange=e=>{toolCfg.text.font=e.target.value;saveTools();if(ed.sel&&ed.sel.type==='text'){ed.sel.font=e.target.value;const el=itemEl(ed.sel);if(el)el.querySelector('.tx').style.fontFamily=e.target.value;save()}};
+$('#tSize').onchange=e=>{const v=Math.max(8,Math.min(160,+e.target.value||28));setSize(v)};
+$$('#textbar .fb').forEach(b=>{b.addEventListener('pointerdown',e=>e.preventDefault());b.onclick=()=>{if(!ed.editing){toast('Toca dentro de un texto para darle formato',1600);return}document.execCommand(b.dataset.cmd);syncEditing()}});
+
+async function addImageSrc(src,natural){
+  let w=natural?natural.w:400,h=natural?natural.h:300;
+  const max=Math.min(520,ed.page.w*.7);if(w>max){h=h*max/w;w=max}
+  const c=visibleCenter();pushUndo();
+  const it={id:uid(),type:'img',x:c.x-w/2,y:c.y-h/2,w,h,src};ed.page.items.push(it);
+  setTool('move');renderItems();selectItem(it);save();
+}
+async function addImageBlob(blob){
+  try{const src=await shrinkImage(blob);const im=await loadImage(src);await addImageSrc(src,{w:im.naturalWidth,h:im.naturalHeight})}
+  catch(e){toast('No se pudo leer la imagen')}
+}
+function imageMenu(){
+  modal(`<h2>Insertar imagen</h2><div class="menu">
+    <button id="imF">📷 Fotos, cámara o Archivos</button>
+    <button id="imU">🌐 Desde un enlace (URL de imagen)</button>
+    <button id="imC">📋 Pegar del portapapeles</button></div>
+    <p style="font-size:13px;color:var(--muted);margin:12px 4px 0">También puedes arrastrar imágenes desde Safari, Fotos o Archivos (Split View en el iPad) o pegarlas con ⌘V.</p>
+    <div class="acts"><button class="btn" id="imX">Cerrar</button></div>`);
+  $('#imX').onclick=closeModal;
+  $('#imF').onclick=async()=>{closeModal();const fs=await pickFile('#fileImg');for(const f of fs)await addImageBlob(f)};
+  $('#imU').onclick=async()=>{
+    const url=prompt('Pega la dirección de la imagen:');closeModal();if(!url)return;
+    try{const r=await fetch(url);if(!r.ok)throw 0;await addImageBlob(await r.blob())}
+    catch(e){try{const im=await loadImage(url);await addImageSrc(url,{w:im.naturalWidth,h:im.naturalHeight});toast('Imagen enlazada (necesita internet para verse)')}catch(_){toast('No se pudo cargar esa imagen. Prueba a guardarla y subirla desde Fotos.')}}
+  };
+  $('#imC').onclick=async()=>{
+    closeModal();
+    try{const items=await navigator.clipboard.read();for(const ci of items){const t=ci.types.find(t=>t.startsWith('image/'));if(t){await addImageBlob(await ci.getType(t));return}}toast('No hay ninguna imagen copiada')}
+    catch(e){toast('Usa ⌘V o mantén pulsado y «Pegar»')}
+  };
+}
+document.addEventListener('paste',async e=>{
+  if($('#editor').classList.contains('hidden')||!$('#modal').classList.contains('hidden'))return;
+  const items=[...(e.clipboardData?.items||[])];const img=items.find(i=>i.type.startsWith('image/'));
+  if(img){e.preventDefault();await addImageBlob(img.getAsFile());return}
+  if(ed.editing){e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'))}
+});
+sc.addEventListener('dragover',e=>e.preventDefault());
+sc.addEventListener('drop',async e=>{
+  e.preventDefault();const files=[...(e.dataTransfer?.files||[])];
+  for(const f of files){if(f.type.startsWith('image/'))await addImageBlob(f);else if(isPdf(f))await insertPdfPages(await f.arrayBuffer())}
+  if(!files.length){const url=e.dataTransfer.getData('text/uri-list')||e.dataTransfer.getData('text/plain');if(url&&/^https?:/.test(url)){try{const im=await loadImage(url);await addImageSrc(url,{w:im.naturalWidth,h:im.naturalHeight})}catch(_){}}}
+});
+
+/* ---------- Páginas ---------- */
+$('#pPrev').onclick=()=>loadPage(ed.idx-1);
+$('#pNext').onclick=()=>loadPage(ed.idx+1);
+$('#pAdd').onclick=async()=>{
+  await flushSave();const c=ed.page;
+  const p=newPage({paper:c.bg?'rayado':c.paper,tint:c.tint,w:c.bg?1000:c.w,h:c.bg?1414:c.h});
+  await DB.set('page:'+p.id,p);ed.nb.pages.splice(ed.idx+1,0,p.id);await saveNotebooks();await loadPage(ed.idx+1);toast('Página nueva añadida',1400);
+};
+async function insertPdfPages(ab){
+  try{const pages=await pdfToPages(ab);await flushSave();
+    for(let i=0;i<pages.length;i++){await DB.set('page:'+pages[i].id,pages[i]);ed.nb.pages.splice(ed.idx+1+i,0,pages[i].id)}
+    await saveNotebooks();await loadPage(ed.idx+1);
+  }catch(e){toast('No se pudo importar el PDF: '+(e.message||e))}
+}
+$('#eBack').onclick=closeEditor;
+$('#bUndo').onclick=undo;$('#bRedo').onclick=redo;
+function setZoom(z){
+  const cx=(sc.scrollLeft+sc.clientWidth/2)/Math.max(1,wrap.offsetWidth),cy=(sc.scrollTop+sc.clientHeight/2)/Math.max(1,wrap.offsetHeight);
+  ed.zoom=Math.max(.5,Math.min(3,Math.round(z*100)/100));layout();
+  sc.scrollLeft=cx*wrap.offsetWidth-sc.clientWidth/2;sc.scrollTop=cy*wrap.offsetHeight-sc.clientHeight/2;
+}
+$('#bZoomIn').onclick=()=>setZoom(ed.zoom+.25);
+$('#bZoomOut').onclick=()=>setZoom(ed.zoom-.25);
+$('#bZoomFit').onclick=()=>setZoom(1);
+let rzT,lastW=0;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(!ed.page||$('#editor').classList.contains('hidden'))return;const w=sc.clientWidth;if(Math.abs(w-lastW)<2)return;lastW=w;layout()},150)});
+
+$('#bPaper').onclick=()=>{
+  const p=ed.page;let paper=p.paper,tint=p.tint;
+  const s=modal(`<h2>Papel</h2>
+    ${p.bg?'<p style="font-size:14px;color:var(--muted)">Esta página es un PDF o una imagen importada: el papel solo cambia en las páginas normales.</p>':''}
+    <div class="papers" id="pp">${PAPERS.map(([k,n])=>`<button class="paperopt ${k===paper?'on':''}" data-p="${k}"><canvas width="120" height="150"></canvas>${n}</button>`).join('')}</div>
+    <div class="field" style="margin-top:14px"><label>Color del papel</label><div class="sw" id="pt">${Object.entries(TINTS).map(([k,t])=>`<button data-t="${k}" title="${t.n}" style="background:${t.bg}" class="${k===tint?'on':''}"></button>`).join('')}</div></div>
+    ${!p.bg?`<div class="field"><label>Orientación</label><select id="po"><option value="v" ${p.h>p.w?'selected':''}>Vertical</option><option value="h" ${p.w>p.h?'selected':''}>Horizontal</option></select></div>`:''}
+    <label class="switch"><span>Aplicar a todas las páginas de la libreta</span><input type="checkbox" id="pall"></label>
+    <div class="acts"><button class="btn" id="pX">Cancelar</button><button class="btn pri" id="pOk">Aplicar</button></div>`);
+  const drawPrev=()=>s.querySelectorAll('.paperopt').forEach(b=>{const c=b.querySelector('canvas'),x=c.getContext('2d');x.setTransform(120/1000,0,0,150/1414,0,0);drawPaper(x,{w:1000,h:1414,paper:b.dataset.p,tint})});
+  drawPrev();
+  s.querySelectorAll('.paperopt').forEach(b=>b.onclick=()=>{paper=b.dataset.p;s.querySelectorAll('.paperopt').forEach(x=>x.classList.toggle('on',x===b))});
+  s.querySelectorAll('#pt button').forEach(b=>b.onclick=()=>{tint=b.dataset.t;s.querySelectorAll('#pt button').forEach(x=>x.classList.toggle('on',x===b));drawPrev()});
+  $('#pX').onclick=closeModal;
+  $('#pOk').onclick=async()=>{
+    const orient=$('#po')?$('#po').value:null,all=$('#pall').checked;closeModal();
+    const apply=pg=>{if(!pg.bg){pg.paper=paper;if(orient){const big=Math.max(pg.w,pg.h),sm=Math.min(pg.w,pg.h);pg.w=orient==='h'?big:sm;pg.h=orient==='h'?sm:big}}pg.tint=tint};
+    apply(ed.page);await flushSave();
+    if(all)for(const id of ed.nb.pages){if(id===ed.page.id)continue;const pg=await DB.get('page:'+id);if(pg){apply(pg);await DB.set('page:'+id,pg)}}
+    layout();
+  };
+};
+
+$('#bMore').onclick=()=>{
+  modal(`<h2>${esc(ed.nb.title)}</h2><div class="menu">
+    <button id="mExp">🖼️ Exportar esta página como imagen</button>
+    <button id="mPrint">🖨️ Imprimir o guardar la libreta en PDF</button>
+    <button id="mCard">🃏 Crear tarjeta de repaso con esta página</button>
+    ${Object.entries(TEMPLATES).map(([k,t])=>`<button data-tpl="${k}">＋ Página de plantilla: ${t.n}</button>`).join('')}
+    <button id="mPdf">📄 Importar un PDF aquí (para escribir encima)</button>
+    <button id="mDup">⧉ Duplicar esta página</button>
+    <button id="mEdit">✏️ Cambiar título, tema o color</button>
+    <button id="mClr" class="dan">🧹 Borrar todo lo dibujado en esta página</button>
+    <button id="mDel" class="dan">🗑️ Eliminar esta página</button></div>
+    <div class="acts"><button class="btn" id="mX">Cerrar</button></div>`);
+  $('#mX').onclick=closeModal;
+  $('#mExp').onclick=async()=>{closeModal();if(ed.editing)stopEditing();const c=await composePage(ed.page,2);c.toBlob(b=>shareOrDownload(b,`${ed.nb.title} - pág ${ed.idx+1}.png`),'image/png')};
+  $('#mPrint').onclick=async()=>{
+    closeModal();if(ed.editing)stopEditing();await flushSave();toast('Preparando…',30000);
+    const pa=$('#printArea');pa.innerHTML='';
+    for(const id of ed.nb.pages){const pg=await DB.get('page:'+id);if(!pg)continue;const c=await composePage(pg,1.6);const im=document.createElement('img');im.src=c.toDataURL('image/jpeg',.9);pa.appendChild(im)}
+    toast('Elige «Guardar en Archivos» o la impresora',2500);setTimeout(()=>window.print(),400);
+  };
+  $('#mCard').onclick=async()=>{closeModal();if(ed.editing)stopEditing();const c=await composePage(ed.page,1);cardForm(null,{img:c.toDataURL('image/jpeg',.82),tema:ed.nb.tema})};
+  $$('[data-tpl]').forEach(b=>b.onclick=()=>{closeModal();addTemplatePage(b.dataset.tpl)});
+  $('#mPdf').onclick=async()=>{closeModal();const [f]=await pickFile('#filePdf');if(f)await insertPdfPages(await f.arrayBuffer())};
+  $('#mDup').onclick=async()=>{closeModal();await flushSave();const cp=JSON.parse(JSON.stringify(ed.page));cp.id=uid();await DB.set('page:'+cp.id,cp);ed.nb.pages.splice(ed.idx+1,0,cp.id);await saveNotebooks();await loadPage(ed.idx+1);toast('Página duplicada',1400)};
+  $('#mEdit').onclick=()=>{closeModal();notebookForm(ed.nb)};
+  $('#mClr').onclick=()=>{closeModal();if(!ed.page.strokes.length)return;pushUndo();ed.page.strokes=[];renderInk();save();toast('Borrado (puedes deshacer con ↶)')};
+  $('#mDel').onclick=async()=>{
+    closeModal();if(!confirm('¿Eliminar esta página?'))return;
+    if(ed.nb.pages.length===1){pushUndo();ed.page.strokes=[];ed.page.items=[];renderInk();renderItems();save();toast('Era la única página: la he dejado en blanco');return}
+    const id=ed.nb.pages[ed.idx];await DB.del('page:'+id);ed.nb.pages.splice(ed.idx,1);ed.nb.marks=ed.nb.marks.filter(m=>m.pageId!==id);await saveNotebooks();ed.page=null;await loadPage(Math.min(ed.idx,ed.nb.pages.length-1));
+  };
+};
+window.addEventListener('afterprint',()=>{$('#printArea').innerHTML=''});
+
+/* ---------- Atajos de teclado ---------- */
+document.addEventListener('keydown',e=>{
+  if($('#editor').classList.contains('hidden')||!$('#modal').classList.contains('hidden'))return;
+  const tag=(e.target.tagName||'').toLowerCase();const typing=ed.editing||tag==='input'||tag==='select'||tag==='textarea';
+  const mod=e.metaKey||e.ctrlKey;
+  if(mod&&e.key.toLowerCase()==='z'&&!typing){e.preventDefault();e.shiftKey?redo():undo();return}
+  if(e.key==='Escape'){if(ed.editing)stopEditing();else selectItem(null);return}
+  if(typing||mod)return;
+  if((e.key==='Backspace'||e.key==='Delete')&&ed.sel){pushUndo();ed.page.items=ed.page.items.filter(i=>i!==ed.sel);ed.sel=null;renderItems();refreshToolbar();save();return}
+  const map={p:'pencil',m:'marker',h:'highlighter',e:'eraser',t:'text',v:'move'};
+  const k=e.key.toLowerCase();
+  if(map[k])setTool(map[k]);
+  else if(k==='r')$('#tRuler').click();
+  else if(e.key==='ArrowRight'&&ed.idx<ed.nb.pages.length-1)loadPage(ed.idx+1);
+  else if(e.key==='ArrowLeft'&&ed.idx>0)loadPage(ed.idx-1);
+});
+document.addEventListener('keydown',e=>{ // repaso con teclado: espacio = ver respuesta, 1 = no la sabía, 2 = la sabía
+  if(e.target.closest&&e.target.closest('input,textarea'))return;
+  const show=$('#sShow'),no=$('#sNo'),yes=$('#sYes');
+  if(show&&(e.key===' '||e.key==='Enter')){e.preventDefault();show.click()}
+  else if(no&&e.key==='1')no.click();else if(yes&&(e.key==='2'||e.key===' '))(e.preventDefault(),yes.click());
+});
+window.addEventListener('pagehide',()=>{flushSave()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flushSave()});
+
+/* =========================================================
+   ICONO PARA LA PANTALLA DE INICIO
+   ========================================================= */
+(function makeIcon(){
+  const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
+  x.fillStyle='#2b7a73';x.fillRect(0,0,180,180);x.scale(180/64,180/64);
+  x.fillStyle='#fff';x.fill(new Path2D('M26 12h12v13h13v12H38v13H26V37H13V25h13z'));
+  x.save();x.translate(46,47);x.rotate(-0.7);x.fillStyle='#f2b84b';x.strokeStyle='#fff';x.lineWidth=2.4;
+  x.beginPath();x.roundRect?x.roundRect(-11,-5,22,10,5):x.rect(-11,-5,22,10);x.fill();x.stroke();x.beginPath();x.moveTo(0,-5);x.lineTo(0,5);x.stroke();x.restore();
+  const l=document.createElement('link');l.rel='apple-touch-icon';l.href=c.toDataURL('image/png');document.head.appendChild(l);
+})();
+
+/* =========================================================
+   ARRANQUE
+   ========================================================= */
+(async()=>{
+  try{
+    await DB.open();await loadState();
+    const h=(location.hash||'').slice(1);if(h&&$(`.tab[data-tab="${h}"]`)){ui.tab=h;$$('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===h))}
+    renderHome();
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+  }catch(e){console.error(e);document.body.innerHTML='<p style="padding:30px">No se pudo abrir el almacenamiento del navegador. Si estás en modo privado, ábrela en una ventana normal.</p>'}
+})();
+</script>
+</body>
+</html>

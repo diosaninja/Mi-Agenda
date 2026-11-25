@@ -22,7 +22,7 @@
   --rose:#D9B5AE; --rose-d:#B98A82; --stone:#8F8A83; --stone-l:#C9C4BC; --ink:#38332E; --ink-2:#5E5750;
   --desk:#E9E2D6; --line:rgba(56,51,46,.12); --card:rgba(255,253,248,.92); --soft:rgba(255,255,255,.6);
   --shadow:0 10px 30px rgba(60,45,30,.10),0 2px 6px rgba(60,45,30,.06);
-  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#2b8a82;
   --t-cita:#B98A82; --t-evento:#C99A4B; --t-tarea:#6F8068; --t-nota:#8F8A83;
   --warn:#A65E55;
   --r:16px; --ui:"DM Sans",-apple-system,"Helvetica Neue",sans-serif; --display:"Cormorant Garamond","Didot",Georgia,serif;
@@ -35,7 +35,7 @@
   --rose:#8E6A63; --rose-d:#D9A79E; --stone:#A39C93; --stone-l:#625B53; --ink:#EFE8DE; --ink-2:#CFC6BA;
   --desk:#1C1A17; --line:rgba(239,232,222,.13); --card:rgba(42,38,34,.95); --soft:rgba(255,255,255,.05);
   --shadow:0 10px 30px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.25);
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#3fa89e;
   --t-cita:#D9A79E; --t-evento:#D9B26A; --t-tarea:#9DB596; --t-nota:#A39C93; --warn:#E08A80;
   color-scheme:dark;
 }
@@ -506,6 +506,11 @@ function kanaInfo(){
   const S=readJSON('silabarios-v1');if(!S)return null;const L=S.learned||{};
   return{h:(L.h||[]).length,k:(L.k||[]).length,streak:streakDays(S.days),today:(S.days||[]).includes(todayStr())};
 }
+function patoInfo(){
+  const S=readJSON('patologias-resumen');if(!S)return null;const now=Date.now();
+  return{due:(S.dues||[]).filter(t=>t<=now).length,cards:S.cards||0,fail:S.fail||0,dis:S.diseases||0,dom:S.dominadas||0,est:S.estudiando||0,drugs:S.drugs||0,
+    streak:streakDays(S.days),today:(S.days||[]).includes(todayStr())};
+}
 const PJ_BASE={'b-anki':15,'b-yuki':20,'b-shadow':5};
 const PJ_VAR={1:{'v-tk':40,'v-notes':10},2:{'v-ep':35,'v-mine':15},3:{'v-tk':40,'v-rev':10},4:{'v-ep':50},5:{'v-class':30,'v-prep':20},6:{'v-ep':25,'v-misa':20,'v-log':5},0:{}};
 let PJ=null;
@@ -550,13 +555,13 @@ let pickCb=null;
 function pickImage(cb){pickCb=cb;const f=$('#fileIn');f.value='';f.click();}
 
 /* ---------- aprendizaje: minutos ---------- */
-const AREAS={japones:{n:'Japonés',c:'var(--s1)',e:'🇯🇵'},caligrafia:{n:'Caligrafía',c:'var(--s2)',e:'✒️'},lectura:{n:'Lectura',c:'var(--s3)',e:'📖'},otro:{n:'Otro',c:'var(--s4)',e:'✨'}};
+const AREAS={japones:{n:'Japonés',c:'var(--s1)',e:'🇯🇵'},caligrafia:{n:'Caligrafía',c:'var(--s2)',e:'✒️'},lectura:{n:'Lectura',c:'var(--s3)',e:'📖'},medicina:{n:'Medicina',c:'var(--s5)',e:'🩺'},otro:{n:'Otro',c:'var(--s4)',e:'✨'}};
 function minutesOn(ds){
-  const r={japones:0,caligrafia:0,lectura:0,otro:0,plan:0};
+  const r={japones:0,caligrafia:0,lectura:0,medicina:0,otro:0,plan:0};
   for(const s of D.learn.sessions)if(s.date===ds&&r[s.area]!=null)r[s.area]+=+s.min||0;
   if(D.timer&&D.timer.date===ds){const m=timerMs()/60000;if(r[D.timer.area]!=null)r[D.timer.area]+=m;}
   const p=planDay(ds);if(p){r.plan=p.mins;r.japones+=p.mins;}
-  r.total=r.japones+r.caligrafia+r.lectura+r.otro;return r;
+  r.total=r.japones+r.caligrafia+r.lectura+r.medicina+r.otro;return r;
 }
 function timerMs(){const t=D.timer;if(!t)return 0;return(t.acc||0)+(t.run?Date.now()-t.start:0);}
 const fmtClock=ms=>{const s=Math.floor(ms/1000);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return(h?h+':'+pad(m):pad(m))+':'+pad(x);};
@@ -649,10 +654,8 @@ const CALI=['Calentamiento: óvalos y bucles, 3 filas','Trazos básicos: vertica
 'Mayúsculas decorativas: A – I','Números 0 – 9 con tu mejor letra','Una frase de gratitud bonita','Una palabra N5 en japonés ×5 (ありがとう, おはよう…)','Cenefa de trazos curvos y ondas',
 'Repasa una ficha del Cuaderno de tinta','Escribe la fecha de hoy en japonés: '+'今日'];
 const dayIndex=(ds,n)=>{const d=fromYmd(ds);const s=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5;return((Math.floor(s)%n)+n)%n;};
-const LIBRETA='libreta.html';
-const libInfo=()=>{try{const o=JSON.parse(localStorage.getItem('libreta-v1')||'null');if(!o||!o.last)return null;const t=ymd(new Date()),pc=o.days&&o.days[o.last.id]||0;let st=0;const d=new Date();for(let i=0;i<400;i++){const k=ymd(d);if(o.days&&o.days[k]>=50)st++;else if(i>0)break;d.setDate(d.getDate()-1);}return{...o.last,pct:pc,today:o.last.id===t,streak:st};}catch(e){return null}};
-const APPS=[['calendario.html','📅','Calendario'],[LIBRETA,'練','Libreta de japonés'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['caligrafia.html','✒️','Caligrafía'],
-['cuaderno.html','📓','Cuaderno de tinta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['gimnasio.html','🏋️','Gimnasio'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['index.html?biblioteca','🗂️','Biblioteca']];
+const APPS=[['calendario.html','📅','Calendario'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['caligrafia.html','✒️','Caligrafía'],
+['cuaderno.html','📓','Cuaderno de tinta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['gimnasio.html','🏋️','Gimnasio'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['index.html?biblioteca','🗂️','Biblioteca']];
 </script>
 <script>
 /* ---------- navegación ---------- */
@@ -732,7 +735,7 @@ VIEWS.hoy=()=>{
   const top=tareas.filter(x=>!isDone(x,t)).slice(0,3);const pend=tareas.filter(x=>!isDone(x,t)).length;
   const rem=remindersUpcoming(1).filter(r=>r.ds===t);
   const mn=minutesOn(t);const goal=D.learn.dailyGoal||90;
-  const pj=planDay(t),ki=kanjiInfo(),ka=kanaInfo();
+  const pj=planDay(t),ki=kanjiInfo(),ka=kanaInfo(),pa=patoInfo();
   const j=D.journal[t]||{};
   const free=freeSlots(t);
   const firstName=esc(D.settings.name||'');
@@ -763,7 +766,7 @@ VIEWS.hoy=()=>{
       ${pj?`<a class="pill${pj.pct===100?' g':''}" href="japones.html">日 Plan ${pj.rest?'(descanso) ':''}${pj.pct}%</a>`:''}
       ${ki?`<a class="pill${ki.today?' g':''}" href="kanji.html">漢 🔥${ki.streak} · ${ki.started} kanji</a>`:''}
       ${ka?`<a class="pill${ka.today?' g':''}" href="silabarios.html">あ 🔥${ka.streak} · ${ka.h}/46 · ${ka.k}/46</a>`:''}
-      <a class="pill" href="${LIBRETA}">練 Lección de hoy${(()=>{const l=libInfo();return l?` · ${l.pct}%`:''})()}</a>
+      ${pa?`<a class="pill${pa.today?' g':''}" href="patologias.html#repaso">🩺 ${pa.due?pa.due+' por repasar':'repaso al día'}${pa.streak?' · 🔥'+pa.streak:''}</a>`:''}
       <span class="pill">✒️ ${CALI[dayIndex(t,CALI.length)]}</span>
     </div></section>
 
@@ -983,7 +986,7 @@ function timerCard(defArea){
 function lResumen(){
   const t=todayStr();const mn=minutesOn(t);const goal=D.learn.dailyGoal||90;
   const wk=[...Array(7)].map((_,i)=>addDays(t,i-6));const wm=wk.map(minutesOn);const tot=a=>wm.reduce((s,x)=>s+x[a],0);
-  const pj=planDay(t),ki=kanjiInfo(),ka=kanaInfo();
+  const pj=planDay(t),ki=kanjiInfo(),ka=kanaInfo(),pa=patoInfo();
   const due=dueReviews();
   return`<div class="grid">${timerCard('japones')}
   <section class="card c6"><h3>Hoy</h3><div class="row" style="gap:18px"><div class="ring">${ringSVG(mn.total/goal*100)}<b>${Math.round(mn.total)}<small style="margin-top:26px">min</small></b></div>
@@ -992,11 +995,17 @@ function lResumen(){
   <section class="card c6"><h3>Esta semana</h3><div class="stats">${Object.entries(AREAS).map(([k,a])=>`<div class="stat"><b>${fmtMin(tot(k))}</b><span>${a.e} ${a.n}</span></div>`).join('')}</div>
     <p class="small muted" style="margin:12px 0 0">Total: <b style="color:var(--ink)">${fmtMin(tot('total'))}</b> · <button data-a="go" data-s="stats" style="color:var(--sage-d);font-weight:600">ver estadísticas ›</button></p></section>
   <section class="card c6"><h3>Japonés hoy <span class="jp">日本語</span></h3><div class="list">
-    <a class="it" href="${LIBRETA}" style="text-decoration:none"><span>練</span><div class="tx"><div class="t">Libreta de japonés ${(()=>{const l=libInfo();return l&&l.pct===100?'✓':''})()}</div><div class="m">${(()=>{const l=libInfo();return l?`Día ${l.n} · fila ${l.h}/${l.t} · ${l.pct}% hecho${l.streak?` · 🔥 ${l.streak} días`:''}`:'Lección nueva cada mañana: kana, vocabulario, dictado, verbos, lectura…'})()}</div></div></a>
     ${pj?`<a class="it" href="japones.html" style="text-decoration:none"><span>日</span><div class="tx"><div class="t">Plan de japonés</div><div class="m">${pj.done}/${pj.total} tareas · ${pj.pct}%</div></div></a>`:''}
     ${ka?`<a class="it" href="silabarios.html" style="text-decoration:none"><span>あ</span><div class="tx"><div class="t">Silabarios ${ka.today?'✓':''}</div><div class="m">🔥 ${ka.streak} días · hiragana ${ka.h}/46 · katakana ${ka.k}/46</div></div></a>`:''}
     ${ki?`<a class="it" href="kanji.html" style="text-decoration:none"><span>漢</span><div class="tx"><div class="t">Kanji ${ki.today?'✓':''}</div><div class="m">🔥 ${ki.streak} días · ${ki.started} empezados · ${ki.dom} dominados</div></div></a>`:''}
-    </div></section>
+    ${!pj&&!ka&&!ki?'<p class="empty">Cuando uses Kanji, Silabarios y el Plan de japonés, verás aquí tu progreso.</p>':''}</div></section>
+  <section class="card c6"><h3>Medicina <span class="jp">医学</span><a class="more" href="patologias.html">Abrir ›</a></h3>
+    ${pa?`<div class="list">
+      <a class="it" href="patologias.html#repaso" style="text-decoration:none"><span>🃏</span><div class="tx"><div class="t">${pa.due?pa.due+' tarjetas para repasar hoy':'Repaso al día ✓'}</div><div class="m">${pa.cards} tarjetas${pa.fail?' · '+pa.fail+' falladas':''}${pa.streak?' · 🔥 '+pa.streak+' días':''}</div></div></a>
+      <a class="it" href="patologias.html#patologias" style="text-decoration:none"><span>🩺</span><div class="tx"><div class="t">Patologías</div><div class="m">${pa.dis} fichas · ${pa.est} estudiando · ${pa.dom} dominadas</div></div></a>
+      <a class="it" href="patologias.html#vademecum" style="text-decoration:none"><span>💊</span><div class="tx"><div class="t">Vademécum</div><div class="m">${pa.drugs} fármacos</div></div></a></div>
+      <p class="small muted" style="margin:10px 0 0">Para contar el tiempo, usa el cronómetro con 🩺 Medicina.</p>`
+    :'<p class="empty">Cuando abras Patologías verás aquí tus repasos, fichas y vademécum.</p>'}</section>
   <section class="card c6"><h3>Para repasar hoy</h3>${due.length?`<div class="list">${due.slice(0,5).map(logRow).join('')}</div>`:'<p class="empty">No tienes repasos pendientes hoy.</p>'}
     <button class="btn small" style="margin-top:8px" data-a="learnTab" data-t="aprendido">${ico('plus')}Apuntar lo aprendido hoy</button></section></div>`;
 }
@@ -1008,7 +1017,7 @@ function lJapones(){
     <div class="stat"><b>${ka.h}/46</b><span>あ Hiragana aprendidos</span></div><div class="stat"><b>${ka.k}/46</b><span>ア Katakana aprendidos</span></div>
     <div class="stat"><b>${ki.started}</b><span>漢 Kanji empezados</span></div><div class="stat"><b>${ki.dom}</b><span>Kanji dominados</span></div>
     <div class="stat"><b>${known}/${PARTS.length}</b><span>Partículas que dominas</span></div><div class="stat"><b>🔥 ${Math.max(ka.streak,ki.streak)}</b><span>Mejor racha actual</span></div></div>
-    <div class="row wrap" style="margin-top:14px;gap:8px"><a class="btn small" href="silabarios.html">あ Silabarios</a><a class="btn small" href="kanji.html">漢 Kanji</a><a class="btn small" href="japones.html">日 Plan japonés</a><a class="btn small" href="${LIBRETA}">練 Libreta de japonés</a></div></section>
+    <div class="row wrap" style="margin-top:14px;gap:8px"><a class="btn small" href="silabarios.html">あ Silabarios</a><a class="btn small" href="kanji.html">漢 Kanji</a><a class="btn small" href="japones.html">日 Plan japonés</a></div></section>
   ${timerCard('japones')}
   <section class="card c7"><h3>Partículas <span class="jp">助詞</span><span class="more">${known} dominadas</span></h3>
     <div class="parts">${PARTS.map(p=>`<button class="part${P[p.p]?' on':''}" data-a="part" data-p="${p.p}" style="${ui.part===p.p?'outline:2px solid var(--ink)':''}">${p.p}</button>`).join('')}</div>
