@@ -383,6 +383,7 @@ const DK='midashboard.v1';
 const DEF=()=>({v:1,inbox:[],goals:[],reviews:{},vision:[],focus:{},journal:{},
   learn:{sessions:[],log:[],projects:[],particles:{},dailyGoal:90,readGoal:12},
   settings:{theme:'auto',name:'Diosa',pin:'',face:[],rollover:true,notif:false,portada:true},
+  health:{goals:{steps:8000,sleep:8},days:{},last:0},
   timer:null,quizBest:0});
 const isObj=o=>o&&typeof o==='object'&&!Array.isArray(o);
 function merge(a,b){if(!isObj(b))return a;for(const k of Object.keys(b)){if(isObj(a[k])&&isObj(b[k]))merge(a[k],b[k]);else a[k]=b[k];}return a;}
@@ -649,7 +650,7 @@ const CALI=['Calentamiento: óvalos y bucles, 3 filas','Trazos básicos: vertica
 'Repasa una ficha del Cuaderno de tinta','Escribe la fecha de hoy en japonés: '+'今日'];
 const dayIndex=(ds,n)=>{const d=fromYmd(ds);const s=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5;return((Math.floor(s)%n)+n)%n;};
 const APPS=[['calendario.html','📅','Calendario'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['caligrafia.html','✒️','Caligrafía'],
-['cuaderno.html','📓','Cuaderno de tinta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['gimnasio.html','🏋️','Gimnasio'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['index.html?biblioteca','🗂️','Biblioteca']];
+['cuaderno.html','📓','Cuaderno de tinta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['gimnasio.html','🏋️','Gimnasio'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['index.html?biblioteca','🗂️','Biblioteca']];
 </script>
 <script>
 /* ---------- navegación ---------- */
@@ -763,6 +764,7 @@ VIEWS.hoy=()=>{
       <span class="pill">✒️ ${CALI[dayIndex(t,CALI.length)]}</span>
     </div></section>
 
+  ${healthCard()}
   <section class="card c6"><h3>Recordatorios <span class="jp">お知らせ</span><button class="more" data-a="taskTab" data-t="avisos">Ver ›</button></h3>
     ${rem.length?`<div class="list">${rem.map(r=>itemRow(r.it,r.ds)).join('')}</div>`:'<p class="empty">Ningún recordatorio para hoy.</p>'}</section>
   <section class="card c6"><h3>¿Cómo te sientes? <span class="jp">気分</span><button class="more" data-a="go" data-s="diario">Diario ›</button></h3>
@@ -1224,7 +1226,7 @@ function monthSummary(mk){
   const learned=D.learn.log.filter(x=>x.date.slice(0,7)===mk).length;
   const books=BOOKS.filter(b=>b.status==='terminado'&&(b.end||'').slice(0,7)===mk).length;
   const goals=D.goals.filter(g=>g.done&&(g.doneAt||'').slice(0,7)===mk).length;
-  return{days,min,ts,avg,wins,jd,hb,learned,books,goals};
+  return{days,min,ts,avg,wins,jd,hb,learned,books,goals,steps:healthAvg(days,'steps'),sleep:healthAvg(days,'sleep')};
 }
 VIEWS.stats=()=>{
   const days=rangeDays();const ts=tasksStats(days);const mk=monthKey();
@@ -1241,6 +1243,7 @@ VIEWS.stats=()=>{
     <div class="stat"><b>${mDone}/${metas.length}</b><span>metas mensuales</span></div>
     <div class="stat"><b>${days.filter(d=>D.journal[d]&&(D.journal[d].text||D.journal[d].mood||D.journal[d].ink)).length}</b><span>días con diario</span></div></div></section>
   <section class="card c12"><h3>Tiempo dedicado al aprendizaje <span class="jp">学習時間</span></h3>${stackChart(days)}</section>
+  ${healthStats(days)}
   <section class="card c6"><h3>Hábitos completados <span class="jp">習慣</span></h3>${C.habits.list.length?`<div class="list">${C.habits.list.map(h=>{const n=days.filter(d=>hDone(h,d)).length;const p=Math.round(n/days.length*100);
     return`<div class="it"><span style="font-size:20px">${esc(h.emoji||'⭐')}</span><div class="tx"><div class="row"><span class="t">${esc(h.name)}</span><span class="sp"></span><span class="small"><b>${n}/${days.length}</b> días</span></div>
     <div class="bar" style="margin-top:6px"><i style="width:${p}%"></i></div><div class="m">🔥 racha ${hStreak(h)} · mejor ${hBest(h)}</div></div></div>`;}).join('')}</div>`:'<p class="empty">Crea hábitos para ver tus rachas.</p>'}</section>
@@ -1264,6 +1267,7 @@ function showWrapped(){
     [String(s.ts.done),'✅',`tareas completadas (${s.ts.pct}% de las que tenías).`],
     [String(s.hb),'💚',`veces cumpliste un hábito${best&&best.b?`. Racha actual: ${best.h.emoji||''} ${best.h.name}, ${best.b} días`:''}.`],
     [String(s.wins),'⭐',`pequeños logros en tu tarro y ${s.jd} días escritos en tu diario.`],
+    ...(s.steps!=null||s.sleep!=null?[[s.steps!=null?fmtSteps(s.steps):fmtSleep(s.sleep),'👣',`${s.steps!=null?'pasos de media al día':'de sueño de media'}${s.steps!=null&&s.sleep!=null?' y '+fmtSleep(s.sleep)+' de sueño por noche':''}.`]]:[]),
     [s.avg?MOODS[Math.round(s.avg)-1][1]:'🌱','💭',s.avg?`Tu ánimo medio ha sido ${s.avg.toFixed(1)} de 5.`:'Este mes aún no has marcado tu ánimo.'],
     [String(s.books+s.goals),'🏆',`${s.books} ${s.books===1?'libro terminado':'libros terminados'} y ${s.goals} ${s.goals===1?'objetivo alcanzado':'objetivos alcanzados'}. ¡Sigue así!`]];
   let i=0;const el=document.createElement('div');el.className='wrapped';document.body.appendChild(el);
@@ -1306,6 +1310,10 @@ VIEWS.ajustes=()=>{
     <label class="l">Meta diaria de aprendizaje (minutos)</label><input class="f" type="number" min="5" max="600" data-in="dailyGoal" value="${D.learn.dailyGoal||90}">
     <label class="l">Avisos</label>${perm==='granted'?'<p class="small">🔔 Avisos activados.</p>':perm==='na'?'<p class="small muted">Este navegador no permite avisos.</p>':`<button class="btn small" data-a="notif">${ico('bell')}Activar avisos</button>`}
     <p class="small muted">En iPhone y iPad los avisos funcionan cuando Mi Agenda está instalada en la pantalla de inicio, y llegan mientras la app está abierta o en segundo plano reciente.</p></section>
+  <section class="card c6"><h3>Salud <span class="jp">健康</span></h3>
+    <div class="two"><div><label class="l">Meta de pasos</label><input class="f" type="number" min="500" max="50000" step="500" data-in="hSteps" value="${D.health.goals.steps}"></div><div><label class="l">Meta de sueño (horas)</label><input class="f" type="number" min="4" max="12" step="0.5" data-in="hSleep" value="${D.health.goals.sleep}"></div></div>
+    <div class="row wrap" style="margin-top:12px"><button class="btn small" data-a="healthHelp">Cómo crear el atajo</button><button class="btn small" data-a="healthPaste">💚 Traer de Salud</button><button class="btn small" data-a="healthManual">${ico('edit')}Apuntar a mano</button></div>
+    <p class="small muted">Las apps web no pueden leer la app Salud directamente: el atajo copia tus pasos y tu sueño de los últimos 7 días y el botón los trae aquí.</p></section>
   <section class="card c6"><h3>Diario privado</h3>
     ${S.pin?`<p class="small">🔒 Tu diario tiene código.</p><div class="row wrap"><button class="btn small" data-a="pinSet">Cambiar código</button><button class="btn small" data-a="pinOff">Quitar código</button>${window.PublicKeyCredential?`<button class="btn small" data-a="faceReg">${ico('face')}${(S.face||[]).length?'Añadir Face ID en este aparato':'Activar Face ID'}</button>`:''}</div>${(S.face||[]).length?`<p class="small muted">Face ID activado en ${(S.face||[]).length} ${(S.face||[]).length===1?'aparato':'aparatos'}. <button data-a="faceOff" style="color:var(--warn)">Quitar</button></p>`:''}`
       :`<p class="small muted">Pon un código de 4 cifras para que nadie lea tu diario si coge tu iPad o tu iPhone.</p><button class="btn small sage" data-a="pinSet">${ico('lock')}Poner código</button>`}</section>
@@ -1321,6 +1329,128 @@ function pinSetup(){
     draw(s);$$('[data-n]',s).forEach(b=>b.onclick=async()=>{const n=b.dataset.n;if(n==='x'){cur=cur.slice(0,-1);draw(s);return;}if(cur.length>=4)return;cur+=n;draw(s);
       if(cur.length===4){if(!first){first=cur;cur='';setTimeout(()=>draw(s),200);}else if(cur===first){D.settings.pin=await sha('miagenda:'+cur);saveD();ui.unlocked=true;closeSheet();render();toast('Código guardado ✓');}else{first='';cur='';toast('No coinciden. Vuelve a empezar.');draw(s);}}});
   });
+}
+</script>
+<script>
+/* ---------- SALUD: pasos y sueño (desde la app Salud con un atajo, o a mano) ---------- */
+const hd=ds=>(D.health.days||{})[ds]||null;
+const fmtSleep=m=>{if(m==null||isNaN(m))return'–';m=Math.round(m);return Math.floor(m/60)+' h '+pad(m%60)+' min';};
+const fmtSteps=n=>n==null||isNaN(n)?'–':String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+function parseNum(s){
+  s=String(s??'').replace(/[\s  ]/g,'').replace(/[^\d.,-]/g,'');if(!s)return NaN;
+  if(/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s))s=s.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,'');
+  else s=s.replace(',','.');
+  return parseFloat(s);
+}
+function parseLocalDT(s){const m=String(s).trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ](\d{1,2}):(\d{2})(?::(\d{2}))?/);if(!m)return null;return new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));}
+function importHealth(text){
+  const steps={},iv=[];
+  for(const raw of String(text||'').split(/\r?\n|\|/)){
+    const l=raw.trim();let m;
+    if((m=l.match(/^P\s*;\s*(\d{4}-\d{1,2}-\d{1,2})\s*;\s*(.+)$/i))){
+      const d=m[1].replace(/-(\d)(?!\d)/g,'-0$1');const v=Math.round(parseNum(m[2]));if(v>=0&&v<300000)steps[d]=(steps[d]||0)+v;
+    }else if((m=l.match(/^S\s*;\s*([^;]+?)\s*;\s*([^;]+?)\s*$/i))){
+      const a=parseLocalDT(m[1]),b=parseLocalDT(m[2]);if(a&&b&&b>a&&b-a<20*3600e3)iv.push([a.getTime(),b.getTime()]);
+    }
+  }
+  /* une los tramos de sueño que se solapan y los asigna al día en que te despiertas */
+  iv.sort((x,y)=>x[0]-y[0]);const merged=[];
+  for(const x of iv){const last=merged[merged.length-1];if(last&&x[0]<=last[1])last[1]=Math.max(last[1],x[1]);else merged.push([x[0],x[1]]);}
+  const nights={};for(const [a,b] of merged){const k=ymd(new Date(b+6*3600e3));nights[k]=(nights[k]||0)+(b-a)/60000;}
+  const days=D.health.days;
+  for(const [d,v] of Object.entries(steps)){days[d]=Object.assign({},days[d],{steps:v,src:'salud'});}
+  for(const [d,v] of Object.entries(nights)){days[d]=Object.assign({},days[d],{sleep:Math.round(v),src:'salud'});}
+  const n=Object.keys(steps).length+Object.keys(nights).length;
+  if(n){D.health.last=Date.now();saveD();}
+  return{steps:Object.keys(steps).length,nights:Object.keys(nights).length,ok:n>0};
+}
+const looksHealth=t=>/(^|\n|\|)\s*[PS]\s*;\s*\d{4}-/.test(String(t||''));
+async function healthPaste(){
+  let t='';try{t=await navigator.clipboard.readText();}catch(e){}
+  if(looksHealth(t)){const r=importHealth(t);if(r.ok){toast(`💚 Salud: ${r.steps} días de pasos y ${r.nights} noches de sueño`);render();return;}}
+  openSheet(`<h2>Traer de Salud</h2><p class="muted small">No he encontrado datos de Salud copiados. Ejecuta antes tu atajo «Salud a Mi Agenda» y vuelve a tocar el botón. También puedes mantener el dedo aquí abajo y elegir «Pegar».</p>
+  <textarea class="f" id="hpTxt" placeholder="Pega aquí lo que copia el atajo" style="min-height:120px"></textarea>
+  <div class="acts"><button class="btn" data-a="healthHelp">Cómo crear el atajo</button><span class="sp"></span><button class="btn" data-a="close">Cancelar</button><button class="btn primary" id="hpOk">Importar</button></div>`,s=>{
+    $('#hpOk',s).onclick=()=>{const r=importHealth($('#hpTxt',s).value);if(!r.ok){toast('No reconozco esos datos');return;}closeSheet();toast(`💚 Salud: ${r.steps} días de pasos y ${r.nights} noches de sueño`);render();};});
+}
+function healthManual(ds){
+  ds=ds||todayStr();const e=hd(ds)||{};const sl=e.sleep!=null?e.sleep:null;
+  openSheet(`<h2>Apuntar salud</h2><form id="hmf"><label class="l">Día</label><input class="f" type="date" name="d" value="${ds}" max="${todayStr()}">
+  <label class="l">👣 Pasos</label><input class="f" type="number" inputmode="numeric" name="p" min="0" max="200000" value="${e.steps!=null?e.steps:''}" placeholder="Ej.: 8200">
+  <label class="l">😴 Sueño de la noche anterior</label><div class="two"><input class="f" type="number" inputmode="numeric" name="h" min="0" max="20" value="${sl!=null?Math.floor(sl/60):''}" placeholder="Horas"><input class="f" type="number" inputmode="numeric" name="m" min="0" max="59" value="${sl!=null?sl%60:''}" placeholder="Minutos"></div>
+  <div class="acts">${hd(ds)?`<button type="button" class="btn danger" id="hmDel">${ico('trash')}Borrar</button><span class="sp"></span>`:''}<button type="button" class="btn" data-a="close">Cancelar</button><button class="btn primary">Guardar</button></div></form>`,s=>{
+    const f=$('#hmf',s);
+    f.d.onchange=()=>{const x=hd(f.d.value)||{};f.p.value=x.steps!=null?x.steps:'';f.h.value=x.sleep!=null?Math.floor(x.sleep/60):'';f.m.value=x.sleep!=null?x.sleep%60:'';};
+    f.onsubmit=ev=>{ev.preventDefault();const d=f.d.value||todayStr();const o=Object.assign({},hd(d));
+      if(f.p.value!=='')o.steps=clamp(parseInt(f.p.value)||0,0,200000);else delete o.steps;
+      if(f.h.value!==''||f.m.value!=='')o.sleep=clamp((parseInt(f.h.value)||0)*60+(parseInt(f.m.value)||0),0,1200);else delete o.sleep;
+      o.src='mano';if(o.steps==null&&o.sleep==null)delete D.health.days[d];else D.health.days[d]=o;saveD();closeSheet();render();toast('Guardado ✓');};
+    const del=$('#hmDel',s);if(del)del.onclick=()=>{delete D.health.days[f.d.value];saveD();closeSheet();render();};
+  });
+}
+function healthCard(){
+  const t=todayStr();const e=hd(t)||{};const g=D.health.goals;
+  const sp=e.steps!=null?clamp(e.steps/g.steps*100,0,100):0,slp=e.sleep!=null?clamp(e.sleep/(g.sleep*60)*100,0,100):0;
+  const last=D.health.last?new Date(D.health.last):null;
+  const lastTxt=last?(ymd(last)===t?'hoy a las '+pad(last.getHours())+':'+pad(last.getMinutes()):fmtShort(ymd(last))):'';
+  return`<section class="card c12"><h3>Salud <span class="jp">健康</span><span class="more">${lastTxt?'De Salud: '+lastTxt:''}</span></h3>
+  <div class="grid" style="gap:14px">
+    <div class="c6"><div class="row"><span style="font-size:24px">👣</span><div style="flex:1"><div class="row"><b style="font-size:24px">${fmtSteps(e.steps)}</b><span class="muted small">de ${fmtSteps(g.steps)} pasos</span><span class="sp"></span>${e.steps>=g.steps?'<span class="pill g">✓ Meta</span>':''}</div>
+      <div class="bar" style="margin-top:6px"><i style="width:${sp}%;background:var(--s3)"></i></div></div></div></div>
+    <div class="c6"><div class="row"><span style="font-size:24px">😴</span><div style="flex:1"><div class="row"><b style="font-size:24px">${fmtSleep(e.sleep)}</b><span class="muted small">de ${g.sleep} h</span><span class="sp"></span>${e.sleep>=g.sleep*60?'<span class="pill g">✓ Meta</span>':''}</div>
+      <div class="bar" style="margin-top:6px"><i style="width:${slp}%;background:var(--s1)"></i></div></div></div></div>
+  </div>
+  <div class="row wrap" style="margin-top:12px;gap:8px"><button class="btn small sage" data-a="healthPaste">💚 Traer de Salud</button><button class="btn small" data-a="healthManual">${ico('edit')}Apuntar a mano</button>${D.health.last?'':`<button class="btn small" data-a="healthHelp">Cómo crear el atajo</button>`}</div></section>`;
+}
+function healthBars(days,key){
+  const g=D.health.goals;const goal=key==='steps'?g.steps:g.sleep*60;const col=key==='steps'?'var(--s3)':'var(--s1)';
+  const vals=days.map(d=>{const e=hd(d);return e&&e[key]!=null?e[key]:null;});
+  if(!vals.some(v=>v!=null))return'<p class="empty">Aún no hay datos en estos días.</p>';
+  const mx=Math.max(goal*1.15,...vals.map(v=>v||0));
+  const W=420,H=170,L=key==='steps'?38:30,B=22,cw=(W-L)/days.length,bw=Math.min(30,cw*.62);const y=v=>H-B-(v/mx)*(H-B-8);
+  const ticks=key==='steps'?[0,Math.round(mx/2/1000)*1000,Math.floor(mx/1000)*1000]:[0,240,480,720].filter(v=>v<=mx);
+  let gr='';for(const v of [...new Set(ticks)]){gr+=`<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${key==='steps'?(v>=1000?Math.round(v/1000)+'k':v):v/60+'h'}</text>`;}
+  let bars='';vals.forEach((v,i)=>{const cx=L+cw*i+cw/2;
+    if(v!=null&&v>0)bars+=`<rect x="${cx-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(1,H-B-y(v))}" rx="4" fill="${col}" opacity="${v>=goal?1:.55}"/>`;
+    bars+=`<rect x="${L+cw*i}" y="0" width="${cw}" height="${H-B}" fill="transparent" data-tip="${fmtShort(days[i])}: ${v==null?'sin datos':key==='steps'?fmtSteps(v)+' pasos':fmtSleep(v)}"/>`;
+    if(days.length<=7||i%Math.ceil(days.length/10)===0||i===days.length-1)bars+=`<text x="${cx}" y="${H-6}" text-anchor="middle">${days.length<=7?DIAS3[fromYmd(days[i]).getDay()]:+days[i].slice(8)}</text>`;});
+  const gl=`<line x1="${L}" x2="${W}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W}" y="${y(goal)-5}" text-anchor="end">meta</text>`;
+  return`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${key==='steps'?'Pasos':'Sueño'} por día"><g class="grid">${gr}</g>${bars}${gl}</svg>`;
+}
+function healthAvg(days,key){const v=days.map(d=>hd(d)).filter(e=>e&&e[key]!=null).map(e=>e[key]);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;}
+function healthStats(days){
+  const g=D.health.goals;const as=healthAvg(days,'steps'),al=healthAvg(days,'sleep');
+  const okS=days.filter(d=>(hd(d)||{}).steps>=g.steps).length,okL=days.filter(d=>(hd(d)||{}).sleep>=g.sleep*60).length;
+  const a=[],b=[];for(let i=0;i<60;i++){const d=addDays(todayStr(),-i);const m=(D.journal[d]||{}).mood,s=(hd(d)||{}).sleep;if(!m||s==null)continue;(s>=7*60?a:b).push(m);}
+  const av=x=>x.reduce((s,v)=>s+v,0)/x.length;
+  const corr=a.length>=3&&b.length>=3?`<p class="small" style="margin:12px 0 0">😴 Los días que duermes 7 h o más tu ánimo medio es <b>${av(a).toFixed(1)}</b>, y cuando duermes menos, <b>${av(b).toFixed(1)}</b>. <span class="muted">(últimos 60 días)</span></p>`:'';
+  const rows=days.filter(d=>hd(d));
+  return`<section class="card c6"><h3>👣 Pasos</h3><div class="stats" style="margin-bottom:10px"><div class="stat"><b>${fmtSteps(as)}</b><span>media diaria</span></div><div class="stat"><b>${okS}/${days.length}</b><span>días con la meta</span></div></div>${healthBars(days,'steps')}</section>
+  <section class="card c6"><h3>😴 Sueño</h3><div class="stats" style="margin-bottom:10px"><div class="stat"><b>${fmtSleep(al)}</b><span>media por noche</span></div><div class="stat"><b>${okL}/${days.length}</b><span>noches con la meta</span></div></div>${healthBars(days,'sleep')}${corr}</section>
+  ${rows.length?`<section class="card c12" style="padding-top:8px"><details class="tv"><summary>Ver pasos y sueño como tabla</summary><table class="tbl"><tr><th>Día</th><th class="n">Pasos</th><th class="n">Sueño</th><th>Origen</th></tr>${rows.map(d=>{const e=hd(d);return`<tr><td>${fmtShort(d)}</td><td class="n">${fmtSteps(e.steps)}</td><td class="n">${fmtSleep(e.sleep)}</td><td class="small muted">${e.src==='mano'?'a mano':'Salud'}</td></tr>`;}).join('')}</table></details></section>`:''}`;
+}
+function healthHelp(){
+  const st=(n,t)=>`<div class="it"><b style="min-width:24px;color:var(--sage-d)">${n}</b><div class="tx">${t}</div></div>`;
+  openSheet(`<h2>Atajo «Salud a Mi Agenda»</h2><p class="small muted">Se hace una sola vez en la app <b>Atajos</b> del iPhone (donde está tu Apple Watch). Toca <b>＋</b> y añade estas acciones en orden:</p>
+  <h3 style="font-size:18px;margin:14px 0 4px">👣 Pasos</h3><div class="list">
+  ${st(1,'<b>Buscar muestras de salud</b> → Tipo: <b>Pasos</b> · Fecha de inicio: <b>está en los últimos 7 días</b> · Agrupar por: <b>Día</b>.')}
+  ${st(2,'<b>Repetir con cada</b> elemento de las muestras.')}
+  ${st(3,'Dentro del repetir: <b>Formatear fecha</b> → la <i>Fecha de inicio</i> del elemento de repetición, formato <b>Personalizado</b>: <code>yyyy-MM-dd</code>')}
+  ${st(4,'<b>Texto</b>: <code>P;</code>[Fecha formateada]<code>;</code>[Elemento de repetición → <i>Valor</i>]')}
+  ${st(5,'<b>Añadir a la variable</b> → nombre: <b>Salud</b>. (Aquí termina el repetir.)')}</div>
+  <h3 style="font-size:18px;margin:14px 0 4px">😴 Sueño</h3><div class="list">
+  ${st(6,'<b>Buscar muestras de salud</b> → Tipo: <b>Análisis del sueño</b> · Fecha de inicio: <b>está en los últimos 7 días</b> · Valor: <b>no es En cama</b> · Valor: <b>no es Despierto</b>.')}
+  ${st(7,'<b>Repetir con cada</b> elemento.')}
+  ${st(8,'<b>Formatear fecha</b> → <i>Fecha de inicio</i> del elemento, Personalizado: <code>yyyy-MM-dd\'T\'HH:mm</code>')}
+  ${st(9,'<b>Formatear fecha</b> → <i>Fecha de finalización</i> del elemento, mismo formato.')}
+  ${st(10,'<b>Texto</b>: <code>S;</code>[primera fecha]<code>;</code>[segunda fecha]')}
+  ${st(11,'<b>Añadir a la variable</b> → <b>Salud</b>. (Fin del repetir.)')}</div>
+  <h3 style="font-size:18px;margin:14px 0 4px">📋 Copiar</h3><div class="list">
+  ${st(12,'<b>Copiar al portapapeles</b> → la variable <b>Salud</b>.')}
+  ${st(13,'<b>Mostrar notificación</b>: «Salud copiada 💚». Llama al atajo <b>Salud a Mi Agenda</b>.')}</div>
+  <p class="small muted">Cada día: ejecuta el atajo (por ejemplo desde un widget) → abre Mi Agenda → toca <b>💚 Traer de Salud</b>. La primera vez el iPhone te pedirá permiso para leer Salud y para pegar.</p>
+  <div class="acts"><button class="btn primary" data-a="close">Entendido</button></div>`);
 }
 </script>
 <script>
@@ -1401,6 +1531,9 @@ const ACT={
   faceReg:()=>faceRegister(),
   faceOff:()=>{D.settings.face=[];saveD();render();toast('Face ID quitado');},
   syncPanel:()=>{try{window.MiAgendaSync.openPanel();}catch(e){}},
+  healthPaste:()=>healthPaste(),
+  healthManual:el=>healthManual(el.dataset.d),
+  healthHelp:()=>healthHelp(),
   export:()=>doExport(),
   import:()=>{const f=$('#jsonIn');f.value='';f.click();}
 };
@@ -1434,6 +1567,8 @@ function onInput(el){
     case'jIdeas':jEntry(ui.jDate).ideas=v;jClean(ui.jDate);break;
     case'jGrat':{const e=jEntry(ui.jDate);e.grat=e.grat||['','',''];e.grat[+el.dataset.i]=v;jClean(ui.jDate);break;}
     case'name':D.settings.name=v.trim();break;
+    case'hSteps':D.health.goals.steps=clamp(parseInt(v)||8000,500,50000);break;
+    case'hSleep':D.health.goals.sleep=clamp(parseNum(v)||8,4,12);break;
     case'rollover':D.settings.rollover=!!v;if(v)rollover();break;
   }
   saveD();
@@ -1504,6 +1639,7 @@ if(mq&&mq.addEventListener)mq.addEventListener('change',applyTheme);
 function init(){
   try{sessionStorage.setItem('ma-portada','1');}catch(e){}
   loadD();loadC();PJ=readJSON('planJapones.v1');applyTheme();rollover();
+  try{const q=new URLSearchParams(location.search).get('salud');if(q){const r=importHealth(q);history.replaceState(null,'',location.pathname+location.hash);if(r.ok)setTimeout(()=>toast(`💚 Salud: ${r.steps} días de pasos y ${r.nights} noches de sueño`),500);}}catch(e){}
   const h=(location.hash||'').slice(1);if(SECS.some(s=>s[0]===h))ui.sec=h;
   render();loadBooks();checkReminders();
   setInterval(()=>{const c=$$('[data-clock]');if(D.timer)c.forEach(el=>el.textContent=fmtClock(timerMs()));},1000);
