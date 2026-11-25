@@ -68,6 +68,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 #pop h3{margin:0 0 12px;font-size:17px}
 .sub{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 7px}
 .row{display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap}
+.row:has(.switch){flex-wrap:nowrap}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{padding:7px 11px;border-radius:999px;background:var(--line);font-size:13.5px;display:flex;align-items:center;gap:6px}
 .chip.on{background:var(--accent);color:#fff}
@@ -215,12 +216,12 @@ const ICON={
 const ic=n=>`<svg viewBox="0 0 24 24">${ICON[n]}</svg>`;
 const TOOL_DEFS={
  pencil:{n:'Lápiz',size:[1,14,3],op:.8,sm:.25},
- marker:{n:'Rotulador',size:[1,40,6],op:1,sm:.3,tip:'round'},
- brush:{n:'Brush pen',size:[3,70,18],op:1,sm:.45},
+ marker:{n:'Rotulador',size:[1,40,6],op:1,sm:.2,tip:'round'},
+ brush:{n:'Brush pen',size:[3,70,18],op:1,sm:.2},
  water:{n:'Acuarela',size:[8,140,44],op:.75,sm:.35},
  chalk:{n:'Tiza',size:[4,60,16],op:.9,sm:.2},
- nib:{n:'Plumilla',size:[3,60,16],op:1,sm:.35,angle:40},
- fude:{n:'Pincel japonés',size:[6,100,32],op:1,sm:.4},
+ nib:{n:'Plumilla',size:[3,60,16],op:1,sm:.2,angle:40},
+ fude:{n:'Pincel japonés',size:[6,100,32],op:1,sm:.2},
  hl:{n:'Subrayador',size:[8,90,30],op:.45,sm:.3},
  eraser:{n:'Goma',size:[4,140,26],op:1,sm:.2,mode:'zona'},
  lasso:{n:'Lazo'},
@@ -241,8 +242,11 @@ function defaultPalettes(){
 }
 
 /* ---------- Estado ---------- */
-const DEFAULT_SETTINGS={tool:'brush',prevTool:'brush',color:'#2b2a28',color2:'#c2697a',grad:false,tools:{},recent:[],palette:'basicos',dark:false,penOnly:false};
+const DEFAULT_SETTINGS={tool:'brush',prevTool:'brush',color:'#2b2a28',color2:'#c2697a',grad:false,tools:{},recent:[],palette:'basicos',dark:false,penOnly:false,pressure:'ligera'};
 let settings=Object.assign({},DEFAULT_SETTINGS,LS.get('lt-settings',{}));
+// v2: trazo más ligero (menos suavizado por defecto y presión más sensible)
+if(settings.v!==2){const old={brush:.45,fude:.4,marker:.3,nib:.35},nw={brush:.2,fude:.2,marker:.2,nib:.2};for(const k in old){const t=settings.tools&&settings.tools[k];if(t&&t.sm!=null&&Math.abs(t.sm-old[k])<.001)t.sm=nw[k]}if(!settings.pressure)settings.pressure='ligera';settings.v=2;try{localStorage.setItem('lt-settings',JSON.stringify(settings))}catch(e){}}
+const PRESS={ligera:2,normal:1.5,firme:1.1};
 let palettes=LS.get('lt-palettes',null)||defaultPalettes();
 const saveSettings=()=>LS.set('lt-settings',settings);
 const savePalettes=()=>LS.set('lt-palettes',palettes);
@@ -279,7 +283,7 @@ const activeLayer=()=>doc.layers.find(l=>l.id===doc.active)||doc.layers[doc.laye
 const layerById=id=>doc.layers.find(l=>l.id===id);
 
 /* ---------- Lienzo ---------- */
-function mkCanvas(){const cv=document.createElement('canvas');cv.width=Math.round(DW*R);cv.height=Math.round(DH*R);const ctx=cv.getContext('2d');ctx.setTransform(R,0,0,R,0,0);return{cv,ctx}}
+function mkCanvas(fast){const cv=document.createElement('canvas');cv.width=Math.round(DW*R);cv.height=Math.round(DH*R);const ctx=fast?(cv.getContext('2d',{desynchronized:true})||cv.getContext('2d')):cv.getContext('2d');ctx.setTransform(R,0,0,R,0,0);return{cv,ctx}}
 function freeCanvas(o){if(o&&o.cv){o.cv.width=0;o.cv.height=0}}
 function setupStage(){
  [paper,guides,ov,scratch].forEach(freeCanvas);LC.forEach(freeCanvas);LC.clear();
@@ -290,7 +294,7 @@ function setupStage(){
  paper=mkCanvas();guides=mkCanvas();stage.append(paper.cv,guides.cv);
  refEl=document.createElement('img');refEl.className='ref';refEl.alt='';stage.append(refEl);
  for(const L of doc.layers){const o=mkCanvas();LC.set(L.id,o)}
- ov=mkCanvas();scratch=mkCanvas();
+ ov=mkCanvas(true);scratch=mkCanvas();
  selBoxEl=document.createElement('div');selBoxEl.id='selBox';selBoxEl.hidden=true;
  rebuildLayerDOM();
  renderPaper();renderGuides();renderAllLayers();renderRef();
@@ -367,10 +371,10 @@ function makeRenderer(s,ctx){
  const ang=(s.angle??(T==='hl'?90:45))*Math.PI/180,nvx=Math.cos(ang),nvy=-Math.sin(ang);
  const W=p=>{switch(T){
   case 'pencil':return size*(.55+.45*p);case 'marker':return size*(.92+.08*p);
-  case 'brush':return size*(.1+.9*Math.pow(p,1.6));case 'fude':return size*(.06+.94*Math.pow(p,1.25));
+  case 'brush':return size*(.12+.88*Math.pow(p,1.1));case 'fude':return size*(.07+.93*p);
   case 'water':return size*(.55+.45*p);case 'chalk':return size*(.7+.3*p);
   case 'nib':return size*(.85+.15*p);case 'hl':return size;default:return soft?size*1.2:size}};
- const spacing=w=>{switch(T){case 'pencil':return Math.max(.6,w*.3);case 'water':return Math.max(1,w*.16);case 'chalk':return Math.max(1,w*.14);default:return Math.max(.5,w*.1)}};
+ const spacing=w=>{switch(T){case 'pencil':return Math.max(.6,w*.3);case 'water':return Math.max(1,w*.16);case 'chalk':return Math.max(1,w*.14);case 'brush':case 'fude':return Math.max(.6,w*.12);default:return Math.max(.5,w*.1)}};
  function dab(x,y,w,d){
   const c=colAt(d);
   switch(T){
@@ -396,7 +400,7 @@ function makeRenderer(s,ctx){
   ctx.fillStyle=T==='eraser'?'#000':cssC(colAt(0));ctx.beginPath();ctx.arc(x,y,w/2,0,6.2832);ctx.fill();ctx.globalCompositeOperation='source-over';
  }
  return{add(pt){
-  const x=pt[0],y=pt[1];let w=W(pt[2]);if(pw!=null&&(T==='brush'||T==='fude'))w=lerp(pw,w,.4);
+  const x=pt[0],y=pt[1];let w=W(pt[2]);if(pw!=null&&(T==='brush'||T==='fude'))w=lerp(pw,w,.65);
   if(!prev){first(x,y,w);prev={x,y,w};pw=w;carry=spacing(w);return}
   const dx=x-prev.x,dy=y-prev.y,L=Math.hypot(dx,dy);if(L<.05)return;
   if(STAMP.has(T)||soft){let d=carry;while(d<=L){const t=d/L,sw=lerp(prev.w,w,t);dab(prev.x+dx*t,prev.y+dy*t,sw,dist+d);d+=spacing(sw)}carry=d-L}
@@ -512,11 +516,11 @@ function startTool(e,pt){
 function feed(e){const list=(e.getCoalescedEvents&&e.getCoalescedEvents())||[];if(list.length)for(const ev of list)addRaw(ev);else addRaw(e)}
 function addRaw(ev){
  const d=drawing,pt=toDoc(ev),now=ev.timeStamp||performance.now();let p;
- if(ev.pointerType==='pen')p=ev.pressure>0?Math.pow(Math.min(1,ev.pressure*1.15),.85):.5;
+ if(ev.pointerType==='pen')p=ev.pressure>0?Math.pow(Math.min(1,ev.pressure*(PRESS[settings.pressure]||1.5)),.75):.5;
  else if(d.sm){const dt=Math.max(1,now-d.lastT),v=Math.hypot(pt.x-d.sm.x,pt.y-d.sm.y)/dt,target=clamp(1.05-v*.4,.2,1);p=lerp(d.p,target,.2)}else p=.6;
  d.p=p;d.lastT=now;d.raw=[pt.x,pt.y,p];
  let x=pt.x,y=pt.y;
- if(d.sm){const k=1-d.smv*.85;x=d.sm.x+(pt.x-d.sm.x)*k;y=d.sm.y+(pt.y-d.sm.y)*k;if(Math.hypot(x-d.sm.x,y-d.sm.y)<.4)return}
+ if(d.sm){const k=1-d.smv*.6;x=d.sm.x+(pt.x-d.sm.x)*k;y=d.sm.y+(pt.y-d.sm.y)*k;if(Math.hypot(x-d.sm.x,y-d.sm.y)<.4)return}
  d.sm={x,y};pushPt(d,x,y,p);
 }
 function pushPt(d,x,y,p){const q=[Math.round(x*10)/10,Math.round(y*10)/10,Math.round(p*100)/100];d.s.pts.push(q);growBB(d.s,q);d.r.add(q)}
@@ -837,6 +841,9 @@ function popMenu(el){
  el.innerHTML=`<h3>Ajustes</h3>
   <div class="row"><label class="switch"><input type="checkbox" id="mDark" ${settings.dark?'checked':''}><span></span></label> Modo oscuro</div>
   <div class="row"><label class="switch"><input type="checkbox" id="mPen" ${settings.penOnly?'checked':''}><span></span></label> Solo el Apple Pencil dibuja (el dedo mueve y hace zoom)</div>
+  <div class="sub">Presión del Apple Pencil</div>
+  <div class="seg" id="mPress">${[['ligera','Ligera'],['normal','Normal'],['firme','Firme']].map(([k,n])=>`<button data-v="${k}" class="${settings.pressure===k?'on':''}">${n}</button>`).join('')}</div>
+  <p class="cname">Ligera: el trazo engorda con poca presión. Firme: hay que apretar más.</p>
   <div class="sub">Gestos</div>
   <ul class="help cname" style="padding-left:18px;margin:0">
    <li><b>Pellizcar</b> con dos dedos: zoom. <b>Arrastrar</b> con dos dedos: mover la hoja.</li>
@@ -848,6 +855,7 @@ function popMenu(el){
   <p class="cname">Todo se guarda solo en este aparato.</p>`;
  el.querySelector('#mDark').onchange=e=>{settings.dark=e.target.checked;saveSettings();document.body.classList.toggle('dark',settings.dark)};
  el.querySelector('#mPen').onchange=e=>{settings.penOnly=e.target.checked;saveSettings()};
+ el.querySelector('#mPress').onclick=e=>{const b=e.target.closest('button');if(!b)return;settings.pressure=b.dataset.v;saveSettings();popMenu(el);toast('Presión: '+b.textContent)};
 }
 
 /* ---------- Galería de trabajos ---------- */
