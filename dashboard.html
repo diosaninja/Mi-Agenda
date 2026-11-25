@@ -1312,8 +1312,8 @@ VIEWS.ajustes=()=>{
     <p class="small muted">En iPhone y iPad los avisos funcionan cuando Mi Agenda está instalada en la pantalla de inicio, y llegan mientras la app está abierta o en segundo plano reciente.</p></section>
   <section class="card c6"><h3>Salud <span class="jp">健康</span></h3>
     <div class="two"><div><label class="l">Meta de pasos</label><input class="f" type="number" min="500" max="50000" step="500" data-in="hSteps" value="${D.health.goals.steps}"></div><div><label class="l">Meta de sueño (horas)</label><input class="f" type="number" min="4" max="12" step="0.5" data-in="hSleep" value="${D.health.goals.sleep}"></div></div>
-    <div class="row wrap" style="margin-top:12px"><button class="btn small" data-a="healthHelp">Cómo crear el atajo</button><button class="btn small" data-a="healthPaste">💚 Traer de Salud</button><button class="btn small" data-a="healthManual">${ico('edit')}Apuntar a mano</button></div>
-    <p class="small muted">Las apps web no pueden leer la app Salud directamente: el atajo copia tus pasos y tu sueño de los últimos 7 días y el botón los trae aquí.</p></section>
+    <div class="row wrap" style="margin-top:12px"><button class="btn small" data-a="healthManual">${ico('edit')}Apuntar o corregir otro día</button></div>
+    <p class="small muted">Los pasos y el sueño de hoy se apuntan en la tarjeta «Salud» de Hoy.</p></section>
   <section class="card c6"><h3>Diario privado</h3>
     ${S.pin?`<p class="small">🔒 Tu diario tiene código.</p><div class="row wrap"><button class="btn small" data-a="pinSet">Cambiar código</button><button class="btn small" data-a="pinOff">Quitar código</button>${window.PublicKeyCredential?`<button class="btn small" data-a="faceReg">${ico('face')}${(S.face||[]).length?'Añadir Face ID en este aparato':'Activar Face ID'}</button>`:''}</div>${(S.face||[]).length?`<p class="small muted">Face ID activado en ${(S.face||[]).length} ${(S.face||[]).length===1?'aparato':'aparatos'}. <button data-a="faceOff" style="color:var(--warn)">Quitar</button></p>`:''}`
       :`<p class="small muted">Pon un código de 4 cifras para que nadie lea tu diario si coge tu iPad o tu iPhone.</p><button class="btn small sage" data-a="pinSet">${ico('lock')}Poner código</button>`}</section>
@@ -1392,16 +1392,33 @@ function healthManual(ds){
 function healthCard(){
   const t=todayStr();const e=hd(t)||{};const g=D.health.goals;
   const sp=e.steps!=null?clamp(e.steps/g.steps*100,0,100):0,slp=e.sleep!=null?clamp(e.sleep/(g.sleep*60)*100,0,100):0;
-  const last=D.health.last?new Date(D.health.last):null;
-  const lastTxt=last?(ymd(last)===t?'hoy a las '+pad(last.getHours())+':'+pad(last.getMinutes()):fmtShort(ymd(last))):'';
-  return`<section class="card c12"><h3>Salud <span class="jp">健康</span><span class="more">${lastTxt?'De Salud: '+lastTxt:''}</span></h3>
+  const y=hd(addDays(t,-1));
+  return`<section class="card c12"><h3>Salud <span class="jp">健康</span><button class="more" data-a="healthManual" data-d="${addDays(t,-1)}">Otro día ›</button></h3>
   <div class="grid" style="gap:14px">
-    <div class="c6"><div class="row"><span style="font-size:24px">👣</span><div style="flex:1"><div class="row"><b style="font-size:24px">${fmtSteps(e.steps)}</b><span class="muted small">de ${fmtSteps(g.steps)} pasos</span><span class="sp"></span>${e.steps>=g.steps?'<span class="pill g">✓ Meta</span>':''}</div>
-      <div class="bar" style="margin-top:6px"><i style="width:${sp}%;background:var(--s3)"></i></div></div></div></div>
-    <div class="c6"><div class="row"><span style="font-size:24px">😴</span><div style="flex:1"><div class="row"><b style="font-size:24px">${fmtSleep(e.sleep)}</b><span class="muted small">de ${g.sleep} h</span><span class="sp"></span>${e.sleep>=g.sleep*60?'<span class="pill g">✓ Meta</span>':''}</div>
-      <div class="bar" style="margin-top:6px"><i style="width:${slp}%;background:var(--s1)"></i></div></div></div></div>
-  </div>
-  <div class="row wrap" style="margin-top:12px;gap:8px"><button class="btn small sage" data-a="healthPaste">💚 Traer de Salud</button><button class="btn small" data-a="healthManual">${ico('edit')}Apuntar a mano</button>${D.health.last?'':`<button class="btn small" data-a="healthHelp">Cómo crear el atajo</button>`}</div></section>`;
+    <div class="c6"><div class="row" style="align-items:flex-start"><span style="font-size:24px;margin-top:6px">👣</span><div style="flex:1;min-width:0">
+      <label class="l" style="margin-top:0">Pasos de hoy</label>
+      <div class="row"><input class="f" type="number" inputmode="numeric" min="0" max="200000" data-in="hdSteps" value="${e.steps!=null?e.steps:''}" placeholder="0" style="max-width:140px;font-size:20px;font-weight:600"><span class="muted small">de ${fmtSteps(g.steps)}</span><span class="sp"></span><span id="hsOk">${e.steps>=g.steps?'<span class="pill g">✓ Meta</span>':''}</span></div>
+      <div class="bar" style="margin-top:8px"><i id="hsBar" style="width:${sp}%;background:var(--s3)"></i></div>
+      ${y&&y.steps!=null?`<div class="small muted" style="margin-top:4px">Ayer: ${fmtSteps(y.steps)}</div>`:''}</div></div></div>
+    <div class="c6"><div class="row" style="align-items:flex-start"><span style="font-size:24px;margin-top:6px">😴</span><div style="flex:1;min-width:0">
+      <label class="l" style="margin-top:0">Sueño de anoche</label>
+      <div class="row"><input class="f" type="number" inputmode="numeric" min="0" max="20" data-in="hdSleepH" value="${e.sleep!=null?Math.floor(e.sleep/60):''}" placeholder="h" style="width:64px;font-size:20px;font-weight:600;text-align:center"><span class="muted">h</span>
+        <input class="f" type="number" inputmode="numeric" min="0" max="59" data-in="hdSleepM" value="${e.sleep!=null?e.sleep%60:''}" placeholder="min" style="width:72px;font-size:20px;font-weight:600;text-align:center"><span class="muted">min</span><span class="sp"></span><span id="hlOk">${e.sleep>=g.sleep*60?'<span class="pill g">✓ Meta</span>':''}</span></div>
+      <div class="bar" style="margin-top:8px"><i id="hlBar" style="width:${slp}%;background:var(--s1)"></i></div>
+      ${y&&y.sleep!=null?`<div class="small muted" style="margin-top:4px">Ayer: ${fmtSleep(y.sleep)}</div>`:''}</div></div></div>
+  </div><p class="small muted" style="margin:10px 0 0">Copia los números de la app Salud (Resumen). Se guarda solo.</p></section>`;
+}
+function saveHealthInline(){
+  const t=todayStr();const v=k=>{const el=$(`[data-in="${k}"]`);return el?el.value.trim():'';};
+  const o=Object.assign({},hd(t));const p=v('hdSteps'),h=v('hdSleepH'),m=v('hdSleepM');
+  if(p!=='')o.steps=clamp(parseInt(p)||0,0,200000);else delete o.steps;
+  if(h!==''||m!=='')o.sleep=clamp((parseInt(h)||0)*60+clamp(parseInt(m)||0,0,59),0,1200);else delete o.sleep;
+  o.src='mano';if(o.steps==null&&o.sleep==null)delete D.health.days[t];else D.health.days[t]=o;
+  const g=D.health.goals;const sb=$('#hsBar'),lb=$('#hlBar');
+  if(sb)sb.style.width=(o.steps!=null?clamp(o.steps/g.steps*100,0,100):0)+'%';
+  if(lb)lb.style.width=(o.sleep!=null?clamp(o.sleep/(g.sleep*60)*100,0,100):0)+'%';
+  const ok='<span class="pill g">✓ Meta</span>';const a=$('#hsOk'),b=$('#hlOk');
+  if(a)a.innerHTML=o.steps>=g.steps?ok:'';if(b)b.innerHTML=o.sleep>=g.sleep*60?ok:'';
 }
 function healthBars(days,key){
   const g=D.health.goals;const goal=key==='steps'?g.steps:g.sleep*60;const col=key==='steps'?'var(--s3)':'var(--s1)';
@@ -1567,6 +1584,7 @@ function onInput(el){
     case'jIdeas':jEntry(ui.jDate).ideas=v;jClean(ui.jDate);break;
     case'jGrat':{const e=jEntry(ui.jDate);e.grat=e.grat||['','',''];e.grat[+el.dataset.i]=v;jClean(ui.jDate);break;}
     case'name':D.settings.name=v.trim();break;
+    case'hdSteps':case'hdSleepH':case'hdSleepM':saveHealthInline();break;
     case'hSteps':D.health.goals.steps=clamp(parseInt(v)||8000,500,50000);break;
     case'hSleep':D.health.goals.sleep=clamp(parseNum(v)||8,4,12);break;
     case'rollover':D.settings.rollover=!!v;if(v)rollover();break;
