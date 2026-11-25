@@ -649,7 +649,8 @@ const CALI=['Calentamiento: óvalos y bucles, 3 filas','Trazos básicos: vertica
 'Mayúsculas decorativas: A – I','Números 0 – 9 con tu mejor letra','Una frase de gratitud bonita','Una palabra N5 en japonés ×5 (ありがとう, おはよう…)','Cenefa de trazos curvos y ondas',
 'Repasa una ficha del Cuaderno de tinta','Escribe la fecha de hoy en japonés: '+'今日'];
 const dayIndex=(ds,n)=>{const d=fromYmd(ds);const s=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5;return((Math.floor(s)%n)+n)%n;};
-const LIBRETA='https://claude.ai/artifact/KLcimgj1EJizZT75rVKju5';
+const LIBRETA='libreta.html';
+const libInfo=()=>{try{const o=JSON.parse(localStorage.getItem('libreta-v1')||'null');if(!o||!o.last)return null;const t=ymd(new Date()),pc=o.days&&o.days[o.last.id]||0;let st=0;const d=new Date();for(let i=0;i<400;i++){const k=ymd(d);if(o.days&&o.days[k]>=50)st++;else if(i>0)break;d.setDate(d.getDate()-1);}return{...o.last,pct:pc,today:o.last.id===t,streak:st};}catch(e){return null}};
 const APPS=[['calendario.html','📅','Calendario'],[LIBRETA,'練','Libreta de japonés'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['caligrafia.html','✒️','Caligrafía'],
 ['cuaderno.html','📓','Cuaderno de tinta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['gimnasio.html','🏋️','Gimnasio'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['index.html?biblioteca','🗂️','Biblioteca']];
 </script>
@@ -762,7 +763,7 @@ VIEWS.hoy=()=>{
       ${pj?`<a class="pill${pj.pct===100?' g':''}" href="japones.html">日 Plan ${pj.rest?'(descanso) ':''}${pj.pct}%</a>`:''}
       ${ki?`<a class="pill${ki.today?' g':''}" href="kanji.html">漢 🔥${ki.streak} · ${ki.started} kanji</a>`:''}
       ${ka?`<a class="pill${ka.today?' g':''}" href="silabarios.html">あ 🔥${ka.streak} · ${ka.h}/46 · ${ka.k}/46</a>`:''}
-      <a class="pill" href="${LIBRETA}" target="_blank" rel="noopener">練 Lección de japonés de hoy</a>
+      <a class="pill" href="${LIBRETA}">練 Lección de hoy${(()=>{const l=libInfo();return l?` · ${l.pct}%`:''})()}</a>
       <span class="pill">✒️ ${CALI[dayIndex(t,CALI.length)]}</span>
     </div></section>
 
@@ -774,7 +775,7 @@ VIEWS.hoy=()=>{
     <p class="small muted" style="margin:10px 0 0">${(j.grat||[]).filter(Boolean).length?`🙏 ${(j.grat||[]).filter(Boolean).length} agradecimientos hoy`:'Apunta 3 cosas por las que estás agradecida.'}</p></section>
 
   <section class="card c12"><div class="row wrap" style="gap:14px"><span style="font-size:26px">🎋</span><div style="flex:1;min-width:200px"><div class="prov">${pv[0]}</div><div class="small muted" style="font-family:var(--jp)">${pv[1]}</div><div style="margin-top:4px">${esc(pv[2])}</div></div></div></section>
-  <section class="card c12"><h3>Mis apps</h3><div class="apps">${APPS.map(([h,e,n])=>`<a class="app" href="${h}"${h.startsWith('http')?' target="_blank" rel="noopener"':''}><span class="e">${e}</span>${n}</a>`).join('')}</div></section>
+  <section class="card c12"><h3>Mis apps</h3><div class="apps">${APPS.map(([h,e,n])=>`<a class="app" href="${h}"><span class="e">${e}</span>${n}</a>`).join('')}</div></section>
   </div>`;
 };
 function timerMini(){
@@ -991,7 +992,7 @@ function lResumen(){
   <section class="card c6"><h3>Esta semana</h3><div class="stats">${Object.entries(AREAS).map(([k,a])=>`<div class="stat"><b>${fmtMin(tot(k))}</b><span>${a.e} ${a.n}</span></div>`).join('')}</div>
     <p class="small muted" style="margin:12px 0 0">Total: <b style="color:var(--ink)">${fmtMin(tot('total'))}</b> · <button data-a="go" data-s="stats" style="color:var(--sage-d);font-weight:600">ver estadísticas ›</button></p></section>
   <section class="card c6"><h3>Japonés hoy <span class="jp">日本語</span></h3><div class="list">
-    <a class="it" href="${LIBRETA}" target="_blank" rel="noopener" style="text-decoration:none"><span>練</span><div class="tx"><div class="t">Libreta de japonés</div><div class="m">Lección nueva cada mañana: kana, vocabulario, dictado, verbos, lectura…</div></div></a>
+    <a class="it" href="${LIBRETA}" style="text-decoration:none"><span>練</span><div class="tx"><div class="t">Libreta de japonés ${(()=>{const l=libInfo();return l&&l.pct===100?'✓':''})()}</div><div class="m">${(()=>{const l=libInfo();return l?`Día ${l.n} · fila ${l.h}/${l.t} · ${l.pct}% hecho${l.streak?` · 🔥 ${l.streak} días`:''}`:'Lección nueva cada mañana: kana, vocabulario, dictado, verbos, lectura…'})()}</div></div></a>
     ${pj?`<a class="it" href="japones.html" style="text-decoration:none"><span>日</span><div class="tx"><div class="t">Plan de japonés</div><div class="m">${pj.done}/${pj.total} tareas · ${pj.pct}%</div></div></a>`:''}
     ${ka?`<a class="it" href="silabarios.html" style="text-decoration:none"><span>あ</span><div class="tx"><div class="t">Silabarios ${ka.today?'✓':''}</div><div class="m">🔥 ${ka.streak} días · hiragana ${ka.h}/46 · katakana ${ka.k}/46</div></div></a>`:''}
     ${ki?`<a class="it" href="kanji.html" style="text-decoration:none"><span>漢</span><div class="tx"><div class="t">Kanji ${ki.today?'✓':''}</div><div class="m">🔥 ${ki.streak} días · ${ki.started} empezados · ${ki.dom} dominados</div></div></a>`:''}
@@ -1007,7 +1008,7 @@ function lJapones(){
     <div class="stat"><b>${ka.h}/46</b><span>あ Hiragana aprendidos</span></div><div class="stat"><b>${ka.k}/46</b><span>ア Katakana aprendidos</span></div>
     <div class="stat"><b>${ki.started}</b><span>漢 Kanji empezados</span></div><div class="stat"><b>${ki.dom}</b><span>Kanji dominados</span></div>
     <div class="stat"><b>${known}/${PARTS.length}</b><span>Partículas que dominas</span></div><div class="stat"><b>🔥 ${Math.max(ka.streak,ki.streak)}</b><span>Mejor racha actual</span></div></div>
-    <div class="row wrap" style="margin-top:14px;gap:8px"><a class="btn small" href="silabarios.html">あ Silabarios</a><a class="btn small" href="kanji.html">漢 Kanji</a><a class="btn small" href="japones.html">日 Plan japonés</a><a class="btn small" href="${LIBRETA}" target="_blank" rel="noopener">練 Libreta de japonés</a></div></section>
+    <div class="row wrap" style="margin-top:14px;gap:8px"><a class="btn small" href="silabarios.html">あ Silabarios</a><a class="btn small" href="kanji.html">漢 Kanji</a><a class="btn small" href="japones.html">日 Plan japonés</a><a class="btn small" href="${LIBRETA}">練 Libreta de japonés</a></div></section>
   ${timerCard('japones')}
   <section class="card c7"><h3>Partículas <span class="jp">助詞</span><span class="more">${known} dominadas</span></h3>
     <div class="parts">${PARTS.map(p=>`<button class="part${P[p.p]?' on':''}" data-a="part" data-p="${p.p}" style="${ui.part===p.p?'outline:2px solid var(--ink)':''}">${p.p}</button>`).join('')}</div>
