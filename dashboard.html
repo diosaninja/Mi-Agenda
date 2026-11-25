@@ -502,6 +502,10 @@ function kanjiInfo(){
   return{started:ks.length,dom:ks.filter(k=>srs[k]&&srs[k].iv>=21).length,streak:streakDays(S.days),today:(S.days||[]).includes(todayStr()),
     month:((S.month||{})[monthKey()]||[]).length};
 }
+function letteringInfo(){
+  const S=readJSON('lt-stats');const days=readJSON('lt-days');if(!S&&!days)return null;
+  return{works:(S&&S.works)||0,streak:streakDays(days),today:(days||[]).includes(todayStr()),last:S&&S.lastTitle||''};
+}
 function kanaInfo(){
   const S=readJSON('silabarios-v1');if(!S)return null;const L=S.learned||{};
   return{h:(L.h||[]).length,k:(L.k||[]).length,streak:streakDays(S.days),today:(S.days||[]).includes(todayStr())};
@@ -655,7 +659,7 @@ const CALI=['Calentamiento: óvalos y bucles, 3 filas','Trazos básicos: vertica
 'Repasa una ficha del Cuaderno de tinta','Escribe la fecha de hoy en japonés: '+'今日'];
 const dayIndex=(ds,n)=>{const d=fromYmd(ds);const s=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5;return((Math.floor(s)%n)+n)%n;};
 const APPS=[['calendario.html','📅','Calendario'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['caligrafia.html','✒️','Caligrafía'],
-['cuaderno.html','📓','Cuaderno de tinta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['gimnasio.html','🏋️','Gimnasio'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['index.html?biblioteca','🗂️','Biblioteca']];
+['cuaderno.html','📓','Cuaderno de tinta'],['lettering.html','🖌️','Lettering'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['gimnasio.html','🏋️','Gimnasio'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['index.html?biblioteca','🗂️','Biblioteca']];
 </script>
 <script>
 /* ---------- navegación ---------- */
@@ -767,6 +771,7 @@ VIEWS.hoy=()=>{
       ${ki?`<a class="pill${ki.today?' g':''}" href="kanji.html">漢 🔥${ki.streak} · ${ki.started} kanji</a>`:''}
       ${ka?`<a class="pill${ka.today?' g':''}" href="silabarios.html">あ 🔥${ka.streak} · ${ka.h}/46 · ${ka.k}/46</a>`:''}
       ${pa?`<a class="pill${pa.today?' g':''}" href="patologias.html#repaso">🩺 ${pa.due?pa.due+' por repasar':'repaso al día'}${pa.streak?' · 🔥'+pa.streak:''}</a>`:''}
+      ${(()=>{const lt=letteringInfo();return lt?`<a class="pill${lt.today?' g':''}" href="lettering.html">🖌️ 🔥${lt.streak} · ${lt.works} ${lt.works===1?'trabajo':'trabajos'}</a>`:'';})()}
       <span class="pill">✒️ ${CALI[dayIndex(t,CALI.length)]}</span>
     </div></section>
 
@@ -1047,7 +1052,8 @@ function lCali(){
   const pics=ses.filter(s=>s.img);const wk=ses.filter(s=>s.date>=addDays(t,-6)).reduce((a,s)=>a+(+s.min||0),0);
   return`<div class="grid">
   <section class="card c6"><h3>✒️ Ficha del día</h3><p style="font-size:18px;margin:4px 0 14px">${esc(CALI[dayIndex(t,CALI.length)])}</p>
-    <div class="row wrap"><a class="btn small" href="caligrafia.html">Caligrafía</a><a class="btn small" href="cuaderno.html">Cuaderno de tinta</a><a class="btn small" href="kanji.html">Kanji</a></div>
+    <div class="row wrap"><a class="btn small" href="caligrafia.html">Caligrafía</a><a class="btn small" href="cuaderno.html">Cuaderno de tinta</a><a class="btn small" href="lettering.html">🖌️ Lettering</a><a class="btn small" href="kanji.html">Kanji</a></div>
+    ${(()=>{const lt=letteringInfo();return lt?`<p class="small muted" style="margin:10px 0 0">Lettering: <b style="color:var(--ink)">🔥 ${lt.streak} ${lt.streak===1?'día':'días'}</b> seguidos · ${lt.works} ${lt.works===1?'trabajo':'trabajos'}${lt.last?' · último: '+esc(lt.last):''}</p>`:'';})()}
     <p class="small muted" style="margin:12px 0 0">Esta semana: <b style="color:var(--ink)">${fmtMin(wk)}</b> · ${ses.filter(s=>s.date>=addDays(t,-6)).length} sesiones</p></section>
   <section class="card c6"><h3>Registrar sesión</h3><form data-f="cali"><div class="two"><div><label class="l">Minutos</label><input class="f" type="number" name="min" min="1" max="600" value="20"></div><div><label class="l">Fecha</label><input class="f" type="date" name="date" value="${t}"></div></div>
     <label class="l">¿Qué has practicado?</label><input class="f" name="note" placeholder="Ej.: fila か, 3 hojas" autocomplete="off">
