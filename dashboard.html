@@ -504,7 +504,11 @@ function kanjiInfo(){
 }
 function letteringInfo(){
   const S=readJSON('lt-stats');const days=readJSON('lt-days');if(!S&&!days)return null;
-  return{works:(S&&S.works)||0,streak:streakDays(days),today:(days||[]).includes(todayStr()),last:S&&S.lastTitle||''};
+  const R=readJSON('lt-reto')||{days:{}};const rd=R.days||{};
+  let rs=0,ds=todayStr();if(!(rd[ds]&&rd[ds].done))ds=addDays(ds,-1);while(rd[ds]&&rd[ds].done&&rs<3000){rs++;ds=addDays(ds,-1);}
+  const fresh=S&&S.lastUpdated&&ymd(new Date(S.lastUpdated))===todayStr();
+  return{works:(S&&S.works)||0,streak:streakDays(days),today:(days||[]).includes(todayStr()),last:S&&S.lastTitle||'',
+    retoDone:!!(rd[todayStr()]&&rd[todayStr()].done),retoStreak:rs,reto:fresh?(S.reto||''):''};
 }
 function kanaInfo(){
   const S=readJSON('silabarios-v1');if(!S)return null;const L=S.learned||{};
@@ -771,7 +775,7 @@ VIEWS.hoy=()=>{
       ${ki?`<a class="pill${ki.today?' g':''}" href="kanji.html">漢 🔥${ki.streak} · ${ki.started} kanji</a>`:''}
       ${ka?`<a class="pill${ka.today?' g':''}" href="silabarios.html">あ 🔥${ka.streak} · ${ka.h}/46 · ${ka.k}/46</a>`:''}
       ${pa?`<a class="pill${pa.today?' g':''}" href="patologias.html#repaso">🩺 ${pa.due?pa.due+' por repasar':'repaso al día'}${pa.streak?' · 🔥'+pa.streak:''}</a>`:''}
-      ${(()=>{const lt=letteringInfo();return lt?`<a class="pill${lt.today?' g':''}" href="lettering.html">🖌️ 🔥${lt.streak} · ${lt.works} ${lt.works===1?'trabajo':'trabajos'}</a>`:'';})()}
+      ${(()=>{const lt=letteringInfo();return lt?`<a class="pill${lt.today?' g':''}" href="lettering.html" title="Lettering: reto del día">🖌️ ${lt.retoDone?'Reto ✓':'Reto'+(lt.reto?': '+esc(lt.reto):' pendiente')} · 🔥${lt.retoStreak}</a>`:'';})()}
       <span class="pill">✒️ ${CALI[dayIndex(t,CALI.length)]}</span>
     </div></section>
 
@@ -1053,7 +1057,7 @@ function lCali(){
   return`<div class="grid">
   <section class="card c6"><h3>✒️ Ficha del día</h3><p style="font-size:18px;margin:4px 0 14px">${esc(CALI[dayIndex(t,CALI.length)])}</p>
     <div class="row wrap"><a class="btn small" href="caligrafia.html">Caligrafía</a><a class="btn small" href="cuaderno.html">Cuaderno de tinta</a><a class="btn small" href="lettering.html">🖌️ Lettering</a><a class="btn small" href="kanji.html">Kanji</a></div>
-    ${(()=>{const lt=letteringInfo();return lt?`<p class="small muted" style="margin:10px 0 0">Lettering: <b style="color:var(--ink)">🔥 ${lt.streak} ${lt.streak===1?'día':'días'}</b> seguidos · ${lt.works} ${lt.works===1?'trabajo':'trabajos'}${lt.last?' · último: '+esc(lt.last):''}</p>`:'';})()}
+    ${(()=>{const lt=letteringInfo();return lt?`<p class="small muted" style="margin:10px 0 0">Lettering: reto de hoy ${lt.retoDone?'<b style="color:var(--sage-d)">hecho ✓</b>':'pendiente'} · racha de retos <b style="color:var(--ink)">🔥 ${lt.retoStreak}</b> · ${lt.streak===1?'1 día practicando':lt.streak+' días seguidos practicando'} · ${lt.works} ${lt.works===1?'trabajo':'trabajos'}${lt.last?' · último: '+esc(lt.last):''}</p>`:'';})()}
     <p class="small muted" style="margin:12px 0 0">Esta semana: <b style="color:var(--ink)">${fmtMin(wk)}</b> · ${ses.filter(s=>s.date>=addDays(t,-6)).length} sesiones</p></section>
   <section class="card c6"><h3>Registrar sesión</h3><form data-f="cali"><div class="two"><div><label class="l">Minutos</label><input class="f" type="number" name="min" min="1" max="600" value="20"></div><div><label class="l">Fecha</label><input class="f" type="date" name="date" value="${t}"></div></div>
     <label class="l">¿Qué has practicado?</label><input class="f" name="note" placeholder="Ej.: fila か, 3 hojas" autocomplete="off">
