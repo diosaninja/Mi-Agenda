@@ -662,7 +662,7 @@ const CALI=['Calentamiento: óvalos y bucles, 3 filas','Trazos básicos: vertica
 'Mayúsculas decorativas: A – I','Números 0 – 9 con tu mejor letra','Una frase de gratitud bonita','Una palabra N5 en japonés ×5 (ありがとう, おはよう…)','Cenefa de trazos curvos y ondas',
 'Repasa una ficha del Cuaderno de tinta','Escribe la fecha de hoy en japonés: '+'今日'];
 const dayIndex=(ds,n)=>{const d=fromYmd(ds);const s=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5;return((Math.floor(s)%n)+n)%n;};
-const APPS=[['calendario.html','📅','Calendario'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['caligrafia.html','✒️','Caligrafía'],
+const APPS=[['calendario.html','📅','Calendario'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['libreta-japones.html','練','Libreta japonés'],['caligrafia.html','✒️','Caligrafía'],
 ['cuaderno.html','📓','Cuaderno de tinta'],['lettering.html','🖌️','Lettering'],['libreta.html','📝','Mi Libreta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['../colorear/','🎨','Colorear'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['index.html?biblioteca','🗂️','Biblioteca']];
 </script>
 <script>
@@ -771,7 +771,7 @@ VIEWS.hoy=()=>{
     <div class="row"><b style="font-size:24px">${fmtMin(mn.total)}</b><span class="muted">de ${fmtMin(goal)}</span><span class="sp"></span>${timerMini()}</div>
     <div class="bar" style="margin:8px 0 12px"><i style="width:${clamp(mn.total/goal*100,0,100)}%"></i></div>
     <div class="row wrap small" style="gap:6px">
-      ${pj?`<a class="pill${pj.pct===100?' g':''}" href="japones.html">日 Plan ${pj.rest?'(descanso) ':''}${pj.pct}%</a>`:''}
+      ${pj?`<a class="pill${pj.pct===100?' g':''}" href="japones.html">日 Plan ${pj.rest?'(descanso) ':''}${pj.pct}%</a>`:''}<a class="pill" href="libreta-japones.html">練 Lección de hoy</a>
       ${ki?`<a class="pill${ki.today?' g':''}" href="kanji.html">漢 🔥${ki.streak} · ${ki.started} kanji</a>`:''}
       ${ka?`<a class="pill${ka.today?' g':''}" href="silabarios.html">あ 🔥${ka.streak} · ${ka.h}/46 · ${ka.k}/46</a>`:''}
       ${pa?`<a class="pill${pa.today?' g':''}" href="patologias.html#repaso">🩺 ${pa.due?pa.due+' por repasar':'repaso al día'}${pa.streak?' · 🔥'+pa.streak:''}</a>`:''}
@@ -1026,7 +1026,7 @@ function lJapones(){
     <div class="stat"><b>${ka.h}/46</b><span>あ Hiragana aprendidos</span></div><div class="stat"><b>${ka.k}/46</b><span>ア Katakana aprendidos</span></div>
     <div class="stat"><b>${ki.started}</b><span>漢 Kanji empezados</span></div><div class="stat"><b>${ki.dom}</b><span>Kanji dominados</span></div>
     <div class="stat"><b>${known}/${PARTS.length}</b><span>Partículas que dominas</span></div><div class="stat"><b>🔥 ${Math.max(ka.streak,ki.streak)}</b><span>Mejor racha actual</span></div></div>
-    <div class="row wrap" style="margin-top:14px;gap:8px"><a class="btn small" href="silabarios.html">あ Silabarios</a><a class="btn small" href="kanji.html">漢 Kanji</a><a class="btn small" href="japones.html">日 Plan japonés</a></div></section>
+    <div class="row wrap" style="margin-top:14px;gap:8px"><a class="btn small" href="silabarios.html">あ Silabarios</a><a class="btn small" href="kanji.html">漢 Kanji</a><a class="btn small" href="japones.html">日 Plan japonés</a><a class="btn small" href="libreta-japones.html">練 Libreta de japonés</a></div></section>
   ${timerCard('japones')}
   <section class="card c7"><h3>Partículas <span class="jp">助詞</span><span class="more">${known} dominadas</span></h3>
     <div class="parts">${PARTS.map(p=>`<button class="part${P[p.p]?' on':''}" data-a="part" data-p="${p.p}" style="${ui.part===p.p?'outline:2px solid var(--ink)':''}">${p.p}</button>`).join('')}</div>
