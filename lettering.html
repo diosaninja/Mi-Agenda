@@ -283,7 +283,7 @@ const activeLayer=()=>doc.layers.find(l=>l.id===doc.active)||doc.layers[doc.laye
 const layerById=id=>doc.layers.find(l=>l.id===id);
 
 /* ---------- Lienzo ---------- */
-function mkCanvas(fast){const cv=document.createElement('canvas');cv.width=Math.round(DW*R);cv.height=Math.round(DH*R);const ctx=fast?(cv.getContext('2d',{desynchronized:true})||cv.getContext('2d')):cv.getContext('2d');ctx.setTransform(R,0,0,R,0,0);return{cv,ctx}}
+function mkCanvas(fast){const cv=document.createElement('canvas');cv.width=Math.round(DW*R);cv.height=Math.round(DH*R);const ctx=(fast&&!/Android/i.test(navigator.userAgent))?(cv.getContext('2d',{desynchronized:true})||cv.getContext('2d')):cv.getContext('2d');ctx.setTransform(R,0,0,R,0,0);return{cv,ctx}}
 function freeCanvas(o){if(o&&o.cv){o.cv.width=0;o.cv.height=0}}
 function setupStage(){
  [paper,guides,ov,scratch].forEach(freeCanvas);LC.forEach(freeCanvas);LC.clear();

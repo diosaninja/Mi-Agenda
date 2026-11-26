@@ -1173,7 +1173,7 @@ function resizeStage(refit) {
   const dpr = Math.min(window.devicePixelRatio || 1, 3); Ed.dpr = dpr;
   for (const c of [$('#base'), $('#live')]) { c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr); c.style.width = r.width + 'px'; c.style.height = r.height + 'px'; }
   baseCtx = $('#base').getContext('2d');
-  liveCtx = $('#live').getContext('2d', { desynchronized: true }) || $('#live').getContext('2d');
+  liveCtx = /Android/i.test(navigator.userAgent) ? $('#live').getContext('2d') : ($('#live').getContext('2d', { desynchronized: true }) || $('#live').getContext('2d'));
   Ed.stageW = r.width; Ed.stageH = r.height;
   const keep = !refit && Ed.view.fit ? Ed.view.s / Ed.view.fit : 1;
   fitView(keep);
