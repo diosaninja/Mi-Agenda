@@ -260,7 +260,7 @@ body[data-tool=texto] .it.text .tx:empty::before{content:"Escribe…";opacity:.3
 <section id="home" class="screen">
   <div class="lib-head">
     <a class="btn small" href="index.html?biblioteca" title="Volver a Mi Agenda">‹ Mi Agenda</a>
-    <div class="brand">Mi Libreta<small>ノート · apuntes</small></div>
+    <div class="brand">Mi Libreta<small>ノート · apuntes · v1.2</small></div>
     <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar libreta o etiqueta"></label>
     <button class="btn primary" id="btnNew">+ Nueva libreta</button>
   </div>
@@ -852,8 +852,22 @@ toolsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)re
   if(b.dataset.sz){S.size[cur.tool]=+b.dataset.sz;saveS();renderTools();if(cur.tool==='texto')applyToFocusedText(it=>it.size=TOOLS.texto.sizes[+b.dataset.sz]);return;}
   if(b.dataset.f){S.font=b.dataset.f;saveS();renderTools();applyToFocusedText(it=>it.font=S.font);return;}
   if(b.dataset.c){if(lpFired)return;const c=b.dataset.c;if(cur.tool==='lazo'){S.color.boli=c;if(cur.sel)recolorSel(c);}else{S.color[cur.tool]=c;if(cur.tool==='texto')applyToFocusedText(it=>it.color=c);if(cur.sel)recolorSel(c);}saveS();renderTools();return;}
-  if(b.dataset.addc){const i=document.createElement('input');i.type='color';i.value=S.color[cur.tool]||'#2B2A28';i.style.cssText='position:fixed;left:-50px;top:0;opacity:0';document.body.appendChild(i);
-    i.onchange=()=>{const c=i.value.toUpperCase();const arr=cur.tool==='subrayador'?S.hl:S.palette;if(!arr.includes(c)){arr.push(c);if(arr.length>18)arr.shift();}const k=cur.tool==='lazo'?'boli':cur.tool;S.color[k]=c;saveS();renderTools();i.remove();};i.click();setTimeout(()=>{if(i.parentNode&&!i.value)i.remove()},60000);}});
+  if(b.dataset.addc){if(Date.now()-cpT>700){cpT=Date.now();colorPicker();}}});
+let cpT=0;
+toolsEl.addEventListener('pointerup',e=>{const b=e.target.closest('[data-addc]');if(b&&Date.now()-cpT>700){cpT=Date.now();colorPicker();}});
+function colorPicker(){const isHl=cur.tool==='subrayador',k=cur.tool==='lazo'?'boli':cur.tool;let sel=(S.color[k]||'#2B2A28').toUpperCase();
+  const base=isHl?['#FFF176','#FFE45C','#FFD54F','#FFB46B','#FF8A80','#F7A1C4','#F48FB1','#E1BEE7','#C9A7F5','#B39DDB','#90CAF9','#7FD3F7','#80DEEA','#A5D6A7','#9BE58F','#C5E1A5','#E6EE9C','#FFCCBC','#D7CCC8','#CFD8DC']
+   :['#000000','#2B2A28','#5E5750','#8F8A83','#C9C4BC','#FFFFFF','#7A1F2B','#B23A48','#E05A5A','#E8A0B4','#F2C4CE','#D9B5AE','#8A4B2A','#C9733D','#E89B5E','#C9A24D','#E3C565','#F2E2A0','#2F5233','#6F8068','#A3B19B','#4E9A6B','#9CC5A1','#1F3A5F','#3F6E8C','#7E97A8','#5BA4CF','#A9CCE3','#3E2C5C','#7A5C99','#8E7FA8','#B9A7D6','#B98A82','#DCCDB7','#EDE5D8','#5D4037'];
+  const sh=openModal(`<h2>Añadir color</h2><div class="field"><label>Elige un color</label><div class="chips" id="cpG">${base.map(c=>`<button class="cchip" data-cp="${c}" style="background:${c}"></button>`).join('')}</div></div>
+   <div class="field"><label>O el tuyo exacto</label><div class="row"><input type="color" id="cpIn" value="${sel}" style="width:64px;height:48px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:4px"><input type="text" id="cpHex" value="${sel}" maxlength="7" style="flex:1;height:44px;border-radius:12px;border:1px solid var(--line);padding:0 12px;font-size:16px;text-transform:uppercase"><span id="cpPrev" style="width:44px;height:44px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);background:${sel}"></span></div>
+   <small style="color:var(--stone)">Toca el cuadradito de color para abrir el selector, o escribe el código (#RRGGBB).</small></div>
+   <div class="row end"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="cpOk">Añadir a mi paleta</button></div>`);
+  const set=c=>{c=c.toUpperCase();if(!/^#[0-9A-F]{6}$/.test(c))return;sel=c;$('#cpIn',sh).value=c;$('#cpHex',sh).value=c;$('#cpPrev',sh).style.background=c;$$('[data-cp]',sh).forEach(x=>x.classList.toggle('on',x.dataset.cp===c));};set(sel);
+  $('#cpG',sh).onclick=e=>{const t=e.target.closest('[data-cp]');if(t)set(t.dataset.cp);};
+  $('#cpIn',sh).oninput=e=>set(e.target.value);$('#cpIn',sh).onchange=e=>set(e.target.value);
+  $('#cpHex',sh).oninput=e=>{let v=e.target.value.trim();if(v[0]!=='#')v='#'+v;if(/^#[0-9a-fA-F]{6}$/.test(v)){sel=v.toUpperCase();$('#cpPrev',sh).style.background=sel;$('#cpIn',sh).value=sel;}};
+  $('#cpOk',sh).onclick=()=>{const arr=isHl?S.hl:S.palette;if(!arr.includes(sel)){arr.push(sel);if(arr.length>18)arr.shift();}S.color[k]=sel;saveS();closeModal();renderTools();
+    if(cur.tool==='texto')applyToFocusedText(it=>it.color=sel);if(cur.sel)recolorSel(sel);toast('🎨 Color añadido a tu paleta');};}
 function applyToFocusedText(fn){const ae=document.activeElement;const id=ae&&ae.isContentEditable&&ae.closest('.it')&&ae.closest('.it').dataset.id;const it=id&&cur.page.items.find(i=>i.id===id);if(!it)return;
   pushUndo();fn(it);const tx=itemEls[it.id].querySelector('.tx');tx.style.fontSize=it.size+'px';tx.style.color=it.color;tx.style.fontFamily=FONTS[it.font]||FONTS.ui;savePage();}
 
