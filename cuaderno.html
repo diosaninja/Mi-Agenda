@@ -43,7 +43,27 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none}
   display:inline-flex;align-items:center;gap:7px;color:var(--ink)}
 .ghost:active,.primary:active{transform:scale(.97)}
 @media (max-width:980px){.tabs button span{display:none}.tabs button{padding:9px 11px}}
-@media (max-width:680px){.brand div{display:none}.primary .lbl{display:none}.top{gap:8px;padding-inline:12px}}
+@media (max-width:1240px){.brand div{display:none}}
+.top .primary{white-space:nowrap;flex:none}
+.homebtn{display:inline-flex;align-items:center;gap:6px;flex:none;text-decoration:none;color:var(--pu);font-weight:800;font-size:15px;
+  border:1px solid var(--line);background:#fff;padding:9px 13px;border-radius:12px}
+.homebtn:active{transform:scale(.97)}
+.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:0 1 auto;min-width:0}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none}
+.iconbtn{border:1px solid var(--line);background:#fff;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--pu);flex:none}
+.iconbtn:active{transform:scale(.95)}
+.optlist{display:grid;gap:10px;margin:6px 0 4px}
+.opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:1px solid var(--line);background:#fbfaff;border-radius:16px;padding:14px 16px}
+.opt:active{transform:scale(.99)}
+.opt .ic{width:42px;height:42px;border-radius:12px;background:#efecf6;color:var(--pu);display:grid;place-items:center;flex:none}
+.opt b{display:block;font-size:16px}
+.opt small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px;font-weight:600}
+.opt-sep{font-size:11.5px;letter-spacing:.16em;font-weight:800;color:var(--muted);margin:10px 2px 0}
+.s-img{display:block;width:100%;height:auto;border-radius:6px;margin-top:6px}
+.lk-app{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;margin-top:14px}
+.lk-app a{text-decoration:none}
+@media (max-width:680px){.brand div{display:none}.brand{display:none}.primary .lbl{display:none}.homebtn .lbl{display:none}.top{gap:8px;padding-inline:12px}}
 
 main{max-width:1100px;margin:0 auto;padding:22px}
 .eyebrow{font-size:12px;letter-spacing:.18em;font-weight:800;color:var(--pu);text-transform:uppercase;display:flex;align-items:center;gap:8px}
@@ -204,6 +224,7 @@ svg.prow text.t{fill:#d6d0e2}
 <body>
 
 <header class="top">
+  <a class="homebtn" href="index.html?biblioteca" title="Volver a Mi Agenda"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span class="lbl">Mi Agenda</span></a>
   <div class="brand" data-go="portada">
     <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c-6 1-11 6-13 13l-2 3 3-2c7-2 12-7 13-13z"/><path d="M14 10 6 18"/></svg></div>
     <div><b>Cuaderno de tinta</b><small>CALIGRAFÍA DIARIA</small></div>
@@ -215,6 +236,7 @@ svg.prow text.t{fill:#d6d0e2}
     <button data-view="progreso"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg><span>Progreso</span></button>
     <button data-view="enlaces"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>Enlaces</span></button>
   </nav>
+  <button class="iconbtn" id="btnImport" title="Importar y copia de seguridad" aria-label="Importar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg></button>
   <button class="primary" id="btnNueva"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl">Nueva ficha</span></button>
 </header>
 
@@ -330,6 +352,10 @@ svg.prow text.t{fill:#d6d0e2}
       <div class="full"><label>NOTA (OPCIONAL)</label><input id="lkNote" placeholder="Qué tiene de útil"></div>
       <div class="full" style="display:flex;justify-content:flex-end;gap:10px"><button type="button" class="ghost hidden" id="lkCancel">Cancelar</button><button class="primary" id="lkSave">Guardar enlace</button></div>
     </form>
+    <div class="card lk-app">
+      <span style="font-weight:700;color:var(--muted)">¿Tienes más enlaces en tu app <b style="color:var(--ink)">Mis Enlaces</b>?</span>
+      <span style="display:flex;gap:8px;flex-wrap:wrap"><a class="ghost" href="enlaces.html">Abrir Mis Enlaces ↗</a><button class="ghost" type="button" id="lkImportBtn">Importar enlaces</button></span>
+    </div>
     <div class="filters" id="lkFilters"></div>
     <div class="links" id="lkList"></div>
   </section>
@@ -353,6 +379,34 @@ svg.prow text.t{fill:#d6d0e2}
     <div class="acts"><button class="ghost" id="nfCancel">Cancelar</button><button class="primary" id="nfSave">Crear ficha</button></div>
   </div>
 </div>
+<!-- Modal importar -->
+<div class="overlay hidden" id="impModal">
+  <div class="modal">
+    <h2>Importar</h2>
+    <div class="optlist">
+      <div class="opt-sep">FICHAS</div>
+      <button class="opt" type="button" id="impImg"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></span><span><b>Ficha desde foto o imagen</b><small>Una foto o captura de una ficha para repasar encima</small></span></button>
+      <button class="opt" type="button" id="impPdf"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14h8M8 17h5"/></svg></span><span><b>Fichas desde PDF</b><small>Cada página del PDF se convierte en una ficha</small></span></button>
+      <div class="opt-sep">ENLACES</div>
+      <button class="opt" type="button" id="impLinks"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span><span><b>Pegar enlaces</b><small>Pega varias direcciones, una por línea</small></span></button>
+      <div class="opt-sep">COPIA DE SEGURIDAD</div>
+      <button class="opt" type="button" id="expAll"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M4 21h16"/></svg></span><span><b>Exportar copia</b><small>Guarda fichas, trazos, historial y enlaces en un archivo</small></span></button>
+      <button class="opt" type="button" id="impAll"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg></span><span><b>Importar copia</b><small>Recupera un archivo exportado antes (.json)</small></span></button>
+    </div>
+    <div class="acts"><button class="ghost" id="impClose">Cerrar</button></div>
+  </div>
+</div>
+<div class="overlay hidden" id="pasteModal">
+  <div class="modal">
+    <h2>Pegar enlaces</h2>
+    <div class="f"><label>ENLACES (UNO POR LÍNEA)</label><textarea id="pasteTxt" placeholder="https://www.youtube.com/…&#10;Título opcional | https://…"></textarea></div>
+    <div class="f"><label>CATEGORÍA</label><select id="pasteCat"><option>Tutoriales</option><option>Inspiración</option><option>Plantillas</option><option>Tipografías</option><option>Material</option><option>Otros</option></select></div>
+    <div class="acts"><button class="ghost" id="pasteNo">Cancelar</button><button class="primary" id="pasteYes">Añadir enlaces</button></div>
+  </div>
+</div>
+<input type="file" id="fImg" accept="image/*" multiple hidden>
+<input type="file" id="fPdf" accept="application/pdf,.pdf" hidden>
+<input type="file" id="fJson" accept="application/json,.json" hidden>
 <div class="overlay hidden" id="cfm"><div class="modal" style="width:min(420px,100%)"><h2 style="font-size:22px" id="cfmMsg"></h2><div class="acts"><button class="ghost" id="cfmNo">Cancelar</button><button class="primary" id="cfmYes">Sí, continuar</button></div></div></div>
 <div class="toast" id="toast"></div>
 
@@ -546,7 +600,8 @@ function prow(text, kind){
 function sheetHTML(f, style){
   let h = `<div class="s-top"><span>CUADERNO DE TINTA</span><span>${esc(STAGES[f.stage-1].name.toUpperCase())} · ${(()=>{const fs=allFichas().filter(x=>x.stage===f.stage);return (fs.indexOf(f)+1)+' DE '+fs.length;})()}</span></div>
     <div class="s-title">${esc(f.title)}</div><p class="s-instr">${esc(f.instr||'Repasa despacio y mantén un ritmo constante.')}</p>`;
-  f.sections.forEach((s,i) => {
+  if(f.img){ const src = store.get('img_'+f.id, ''); h += src ? `<img class="s-img" src="${src}" alt="">` : '<p class="s-instr">No se encuentra la imagen de esta ficha.</p>'; }
+  (f.sections||[]).forEach((s,i) => {
     h += `<div class="s-sec"><h4>${i+1} ${esc(s.title)}</h4>`;
     if(s.note) h += `<p class="note">${esc(s.note)}</p>`;
     if(s.kind==='free'){ for(let r=0;r<(s.rows||3);r++) h += prow('', 'empty'); }
@@ -810,6 +865,8 @@ function openFicha(id, keepZoom){
   const finish = () => { sizeCanvas(); applyScale(keepZoom && scale && !isNaN(scale) && openFicha._init ? scale : fitScale()); openFicha._init = true; redrawAll(); };
   finish();
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if(S.current===f.id){ layoutRows(style); if(sheet.offsetHeight!==sheetH){ sizeCanvas(); applyScale(scale); redrawAll(); } } });
+  const im = document.querySelector('#sheetContent .s-img');
+  if(im && !im.complete) im.onload = () => { if(S.current===f.id && sheet.offsetHeight!==sheetH){ sizeCanvas(); applyScale(scale); redrawAll(); } };
 }
 $('fSelect').onchange = e => { S.sid = null; openFicha(e.target.value, true); vp.scrollTop = 0; };
 $('bPrev').onclick = () => { const l=allFichas(), i=l.indexOf(byId(S.current)); if(i>0){ S.sid=null; openFicha(l[i-1].id, true); vp.scrollTop=0; } };
@@ -824,7 +881,7 @@ $('bDone').onclick = () => {
 };
 $('bDelF').onclick = () => {
   const f = byId(S.current); if(!f.custom) return; ask('¿Eliminar la ficha «'+f.title+'»?', () => {
-  custom = custom.filter(x => x.id!==f.id); store.set('custom', custom); sessions.filter(x => x.fid===f.id).forEach(x => store.del('strokes_'+x.sid)); sessions = sessions.filter(x => x.fid!==f.id); saveSessions(); recomputeDone(); S.current = 'f01'; S.sid = null; saveS(); openFicha('f01'); toast('Ficha eliminada'); });
+  custom = custom.filter(x => x.id!==f.id); store.set('custom', custom); store.del('img_'+f.id); sessions.filter(x => x.fid===f.id).forEach(x => store.del('strokes_'+x.sid)); sessions = sessions.filter(x => x.fid!==f.id); saveSessions(); recomputeDone(); S.current = 'f01'; S.sid = null; saveS(); openFicha('f01'); toast('Ficha eliminada'); });
 };
 $('bRep').onclick = () => { const f = byId(S.current); if(!curSes){ toast('Esta ficha ya está limpia'); return; } const st = S.styles[f.id] || f.style; const ns = newSession(f.id, st); S.sid = ns.sid; saveS(); openFicha(f.id, true); vp.scrollTop = 0; toast('Copia limpia: Ficha '+pad(ns.n)); };
 $('bPrint').onclick = () => { try{ window.print(); }catch(e){} if(window.top !== window.self) toast('Para imprimir o guardar en PDF, abre la app desde tu web'); };
@@ -903,6 +960,106 @@ $('linkForm').onsubmit = e => {
   if(lkEdit){ Object.assign(links.find(l => l.id===lkEdit), data); toast('Enlace actualizado'); }
   else { links.unshift(Object.assign({id:Date.now()}, data)); toast('Enlace guardado'); }
   store.set('links', links); resetLinkForm(); renderLinks();
+};
+
+/* ================= Importar y copia de seguridad ================= */
+const openImp = () => $('impModal').classList.remove('hidden');
+const closeImp = () => $('impModal').classList.add('hidden');
+$('btnImport').onclick = openImp;
+$('impClose').onclick = closeImp;
+$('impModal').onclick = e => { if(e.target.id==='impModal') closeImp(); };
+$('impImg').onclick = () => { closeImp(); $('fImg').value=''; $('fImg').click(); };
+$('impPdf').onclick = () => { closeImp(); $('fPdf').value=''; $('fPdf').click(); };
+$('impAll').onclick = () => { closeImp(); $('fJson').value=''; $('fJson').click(); };
+const openPaste = () => { closeImp(); $('pasteTxt').value=''; $('pasteModal').classList.remove('hidden'); setTimeout(()=>$('pasteTxt').focus(),50); };
+$('impLinks').onclick = openPaste; $('lkImportBtn').onclick = openPaste;
+$('pasteNo').onclick = () => $('pasteModal').classList.add('hidden');
+$('pasteYes').onclick = () => {
+  const cat = $('pasteCat').value; let n = 0;
+  $('pasteTxt').value.split('\n').map(x => x.trim()).filter(Boolean).forEach((line, i) => {
+    let title = '', url = line;
+    if(line.includes('|')){ const parts = line.split('|'); title = parts[0].trim(); url = parts.slice(1).join('|').trim(); }
+    const m = url.match(/https?:\/\/\S+/i); if(m) url = m[0]; else if(/^[\w-]+(\.[\w-]+)+/.test(url)) url = 'https://'+url; else return;
+    if(links.some(l => l.url===url)) return;
+    if(!title){ try{ const u = new URL(url); title = u.hostname.replace(/^www\./,''); }catch(e){ title = url; } }
+    links.unshift({id:Date.now()+i, title, url, note:'', cat}); n++;
+  });
+  store.set('links', links); $('pasteModal').classList.add('hidden');
+  if(view!=='enlaces') go('enlaces'); else renderLinks();
+  toast(n ? (n===1 ? '1 enlace añadido' : n+' enlaces añadidos') : 'No se encontraron enlaces nuevos');
+};
+
+function shrink(img, maxW){ // reduce la imagen para que quepa en la memoria del iPad
+  const w = Math.min(maxW, img.naturalWidth || img.width), h = Math.round((img.naturalHeight || img.height) * w / (img.naturalWidth || img.width));
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0,0,w,h); x.drawImage(img, 0, 0, w, h);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+function addImageFicha(dataUrl, title){
+  const f = {id:'c'+Date.now()+Math.floor(Math.random()*1000), custom:true, img:true, stage:5, title, sub:'Importada', min:8, style:'redonda',
+    desc:'Ficha importada por ti.', instr:'Repasa encima con el lápiz.', sections:[]};
+  if(!store.set('img_'+f.id, dataUrl)) return null;
+  custom.push(f); store.set('custom', custom); return f;
+}
+const baseName = n => n.replace(/\.[^.]+$/, '').replace(/[_-]+/g,' ').trim() || 'Ficha importada';
+$('fImg').onchange = async e => {
+  const files = [...e.target.files]; if(!files.length) return; let last = null;
+  for(const file of files){
+    const url = URL.createObjectURL(file);
+    try{ const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+      last = addImageFicha(shrink(img, 1400), baseName(file.name)) || last; }
+    catch(err){ toast('No se pudo leer «'+file.name+'»'); }
+    URL.revokeObjectURL(url);
+  }
+  if(last){ S.current = last.id; S.sid = null; saveS(); go('practica'); toast(files.length>1 ? 'Fichas importadas' : 'Ficha importada'); }
+};
+let pdfLib = null;
+function loadPdfJs(){
+  if(pdfLib) return Promise.resolve(pdfLib);
+  return new Promise((ok, ko) => { const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    sc.onload = () => { pdfLib = window.pdfjsLib; pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(pdfLib); };
+    sc.onerror = () => ko(new Error('pdf')); document.head.appendChild(sc); });
+}
+$('fPdf').onchange = async e => {
+  const file = e.target.files[0]; if(!file) return;
+  toast('Leyendo el PDF…');
+  try{
+    const lib = await loadPdfJs();
+    const pdf = await lib.getDocument({data: await file.arrayBuffer()}).promise;
+    const total = Math.min(pdf.numPages, 30), name = baseName(file.name); let first = null;
+    for(let i=1; i<=total; i++){
+      const page = await pdf.getPage(i), v1 = page.getViewport({scale:1}), v = page.getViewport({scale: 1400 / v1.width});
+      const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height);
+      await page.render({canvasContext:x, viewport:v}).promise;
+      const f = addImageFicha(c.toDataURL('image/jpeg', 0.82), total>1 ? name+' · pág. '+i : name);
+      if(!f){ toast('Memoria llena: se importaron '+(i-1)+' páginas'); break; }
+      first = first || f;
+    }
+    if(first){ S.current = first.id; S.sid = null; saveS(); go('practica'); toast(total>1 ? total+' fichas importadas' : 'Ficha importada'); }
+  }catch(err){ toast('No se pudo abrir el PDF (necesita conexión la primera vez)'); }
+};
+$('expAll').onclick = async () => {
+  closeImp();
+  const data = {app:'cuaderno-de-tinta', version:1, fecha:new Date().toISOString(), datos:{}};
+  for(let i=0; i<localStorage.length; i++){ const k = localStorage.key(i); if(k && k.startsWith(P)) data.datos[k] = localStorage.getItem(k); }
+  const name = 'cuaderno-de-tinta-'+today()+'.json';
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  try{ const file = new File([blob], name, {type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); return; } }catch(err){ if(err && err.name==='AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('Copia exportada');
+};
+$('fJson').onchange = async e => {
+  const file = e.target.files[0]; if(!file) return;
+  let data; try{ data = JSON.parse(await file.text()); }catch(err){ toast('Ese archivo no es una copia válida'); return; }
+  const d = data && data.datos; if(!d || data.app!=='cuaderno-de-tinta'){ toast('Ese archivo no es una copia del Cuaderno de tinta'); return; }
+  ask('¿Recuperar esta copia? Sustituirá lo que tienes ahora en el Cuaderno de tinta.', () => {
+    Object.keys(localStorage).filter(k => k.startsWith(P)).forEach(k => localStorage.removeItem(k));
+    try{ Object.keys(d).forEach(k => { if(k.startsWith(P)) localStorage.setItem(k, d[k]); }); }catch(err){ toast('Memoria llena: la copia no cabe entera'); }
+    toast('Copia recuperada'); setTimeout(() => location.reload(), 700);
+  });
 };
 
 /* ================= Inicio ================= */
