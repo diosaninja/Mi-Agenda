@@ -158,6 +158,39 @@ footer{margin-top:40px;font-size:12px;color:var(--suave);text-align:center;line-
 #reader.tts #selBar{bottom:112px}
 .tts-on{background:rgba(181,82,59,.10)!important;border-radius:6px}
 ::highlight(tts){background-color:rgba(255,216,77,.6);color:inherit}
+::highlight(dict){background-color:rgba(143,180,255,.5);color:inherit}
+#artBox.sin-furi rt,#artBox.sin-furi rp{visibility:hidden}
+/* Japonés */
+.jw{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:4px 0 6px}
+.jw .big{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:42px;line-height:1.3}
+.jw .big rt{font-size:15px;color:var(--acento)}
+.jw .kana{font-size:18px;color:var(--suave);padding-bottom:8px}
+.jpos{font-size:12px;color:var(--suave);margin:2px 0 8px}
+.jmean{margin:0;padding-left:20px;font-size:16px;line-height:1.45}
+.jmean li{margin-bottom:4px}
+.jmean small{color:var(--suave)}
+.jctx{background:#fbf8f3;border-radius:10px;padding:10px 12px;font-family:"Hiragino Mincho ProN",serif;font-size:16px;line-height:1.6;margin-top:10px}
+.jctx b{color:var(--acento)}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
+.kc2{border:1px solid var(--linea);border-radius:12px;padding:8px 10px;display:flex;gap:10px;align-items:center;background:#fff}
+.kc2 .k{font-family:"Hiragino Mincho ProN",serif;font-size:34px;line-height:1}
+.kc2 .d{font-size:12px;line-height:1.35;min-width:0}
+.kc2 .d b{font-size:13px}
+.lv{display:inline-block;font-size:10px;font-weight:700;border-radius:6px;padding:1px 5px;background:var(--acento2);color:var(--acento);margin-left:4px}
+.jalt{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.jalt button{border:1px solid var(--linea);background:#fff;border-radius:10px;padding:6px 10px;font-size:15px;font-family:"Hiragino Mincho ProN",serif}
+.jalt button.on{border-color:var(--acento);color:var(--acento)}
+.vrow{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px solid var(--linea)}
+.vrow .w{font-family:"Hiragino Mincho ProN",serif;font-size:22px;min-width:84px}
+.vrow .w rt{font-size:11px;color:var(--acento)}
+.vrow .m{flex:1;font-size:14px;line-height:1.4}
+.vrow .m small{color:var(--suave);display:block;margin-top:3px}
+.vrow button{border:0;background:transparent;font-size:15px;padding:2px 6px}
+.fc{border:1px solid var(--linea);border-radius:18px;padding:28px 16px;text-align:center;background:#fffdf9;min-height:210px;display:flex;flex-direction:column;justify-content:center;gap:8px;cursor:pointer}
+.fc .w{font-family:"Hiragino Mincho ProN",serif;font-size:52px;line-height:1.3}
+.fc .w rt{font-size:18px;color:var(--acento)}
+.fc .m{font-size:18px}
+.fc .c{font-size:14px;color:var(--suave);font-family:"Hiragino Mincho ProN",serif}
 .vlist button{display:flex;width:100%;justify-content:space-between;align-items:center;border:1px solid var(--linea);background:#fff;border-radius:12px;padding:11px 12px;margin-bottom:8px;font-size:15px;text-align:left}
 .vlist button.on{border-color:var(--acento);box-shadow:0 0 0 1px var(--acento)}
 .vlist small{color:var(--suave);font-size:12px}
@@ -224,6 +257,7 @@ ol.steps{padding-left:20px;line-height:1.55;font-size:14px}
   <div class="row">
     <a class="back" href="index.html">‹ Mi Agenda</a>
     <span class="sp"></span>
+    <button class="btn ghost" id="vocBtn" title="Mi vocabulario de japonés" style="font-family:'Hiragino Mincho ProN',serif">語 Vocabulario</button>
     <button class="btn" id="addBtn">＋ Añadir</button>
   </div>
   <h1 class="mincho"><span class="kanji">読書</span><span>Mi Lector <small>どくしょ</small></span></h1>
@@ -262,6 +296,7 @@ ol.steps{padding-left:20px;line-height:1.55;font-size:14px}
     <button class="ib" id="rDraw" aria-label="Escribir con el lápiz" title="Escribir encima">✏️</button>
     <button class="ib off" id="rMark" aria-label="Marcador" title="Marcador">🔖</button>
     <button class="ib" id="rTts" aria-label="Escuchar" title="Leer en voz alta">🎧</button>
+    <button class="ib" id="rDict" aria-label="Diccionario de japonés" title="Diccionario: toca una palabra en japonés" style="font-family:'Hiragino Mincho ProN',serif">辞</button>
     <button class="ib" id="rToc" aria-label="Índice y subrayados" title="Índice, subrayados y marcadores">☰</button>
     <button class="ib" id="rSet" aria-label="Ajustes de lectura">Aa</button>
   </div>
@@ -323,8 +358,11 @@ const SHELVES = {
   libros:   {n:'Libros',   i:'📚'},
   apuntes:  {n:'Apuntes',  i:'📝'},
   revistas: {n:'Revistas', i:'🗞️'},
-  noticias: {n:'Noticias', i:'📰'}
+  noticias: {n:'Noticias', i:'📰'},
+  japones:  {n:'Japonés',  i:'🇯🇵'}
 };
+/* Kanji N5 y N4 de tu app Kanji: [nivel, significado, on, kun] */
+const KD = {"日":[5,"día; sol","ニチ、ジツ","ひ、-び、-か"],"一":[5,"uno","イチ、イツ","ひと、ひと.つ"],"国":[5,"país","コク","くに"],"人":[5,"persona","ジン、ニン","ひと"],"年":[5,"año","ネン","とし"],"大":[5,"grande","ダイ、タイ","おお、おお.きい"],"十":[5,"diez","ジュウ","とお"],"二":[5,"dos","ニ","ふた、ふた.つ"],"本":[5,"libro; origen","ホン","もと"],"中":[5,"dentro; centro","チュウ","なか"],"長":[5,"largo; jefe","チョウ","なが.い"],"出":[5,"salir","シュツ","で.る、だ.す"],"三":[5,"tres","サン","み、みっ.つ"],"時":[5,"tiempo; hora","ジ","とき"],"行":[5,"ir","コウ、ギョウ","い.く、おこな.う"],"見":[5,"ver","ケン","み.る、み.せる"],"月":[5,"luna; mes","ゲツ、ガツ","つき"],"分":[5,"minuto; parte; entender","ブン、フン","わ.かる、わ.ける"],"後":[5,"detrás; después","ゴ、コウ","うし.ろ、あと"],"前":[5,"delante; antes","ゼン","まえ"],"生":[5,"vida; nacer","セイ、ショウ","い.きる、う.まれる"],"五":[5,"cinco","ゴ","いつ、いつ.つ"],"間":[5,"intervalo; entre","カン、ケン","あいだ、ま"],"上":[5,"arriba","ジョウ","うえ、あ.がる、のぼ.る"],"東":[5,"este","トウ","ひがし"],"四":[5,"cuatro","シ","よ、よん、よっ.つ"],"今":[5,"ahora","コン、キン","いま"],"金":[5,"oro; dinero","キン、コン","かね"],"九":[5,"nueve","キュウ、ク","ここの、ここの.つ"],"入":[5,"entrar","ニュウ","い.る、はい.る、い.れる"],"学":[5,"estudio","ガク","まな.ぶ"],"高":[5,"alto; caro","コウ","たか.い"],"円":[5,"círculo; yen","エン","まる.い"],"子":[5,"niño","シ、ス","こ"],"外":[5,"fuera","ガイ、ゲ","そと、ほか"],"八":[5,"ocho","ハチ","や、やっ.つ"],"六":[5,"seis","ロク","む、むっ.つ"],"下":[5,"abajo","カ、ゲ","した、さ.がる、くだ.さい"],"来":[5,"venir","ライ","く.る、き.ます"],"気":[5,"espíritu; energía","キ、ケ","—"],"小":[5,"pequeño","ショウ","ちい.さい、こ、お"],"七":[5,"siete","シチ","なな、なな.つ"],"山":[5,"montaña","サン","やま"],"話":[5,"hablar; historia","ワ","はな.す、はなし"],"女":[5,"mujer","ジョ、ニョ","おんな、め"],"北":[5,"norte","ホク","きた"],"午":[5,"mediodía","ゴ","うま"],"百":[5,"cien","ヒャク","もも"],"書":[5,"escribir","ショ","か.く"],"先":[5,"antes; delante","セン","さき"],"名":[5,"nombre","メイ、ミョウ","な"],"川":[5,"río","セン","かわ"],"千":[5,"mil","セン","ち"],"水":[5,"agua","スイ","みず"],"半":[5,"mitad","ハン","なか.ば"],"男":[5,"hombre","ダン、ナン","おとこ"],"西":[5,"oeste","セイ、サイ","にし"],"電":[5,"electricidad","デン","—"],"校":[5,"escuela","コウ","—"],"語":[5,"idioma; palabra","ゴ","かた.る"],"土":[5,"tierra","ド、ト","つち"],"木":[5,"árbol; madera","ボク、モク","き"],"聞":[5,"oír; preguntar","ブン、モン","き.く、き.こえる"],"食":[5,"comer; comida","ショク","た.べる、く.う"],"車":[5,"coche","シャ","くるま"],"何":[5,"qué","カ","なに、なん"],"南":[5,"sur","ナン","みなみ"],"万":[5,"diez mil","マン、バン","—"],"毎":[5,"cada","マイ","—"],"白":[5,"blanco","ハク","しろ、しろ.い"],"天":[5,"cielo","テン","あめ、あま"],"母":[5,"madre","ボ","はは"],"火":[5,"fuego","カ","ひ"],"右":[5,"derecha","ウ、ユウ","みぎ"],"読":[5,"leer","ドク","よ.む"],"友":[5,"amigo","ユウ","とも"],"左":[5,"izquierda","サ","ひだり"],"休":[5,"descansar","キュウ","やす.む"],"父":[5,"padre","フ","ちち"],"雨":[5,"lluvia","ウ","あめ"],"会":[4,"reunión; encontrarse","カイ、エ","あ.う"],"同":[4,"igual","ドウ","おな.じ"],"事":[4,"cosa; asunto","ジ","こと"],"自":[4,"uno mismo","ジ、シ","みずか.ら"],"社":[4,"empresa; santuario","シャ","やしろ"],"発":[4,"salir; emitir","ハツ、ホツ","—"],"者":[4,"persona (que hace)","シャ","もの"],"地":[4,"tierra; suelo","チ、ジ","—"],"業":[4,"negocio; oficio","ギョウ、ゴウ","わざ"],"方":[4,"dirección; persona; modo","ホウ","かた"],"新":[4,"nuevo","シン","あたら.しい"],"場":[4,"lugar","ジョウ","ば"],"員":[4,"miembro","イン","—"],"立":[4,"ponerse de pie","リツ","た.つ、た.てる"],"開":[4,"abrir","カイ","ひら.く、あ.く、あ.ける"],"手":[4,"mano","シュ","て"],"力":[4,"fuerza","リョク、リキ","ちから"],"問":[4,"pregunta","モン","と.う、とい"],"代":[4,"época; sustituir; tarifa","ダイ、タイ","か.わる、よ"],"明":[4,"claro; luminoso","メイ、ミョウ","あか.るい、あ.ける"],"動":[4,"moverse","ドウ","うご.く"],"京":[4,"capital","キョウ、ケイ","みやこ"],"目":[4,"ojo","モク","め"],"通":[4,"pasar; atravesar","ツウ","とお.る、かよ.う"],"言":[4,"decir","ゲン、ゴン","い.う、こと"],"理":[4,"razón; lógica","リ","—"],"体":[4,"cuerpo","タイ、テイ","からだ"],"田":[4,"arrozal","デン","た"],"主":[4,"principal; dueño","シュ","ぬし、おも"],"題":[4,"tema; título","ダイ","—"],"意":[4,"idea; intención","イ","—"],"不":[4,"no; negación","フ、ブ","—"],"作":[4,"hacer; crear","サク、サ","つく.る"],"用":[4,"uso; tarea","ヨウ","もち.いる"],"度":[4,"grado; vez","ド","たび"],"強":[4,"fuerte","キョウ、ゴウ","つよ.い"],"公":[4,"público","コウ","おおやけ"],"持":[4,"tener; sostener","ジ","も.つ"],"野":[4,"campo","ヤ","の"],"以":[4,"por medio de; desde","イ","—"],"思":[4,"pensar","シ","おも.う"],"家":[4,"casa","カ、ケ","いえ、うち、や"],"世":[4,"mundo; generación","セイ、セ","よ"],"多":[4,"mucho","タ","おお.い"],"正":[4,"correcto","セイ、ショウ","ただ.しい、まさ"],"安":[4,"barato; tranquilo","アン","やす.い"],"院":[4,"institución","イン","—"],"心":[4,"corazón; mente","シン","こころ"],"界":[4,"mundo; límite","カイ","—"],"教":[4,"enseñar","キョウ","おし.える"],"文":[4,"texto; frase","ブン、モン","ふみ"],"元":[4,"origen","ゲン、ガン","もと"],"重":[4,"pesado","ジュウ、チョウ","おも.い、かさ.ねる"],"近":[4,"cerca","キン","ちか.い"],"考":[4,"pensar; considerar","コウ","かんが.える"],"画":[4,"dibujo; trazo","ガ、カク","—"],"海":[4,"mar","カイ","うみ"],"売":[4,"vender","バイ","う.る"],"知":[4,"saber","チ","し.る"],"道":[4,"camino","ドウ","みち"],"集":[4,"reunir","シュウ","あつ.まる、あつ.める"],"別":[4,"separar; distinto","ベツ","わか.れる"],"物":[4,"cosa","ブツ、モツ","もの"],"使":[4,"usar","シ","つか.う"],"品":[4,"producto; artículo","ヒン","しな"],"計":[4,"medir; plan","ケイ","はか.る"],"死":[4,"muerte","シ","し.ぬ"],"特":[4,"especial","トク","—"],"私":[4,"yo; privado","シ","わたし、わたくし"],"始":[4,"empezar","シ","はじ.める、はじ.まる"],"朝":[4,"mañana","チョウ","あさ"],"運":[4,"transportar; suerte","ウン","はこ.ぶ"],"終":[4,"terminar","シュウ","お.わる、お.える"],"台":[4,"plataforma; soporte","ダイ、タイ","—"],"広":[4,"amplio","コウ","ひろ.い"],"住":[4,"vivir; residir","ジュウ","す.む"],"真":[4,"verdad; real","シン","ま"],"有":[4,"tener; existir","ユウ、ウ","あ.る"],"口":[4,"boca","コウ、ク","くち"],"少":[4,"poco","ショウ","すく.ない、すこ.し"],"町":[4,"pueblo; barrio","チョウ","まち"],"料":[4,"tarifa; materia","リョウ","—"],"工":[4,"obra; artesanía","コウ、ク","—"],"建":[4,"construir","ケン、コン","た.てる"],"空":[4,"cielo; vacío","クウ","そら、あ.く、から"],"急":[4,"prisa; urgente","キュウ","いそ.ぐ"],"止":[4,"parar","シ","と.まる、と.める"],"送":[4,"enviar","ソウ","おく.る"],"切":[4,"cortar","セツ、サイ","き.る"],"転":[4,"girar; rodar","テン","ころ.ぶ"],"研":[4,"pulir; investigar","ケン","と.ぐ"],"足":[4,"pie; bastar","ソク","あし、た.りる"],"究":[4,"investigar","キュウ","きわ.める"],"楽":[4,"diversión; música","ガク、ラク","たの.しい"],"起":[4,"levantarse","キ","お.きる、お.こす"],"着":[4,"llegar; vestir","チャク","き.る、つ.く"],"店":[4,"tienda","テン","みせ"],"病":[4,"enfermedad","ビョウ","や.む"],"質":[4,"calidad","シツ、シチ","—"],"待":[4,"esperar","タイ","ま.つ"],"試":[4,"probar; examen","シ","ため.す、こころ.みる"],"族":[4,"familia; tribu","ゾク","—"],"銀":[4,"plata","ギン","—"],"早":[4,"temprano","ソウ","はや.い"],"映":[4,"reflejar; proyectar","エイ","うつ.る"],"親":[4,"padres; íntimo","シン","おや、した.しい"],"験":[4,"prueba","ケン","—"],"英":[4,"Inglaterra; brillante","エイ","—"],"医":[4,"medicina","イ","—"],"仕":[4,"servir","シ、ジ","つか.える"],"去":[4,"pasado; irse","キョ、コ","さ.る"],"味":[4,"sabor","ミ","あじ"],"写":[4,"copiar; fotografiar","シャ","うつ.す"],"字":[4,"letra; carácter","ジ","あざ"],"答":[4,"respuesta","トウ","こた.える、こた.え"],"夜":[4,"noche","ヤ","よ、よる"],"音":[4,"sonido","オン、イン","おと、ね"],"注":[4,"verter; atención","チュウ","そそ.ぐ"],"帰":[4,"volver","キ","かえ.る"],"古":[4,"viejo","コ","ふる.い"],"歌":[4,"canción","カ","うた、うた.う"],"買":[4,"comprar","バイ","か.う"],"悪":[4,"malo","アク、オ","わる.い"],"図":[4,"plano; dibujo","ズ、ト","はか.る"],"週":[4,"semana","シュウ","—"],"室":[4,"habitación","シツ","むろ"],"歩":[4,"caminar","ホ、ブ","ある.く、あゆ.む"],"風":[4,"viento; estilo","フウ、フ","かぜ"],"紙":[4,"papel","シ","かみ"],"黒":[4,"negro","コク","くろ、くろ.い"],"花":[4,"flor","カ","はな"],"春":[4,"primavera","シュン","はる"],"赤":[4,"rojo","セキ","あか、あか.い"],"青":[4,"azul; verde","セイ","あお、あお.い"],"館":[4,"edificio público","カン","やかた"],"屋":[4,"tienda; tejado","オク","や"],"色":[4,"color","ショク、シキ","いろ"],"走":[4,"correr","ソウ","はし.る"],"秋":[4,"otoño","シュウ","あき"],"夏":[4,"verano","カ、ゲ","なつ"],"習":[4,"aprender","シュウ","なら.う"],"駅":[4,"estación","エキ","—"],"洋":[4,"océano; occidental","ヨウ","—"],"旅":[4,"viaje","リョ","たび"],"服":[4,"ropa","フク","—"],"夕":[4,"tarde; anochecer","セキ","ゆう"],"借":[4,"pedir prestado","シャク","か.りる"],"曜":[4,"día de la semana","ヨウ","—"],"飲":[4,"beber","イン","の.む"],"肉":[4,"carne","ニク","—"],"貸":[4,"prestar","タイ","か.す"],"堂":[4,"sala; salón","ドウ","—"],"鳥":[4,"pájaro","チョウ","とり"],"飯":[4,"arroz cocido; comida","ハン","めし"],"勉":[4,"esfuerzo","ベン","つと.める"],"冬":[4,"invierno","トウ","ふゆ"],"昼":[4,"mediodía; día","チュウ","ひる"],"茶":[4,"té","チャ、サ","—"],"弟":[4,"hermano menor","テイ、ダイ","おとうと"],"牛":[4,"vaca","ギュウ","うし"],"魚":[4,"pez","ギョ","さかな、うお"],"兄":[4,"hermano mayor","ケイ、キョウ","あに"],"犬":[4,"perro","ケン","いぬ"],"妹":[4,"hermana menor","マイ","いもうと"],"姉":[4,"hermana mayor","シ","あね"],"漢":[4,"China (Han)","カン","—"],"低":[4,"bajo","テイ","ひく.い"],"暗":[4,"oscuro","アン","くら.い"],"短":[4,"corto","タン","みじか.い"],"遠":[4,"lejos","エン、オン","とお.い"],"軽":[4,"ligero","ケイ","かる.い"],"寒":[4,"frío (clima)","カン","さむ.い"],"暑":[4,"calor (clima)","ショ","あつ.い"],"若":[4,"joven","ジャク、ニャク","わか.い"],"好":[4,"gustar","コウ","す.き、この.む"],"便":[4,"conveniencia; correo","ベン、ビン","たよ.り"],"乗":[4,"subir (a un vehículo)","ジョウ","の.る、の.せる"],"説":[4,"explicar; teoría","セツ","と.く"],"頭":[4,"cabeza","トウ、ズ","あたま"],"顔":[4,"cara","ガン","かお"],"声":[4,"voz","セイ","こえ"],"晩":[4,"noche; anochecer","バン","—"],"部":[4,"parte; sección","ブ","—"],"太":[4,"grueso","タイ、タ","ふと.い、ふと.る"],"弱":[4,"débil","ジャク","よわ.い"],"洗":[4,"lavar","セン","あら.う"]};
 const STATES = {pendiente:'Pendiente', leyendo:'Leyendo', terminado:'Terminado'};
 const KIND = {epub:'EPUB', pdf:'PDF', images:'IMÁGENES', link:'ENLACE', article:'ARTÍCULO'};
 const isText = () => R.kind === 'epub' || R.kind === 'article';   // se puede subrayar texto
@@ -337,10 +375,14 @@ const FUENTES_DEF = [
   {n:'El Periódico', u:'https://www.elperiodico.com/es/'},
   {n:'Actu Toulouse', u:'https://actu.fr/occitanie/toulouse_31555/'},
   {n:'La Dépêche', u:'https://www.ladepeche.fr/'},
-  {n:'Le Monde', u:'https://www.lemonde.fr/'}
+  {n:'Le Monde', u:'https://www.lemonde.fr/'},
+  {n:'🇯🇵 MATCHA fácil', u:'https://matcha-jp.com/easy', jp:true},
+  {n:'🇯🇵 Watanoc', u:'https://watanoc.com/', jp:true}
 ];
 let fuentes; try{ fuentes = JSON.parse(localStorage.getItem('lector-fuentes') || 'null'); }catch(e){}
 if (!Array.isArray(fuentes)) fuentes = FUENTES_DEF.slice();
+else if (!localStorage.getItem('lector-fuentes-jp')){ FUENTES_DEF.filter(f => f.jp && !fuentes.some(x => x.u === f.u)).forEach(f => fuentes.push(f)); store('lector-fuentes', fuentes); }
+try{ localStorage.setItem('lector-fuentes-jp', '1'); }catch(e){}
 const saveFuentes = () => store('lector-fuentes', fuentes);
 const THEMES = {
   blanco: {n:'Blanco', bg:'#ffffff', fg:'#222222', link:'#2a5db0', line:'rgba(0,0,0,.08)'},
@@ -518,7 +560,7 @@ function sheet(html){
   s.hidden = false;
   return s.firstElementChild;
 }
-function closeSheet(){ $('#sheet').hidden = true; $('#sheet').innerHTML = ''; }
+function closeSheet(){ $('#sheet').hidden = true; $('#sheet').innerHTML = ''; if (typeof clearDictMark === 'function'){ clearDictMark(); D = null; } }
 $('#sheet').addEventListener('click', e => {
   if (e.target.id === 'sheet' || e.target.closest('[data-close]')) closeSheet();
 });
@@ -577,10 +619,14 @@ function render(){
   }[view.sort] || ((a, b) => rec(b) - rec(a));
   list.sort(cmp);
 
-  const showSrc = view.tab === 'noticias' && !q;
+  const showSrc = (view.tab === 'noticias' || view.tab === 'japones') && !q;
   $('#srcWrap').hidden = !showSrc;
-  if (showSrc) $('#srcs').innerHTML = fuentes.map((f, i) => `<button class="src" data-src="${i}">${esc(f.n)}</button>`).join('')
-    + `<button class="src add" data-src="edit">✎ Editar</button>`;
+  if (showSrc){
+    const jpTab = view.tab === 'japones';
+    $('#srcWrap h2').innerHTML = jpTab ? '🇯🇵 Lecturas fáciles <span style="font-weight:400">· artículos con furigana para tu nivel</span>' : '🗞️ Mis periódicos <span style="font-weight:400">· toca uno para ver sus titulares</span>';
+    $('#srcs').innerHTML = fuentes.map((f, i) => (!!f.jp === jpTab || (!jpTab && !f.jp)) && (jpTab ? f.jp : !f.jp) ? `<button class="src" data-src="${i}">${esc(f.n)}</button>` : '').join('')
+      + (jpTab ? `<button class="src add" data-src="mas">📗 Más lecturas gratis</button>` : '') + `<button class="src add" data-src="edit">✎ Editar</button>`;
+  }
   const showCont = view.state === 'todos' && !q;
   const cont = showCont ? items.filter(i => i.state === 'leyendo' && (view.tab === 'todo' || i.shelf === view.tab))
                                .sort((a, b) => rec(b) - rec(a)).slice(0, 10) : [];
@@ -650,7 +696,7 @@ $('#addBtn').addEventListener('click', () => {
 });
 $('#srcs').addEventListener('click', e => {
   const b = e.target.closest('[data-src]'); if (!b) return;
-  if (b.dataset.src === 'edit') editFuentes(); else headlines(fuentes[+b.dataset.src]);
+  if (b.dataset.src === 'edit') editFuentes(); else if (b.dataset.src === 'mas') easyReadsSheet(); else headlines(fuentes[+b.dataset.src]);
 });
 
 $('#fileInput').addEventListener('change', e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) importFiles(f); });
@@ -729,17 +775,18 @@ async function addEpub(f){
   const buf = await f.arrayBuffer();
   const blob = new Blob([buf], {type:'application/epub+zip'});
   const book = ePub(buf.slice(0));
-  let title = cleanName(f.name), author = '', cover = null;
+  let title = cleanName(f.name), author = '', cover = null, jaBook = false;
   try{
     await book.ready;
     const md = await book.loaded.metadata;
     if (md.title) title = md.title;
     if (md.creator) author = md.creator;
+    if (/^ja/i.test(md.language || '') && !SHELVES[view.tab]) jaBook = true;
     const url = await book.coverUrl();
     if (url) cover = await thumb(url);
   }catch(e){ console.warn(e); }
   try{ book.destroy(); }catch(e){}
-  return addItem({type:'epub', title, author, cover, shelf:defShelf('epub'), size:f.size}, blob);
+  return addItem({type:'epub', title, author, cover, shelf:jaBook ? 'japones' : defShelf('epub'), size:f.size}, blob);
 }
 
 async function addPdf(f){
@@ -822,6 +869,11 @@ async function cleanOrphans(){
 /* =========================================================
    NOTICIAS Y ARTÍCULOS
    ========================================================= */
+function stripTags(t){ return String(t || '').replace(/<rt>[\s\S]*?<\/rt>|<rp>[\s\S]*?<\/rp>/gi, '').replace(/<[^>]+>/g, ''); }
+function countWords(t){
+  const jp = (String(t).match(/[\u3040-\u30ff\u4e00-\u9fff]/g) || []).length;
+  return jp > 150 ? Math.round(jp / 2.5) : String(t).split(/\s+/).filter(Boolean).length;
+}
 function normUrl(u){
   u = (u || '').trim();
   const m = u.match(/https?:\/\/\S+/i); if (m) u = m[0];
@@ -879,8 +931,8 @@ async function fetchArticle(url){
     const meta = data.metadata || {};
     const a = new Readability(doc).parse();
     const html = a && a.content ? sanitizeHtml(a.content) : '';
-    const words = (new DOMParser().parseFromString(html, 'text/html').body.textContent || '').split(/\s+/).filter(Boolean).length;
-    if (words >= 120) return {title:(a.title || data.title || '').trim(), html, url:data.finalUrl || data.url || url, site:a.siteName || meta['og:site_name'] || hostOf(url),
+    const words = countWords(new DOMParser().parseFromString(html, 'text/html').body.textContent || '');
+    if (words >= 120) return {title:stripTags(a.title || data.title || '').trim(), html, url:data.finalUrl || data.url || url, site:a.siteName || meta['og:site_name'] || hostOf(url),
       author:(a.byline || meta.author || '').trim().replace(/^(par|por|by|de)\s+/i, '').slice(0, 120), published:data.publishedTime || a.publishedTime || meta['article:published_time'] || '', cover:meta['og:image'] || meta['twitter:image'] || null};
   }catch(e){ if (e.status === 403 || e.status === 451 || e.status === 429) throw e; console.warn(e); }
   const md = await fetchArticleMd(url);
@@ -906,6 +958,7 @@ async function downloadArticle(url, shelf, replaceItem){
     const cover = a.cover || (html.match(/<img[^>]+src="([^"]+)"/) || [])[1] || null;
     if (cover && !/<img/i.test(html)) html = `<figure><img src="${esc(cover)}" alt=""></figure>` + html;
     unbusy();
+    if (shelf === 'noticias' && /[\u3040-\u30ff]/.test(html.slice(0, 4000).replace(/<[^>]+>/g, ''))) shelf = 'japones';
     return await saveArticle({title:a.title || hostOf(url), url:a.url, site:a.site, author:a.author, published:a.published, cover, html, shelf}, replaceItem);
   }catch(e){
     console.warn(e); unbusy();
@@ -988,7 +1041,7 @@ function textToHtml(t){
 async function saveArticle(d, replaceItem){
   const html = d.html || '';
   const plain = new DOMParser().parseFromString(html, 'text/html').body.textContent || '';
-  const words = plain.split(/\s+/).filter(Boolean).length;
+  const words = countWords(plain);
   const partial = /(la suite est réservée aux abonnés|il vous reste [\d.,]+ ?% de cet article|réservé aux abonnés|you have [\d.,]+% of this article left|contenido exclusivo para suscriptores|solo para suscriptores|hazte suscriptor para seguir leyendo|para seguir leyendo)/i.test(plain.slice(-1500));
   const meta = {type:'article', partial, title:d.title || 'Artículo', author:d.author || d.site || '', url:d.url || '', site:d.site || hostOf(d.url),
                 published:d.published || '', cover:d.cover || null, words, size:html.length};
@@ -1064,21 +1117,23 @@ function headlinesFromDoc(doc, src){
   for (const a of doc.querySelectorAll('a[href]')){
     let u; try{ u = new URL(a.getAttribute('href'), doc.baseURI); }catch(e){ continue; }
     u.hash = ''; const href = u.href;
-    let title = (a.textContent || '').replace(/\s+/g, ' ').trim();
-    if (title.length < 25 || title.length > 300 || seen.has(href)) continue;
+    const ac = a.cloneNode(true); ac.querySelectorAll('rt, rp').forEach(x => x.remove());
+    let title = (ac.textContent || '').replace(/\s+/g, ' ').trim();
+    const jpT = /[\u3040-\u30ff\u4e00-\u9fff]/.test(title);
+    if (title.length < (jpT ? 8 : 25) || title.length > 300 || seen.has(href)) continue;
     if (!u.hostname.endsWith(host)) continue;
     if (!srcEn && /\/en\//.test(u.pathname)) continue;
     if (/\.(jpe?g|png|webp|gif|svg|mp4)$/i.test(u.pathname)) continue;
     if (/\/(tag|tags|autor|author|auteur|abonnement|abonnements|newsletter|newsletters|suscripcion|subscribe|jeux|services|page|pages|videos?|faq|bons-plans[^/]*|codigos-descuento|code-promo[^/]*)\//i.test(u.pathname + '/')) continue;
     const segs = u.pathname.split('/').filter(Boolean);
-    if (segs.length < 2 && !/\d{5,}/.test(u.pathname)) continue;
+    if (segs.length < 2 && !/\d{3,}/.test(u.pathname)) continue;
     if (!/\d{4}|\d{5,}|\.html?$|\.php$/.test(u.pathname)) continue;
     const ym = u.pathname.match(/(?:^|\/|-|_)(20\d\d)(?:\/|\d{4}|-|_)/);
     if (ym && +ym[1] < year - (new Date().getMonth() === 0 ? 1 : 0)) continue;
     let lock = false;
     title = title.replace(/^(article réservé aux abonnés|réservé aux abonnés|abonnés|exclusiva suscriptores|exclusiva para suscriptores|suscriptores|premium)\s*/i, () => { lock = true; return ''; })
                  .replace(/^Image \d+:\s*/i, '').replace(/^\d{1,2}[:h]\d{2}\s+/, '');
-    if (title.length < 20) continue;
+    if (title.length < (jpT ? 6 : 20)) continue;
     seen.add(href); out.push({title:(lock ? '🔒 ' : '') + title, url:href});
     if (out.length >= 40) break;
   }
@@ -1124,9 +1179,23 @@ async function headlines(f){
     const ex = items.find(i => i.url === h.url && i.type === 'article');
     if (ex){ closeSheet(); openItem(ex.id); return; }
     closeSheet();
-    const it = await downloadArticle(h.url, 'noticias');
+    const it = await downloadArticle(h.url, f.jp ? 'japones' : 'noticias');
     if (it){ render(); openItem(it.id); }
   };
+}
+function easyReadsSheet(){
+  const L = [
+    ['MATCHA やさしい日本語', 'https://matcha-jp.com/easy', 'Artículos de viajes y cultura con furigana. También en «Lecturas fáciles» aquí arriba.'],
+    ['Watanoc', 'https://watanoc.com/', 'Noticias cortas marcadas por nivel (n5, n4…).'],
+    ['Tadoku – libros gratis', 'https://tadoku.org/japanese/en/free-books-en/', 'Libros graduados por niveles (0 a 5) con furigana, en PDF: descárgalos e impórtalos con ＋ Añadir.'],
+    ['福娘童話集 (cuentos)', 'http://hukumusume.com/douwa/', 'Cuentos japoneses tradicionales en hiragana y con furigana.'],
+    ['NHK News Web Easy', 'https://news.web.nhk/news/easy/', 'Noticias fáciles con furigana. Ábrelas en Safari y guárdalas con tu botón 📥 Guardar en Mi Lector.'],
+    ['青空文庫 Aozora Bunko', 'https://www.aozora.gr.jp/', 'Clásicos gratis (nivel avanzado), para cuando subas de nivel.']
+  ];
+  sheet(`<h3>📗 Lecturas fáciles gratis</h3>
+    <div class="news">${L.map(([n, u, d]) => `<a href="${esc(u)}" target="_blank" rel="noopener"><span><b style="font-size:15px">${esc(n)}</b><br><small style="color:var(--suave)">${esc(d)}</small></span><b>↗</b></a>`).join('')}</div>
+    <div class="info">Consejo: activa <b>辞</b> al leer y toca las palabras que no conozcas; guárdalas en <b>語 Vocabulario</b> y repásalas con las tarjetas.</div>
+    <div class="actions"><span class="sp"></span><button class="btn ghost" data-close>Cerrar</button></div>`);
 }
 function editFuentes(){
   const draw = () => {
@@ -1247,6 +1316,8 @@ async function openItem(id){
   $('#rTitle').textContent = it.title;
   $('#rDraw').hidden = it.type === 'epub' || it.type === 'article';
   $('#rTts').hidden = it.type === 'images';
+  $('#rDict').hidden = !(it.type === 'epub' || it.type === 'article');
+  $('#rDict').classList.toggle('on', !!ajustes.dict);
   applyTheme(); updateDoble();
   try{
     $('#artBox').hidden = true; $('#pages').hidden = true; $('#epubBox').hidden = true;
@@ -1348,7 +1419,7 @@ async function makeRendition(){
   }
   applyEpubStyle();
   rend.hooks.content.register(contents => {
-    try{ const st = contents.document.createElement('style'); st.textContent = '.tts-on{background:rgba(181,82,59,.12)!important;border-radius:6px} ::highlight(tts){background-color:rgba(255,216,77,.6);color:inherit}'; contents.document.head.appendChild(st); }catch(e){}
+    try{ const st = contents.document.createElement('style'); st.textContent = '.tts-on{background:rgba(181,82,59,.12)!important;border-radius:6px} ::highlight(tts){background-color:rgba(255,216,77,.6);color:inherit} ::highlight(dict){background-color:rgba(143,180,255,.5);color:inherit} html.sin-furi rt, html.sin-furi rp{visibility:hidden}'; contents.document.head.appendChild(st); contents.document.documentElement.classList.toggle('sin-furi', ajustes.furi === 'no'); }catch(e){}
     attachGestures(contents.document, true);
     contents.document.addEventListener('selectionchange', () => {
       clearTimeout(R.selT);
@@ -1412,7 +1483,7 @@ function onSelected(cfiRange, contents){
 function showSelBar(){
   const b = $('#selBar');
   b.innerHTML = Object.entries(HL).map(([k, c]) => `<button class="c" data-hl="${k}" title="${c.n}" style="background:${c.fill}"></button>`).join('')
-    + `<span class="sep"></span><button class="txt" data-a="oir" title="Escuchar desde aquí">🎧</button><button class="txt" data-a="nota">📝 Nota</button><button class="txt" data-a="copiar">📋 Copiar</button><button data-a="cerrar" aria-label="Cerrar">✕</button>`;
+    + `<span class="sep"></span><button class="txt" data-a="oir" title="Escuchar desde aquí">🎧</button><button class="txt" data-a="dic" title="Buscar en el diccionario" style="font-family:'Hiragino Mincho ProN',serif">辞</button><button class="txt" data-a="nota">📝 Nota</button><button class="txt" data-a="copiar">📋 Copiar</button><button data-a="cerrar" aria-label="Cerrar">✕</button>`;
   b.hidden = false;
 }
 function hideSel(){ $('#selBar').hidden = true; R.sel = null; }
@@ -1429,6 +1500,7 @@ $('#selBar').addEventListener('click', e => {
   if (c){ addHl(c.dataset.hl); return; }
   if (!a) return;
   if (a.dataset.a === 'oir'){ const s = R.sel; clearSelection(); ttsOpen(s); return; }
+  if (a.dataset.a === 'dic'){ const t = (R.sel ? R.sel.text : '').replace(/\s+/g, '').slice(0, 24); clearSelection(); if (t) dictLookup(t, t, {text:t, ws:0, we:t.length}); return; }
   if (a.dataset.a === 'nota'){ const h = addHl(ajustes.lastHl || 'amarillo'); if (h) openHl(h.id, true); }
   else if (a.dataset.a === 'copiar'){ copyText(R.sel ? R.sel.text : ''); clearSelection(); }
   else clearSelection();
@@ -1508,6 +1580,7 @@ async function openArticle(html){
                 it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">Ver original ↗</a>` : ''].filter(Boolean).join(' · ');
   box.innerHTML = `<article class="art" lang="${/\.fr$/.test(it.site || '') ? 'fr' : 'es'}"><h1 class="at">${esc(it.title)}</h1><div class="am">${meta}</div><div class="ab">${typeof html === 'string' ? html : ''}</div>${it.partial ? `<div class="am" style="margin-top:2em;padding:12px 14px;border:1px dashed var(--rline);border-radius:12px;opacity:.85">🔒 Este artículo está incompleto porque es para suscriptores. Si tienes suscripción, ábrelo en Safari${it.url ? ` (<a href="${esc(it.url)}" target="_blank" rel="noopener">abrir ↗</a>)` : ''}, toca tu marcador <b>📥 Guardar en Mi Lector</b> y pégalo aquí con <b>＋ Añadir › Pegar artículo</b>.</div>` : ''}</article>`;
   R.artRoot = box.querySelector('.ab');
+  applyFuri();
   // Foto que no carga (sin internet): se oculta sin tocar el texto (los subrayados dependen de él)
   R.artRoot.querySelectorAll('img').forEach(i => { i.loading = 'lazy'; i.onerror = () => { (i.closest('figure') || i).style.display = 'none'; }; });
   // Índice a partir de los subtítulos
@@ -1804,7 +1877,7 @@ function attachGestures(target, isEpub){
       const doc = isEpub ? target : document;
       const sel = doc.getSelection ? String(doc.getSelection()) : '';
       if (sel) return;
-      if (isEpub || R.kind === 'article'){ if (R.sel) hideSel(); else toggleBars(); return; }
+      if (isEpub || R.kind === 'article'){ if (R.sel) hideSel(); else if (!dictTap(isEpub ? target : document, e.clientX, e.clientY)) toggleBars(); return; }
       if (R.drawing) return;
       const r = $('#viewer').getBoundingClientRect();
       const x = (e.clientX - r.left) / r.width;
@@ -1813,6 +1886,7 @@ function attachGestures(target, isEpub){
   }, {passive:true});
 }
 attachGestures($('#pages'), false);
+attachGestures($('#artBox'), false);
 $('#gL').addEventListener('click', goLeft);
 $('#gR').addEventListener('click', goRight);
 $('#rClose').addEventListener('click', closeReader);
@@ -1915,7 +1989,8 @@ async function openPanel(tab){
   const tabs = `<div class="ptabs">
     <button data-tab="indice" class="${tab === 'indice' ? 'on' : ''}">☰ Índice</button>
     <button data-tab="subr" class="${tab === 'subr' ? 'on' : ''}">🖍️ ${isText() ? 'Subrayados' : 'Notas'}${nHl ? ' ' + nHl : ''}</button>
-    <button data-tab="marks" class="${tab === 'marks' ? 'on' : ''}">🔖 ${(it.marks || []).length || ''}</button></div>`;
+    <button data-tab="marks" class="${tab === 'marks' ? 'on' : ''}">🔖 ${(it.marks || []).length || ''}</button>
+    ${isText() ? `<button data-tab="voc" class="${tab === 'voc' ? 'on' : ''}" style="font-family:'Hiragino Mincho ProN',serif">語 ${(it.vocab || []).length || ''}</button>` : ''}</div>`;
   let body = '';
   if (tab === 'indice'){
     const toc = R.toc || [];
@@ -1933,6 +2008,9 @@ async function openPanel(tab){
         <button class="btn small" id="xLib">📝 Enviar a Mi Libreta</button>
         ${!isText() ? '<button class="btn small ghost" id="xNote">＋ Nota en esta página</button>' : ''}
       </div>` + (isText() ? hlListHTML() : await pageNotesHTML());
+  } else if (tab === 'voc'){
+    const vl = (it.vocab || []).slice().reverse();
+    body = `<div class="actions" style="margin:0 0 10px">${vl.length ? `<button class="btn small" id="vFc">🃏 Repasar</button><button class="btn small ghost" id="vCopy">📋 Copiar</button><button class="btn small ghost" id="vLib">📝 Enviar a Mi Libreta</button>` : ''}</div>` + vocabRows(vl, false);
   } else {
     const ms = (it.marks || []).slice().sort((a, b) => (a.pct || 0) - (b.pct || 0));
     body = ms.length ? `<div class="toc">${ms.map(m => `<a href="#" data-mark="${m.id}">🔖 ${esc(m.label)}<small data-delmark="${m.id}" title="Quitar">✕</small></a>`).join('')}</div>`
@@ -1963,10 +2041,15 @@ async function openPanel(tab){
     }
     const pe = e.target.closest('[data-editpn]'); if (pe){ e.stopPropagation(); pageNoteSheet(+pe.dataset.editpn); return; }
     const pg = e.target.closest('[data-gopage]'); if (pg){ closeSheet(); goPage(+pg.dataset.gopage); return; }
+    const sy = e.target.closest('[data-say]'); if (sy){ speakJa(sy.dataset.say); return; }
+    const dv = e.target.closest('[data-delv]'); if (dv){ it.vocab = (it.vocab || []).filter(v => v.id !== dv.dataset.delv); saveSoon(); openPanel('voc'); return; }
   };
   if ($('#jGo')) $('#jGo').onclick = () => { const v = parseInt($('#jP').value, 10); if (v >= 1 && v <= R.total){ closeSheet(); goPage(v - 1); } };
   if ($('#xCopy')) $('#xCopy').onclick = async () => copyText(await exportText());
-  if ($('#xLib')) $('#xLib').onclick = exportToLibreta;
+  if ($('#xLib')) $('#xLib').onclick = () => exportToLibreta();
+  if ($('#vFc')) $('#vFc').onclick = () => flashcards((it.vocab || []).slice());
+  if ($('#vCopy')) $('#vCopy').onclick = () => copyText(`語 ${it.title}\n\n` + vocabText(it.vocab || []));
+  if ($('#vLib')) $('#vLib').onclick = () => exportToLibreta('voc');
   if ($('#xNote')) $('#xNote').onclick = () => pageNoteSheet(R.page);
 }
 function goTo(loc){
@@ -2051,10 +2134,11 @@ function idbDo(db, st, mode, fn){
   });
 }
 /* Escribe una libreta «📖 Título» en Mi Libreta (misma web, mismo aparato) */
-async function exportToLibreta(){
+async function exportToLibreta(mode){
   const it = R.item;
-  const bl = exportBlocks(true);
-  if (!bl.length){ toast(exportBlocks(false).length ? 'Ya está todo en Mi Libreta ✓' : 'Todavía no hay subrayados ni notas'); return; }
+  const voc = mode === 'voc';
+  const bl = voc ? (it.vocab || []).filter(v => !v.exp).map(v => ({ref:v, color:'#2B2A28', text:`${v.w}【${v.k}】 — ${v.m}${v.ctx ? `\n「${v.ctx}」` : ''}`})) : exportBlocks(true);
+  if (!bl.length){ toast(voc ? ((it.vocab || []).length ? 'Ya está todo en Mi Libreta ✓' : 'Todavía no hay vocabulario') : exportBlocks(false).length ? 'Ya está todo en Mi Libreta ✓' : 'Todavía no hay subrayados ni notas'); return; }
   try{
     const db = await openIDB('miLibreta', 1, d => ['nb', 'pg', 'files'].forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, {keyPath:'id'}); }));
     let nb = it.libNb ? await idbDo(db, 'nb', 'readonly', s => s.get(it.libNb)) : null;
@@ -2071,13 +2155,13 @@ async function exportToLibreta(){
     const pages = []; let cur = null, y = 0;
     const newPg = () => { cur = {id:uid(), items:[]}; pages.push(cur); y = TOP; };
     newPg();
-    const head = `${it.title}${it.author ? ' — ' + it.author : ''}\n${isText() ? 'Subrayados' : 'Notas'} del ${new Date().toLocaleDateString('es')}`;
+    const head = `${it.title}${it.author ? ' — ' + it.author : ''}\n${voc ? 'Vocabulario' : isText() ? 'Subrayados' : 'Notas'} del ${new Date().toLocaleDateString('es')}`;
     cur.items.push({id:uid(), type:'text', x:X, y, w:MW, text:head, size:30, color:'#B5523B', font:'serif'});
     y += 2 * 30 * 1.35 + 30;
     for (const b of bl){
       const h = lines(b.text) * LH;
       if (y + h > BOTTOM && cur.items.length) newPg();
-      cur.items.push({id:uid(), type:'text', x:X, y, w:MW, text:b.text, size:FS, color:b.color, font:'ui'});
+      cur.items.push({id:uid(), type:'text', x:X, y, w:MW, text:b.text, size:FS, color:b.color, font:voc ? 'jp' : 'ui'});
       y += h + 28;
     }
     for (const pg of pages){
@@ -2091,7 +2175,7 @@ async function exportToLibreta(){
     bl.forEach(b => { b.ref.exp = true; });
     it.libNb = nb.id; saveSoon();
     toast(`✓ ${bl.length} enviados a Mi Libreta («${it.title}»)`, {label:'Abrir Mi Libreta', fn: async () => { await saveNow(); location.href = 'libreta.html'; }});
-    if (R.panelTab === 'subr' && !$('#sheet').hidden) openPanel('subr');
+    if ((R.panelTab === 'subr' || R.panelTab === 'voc') && !$('#sheet').hidden) openPanel(R.panelTab);
   }catch(e){ console.error(e); toast('No he podido escribir en Mi Libreta'); }
 }
 /* Avisar a la sincronización (sync.js) de que Mi Libreta ha cambiado */
@@ -2386,9 +2470,21 @@ function blocksOf(root){
   if (!bl.length) bl = [...root.querySelectorAll('div, section')].filter(d => [...d.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim().length > 20));
   return bl;
 }
+/* Texto de un bloque SIN el furigana (<rt>), para leer en voz alta y para el diccionario */
+function textWalker(block){
+  return block.ownerDocument.createTreeWalker(block, NodeFilter.SHOW_TEXT,
+    {acceptNode: n => n.parentElement && n.parentElement.closest('rt, rp') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+}
+function textOf(block){ const w = textWalker(block); let s = '', t; while ((t = w.nextNode())) s += t.nodeValue; return s; }
+function offsetIn(block, node, off){
+  if (node.nodeType !== 3){ const c = node.childNodes[off]; if (c){ node = c; off = 0; } }
+  const w = textWalker(block); let n = 0, t;
+  while ((t = w.nextNode())){ if (t === node || (node.nodeType !== 3 && node.contains(t))) return n + (t === node ? off : 0); n += t.nodeValue.length; }
+  return n;
+}
 function rangeIn(block, s, e){
   const doc = block.ownerDocument, r = doc.createRange();
-  const w = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  const w = textWalker(block);
   let n = 0, t, setS = false;
   while ((t = w.nextNode())){
     const L = t.nodeValue.length;
@@ -2404,7 +2500,7 @@ function itemsFromBlocks(blocks, startBlock, startOff, extra){
   let on = !startBlock;
   for (const b of blocks){
     if (!on){ if (b === startBlock || b.contains(startBlock) || startBlock.contains(b)) on = true; else continue; }
-    const text = b.textContent;
+    const text = textOf(b);
     for (const [s, e] of sentences(text, T.lang)){
       if (b === startBlock && startOff != null && e <= startOff) continue;
       out.push(Object.assign({text:text.slice(s, e).replace(/\s+/g, ' ').trim(), block:b, s, e, win:b.ownerDocument.defaultView}, extra || {}));
@@ -2425,7 +2521,7 @@ async function ttsBuild(fromSel){
     const root = R.artRoot, blocks = blocksOf(root);
     if (!T.langFixed) T.lang = detectLang(root.textContent.slice(0, 3000));
     let sb = null, so = null;
-    if (fromSel && fromSel.art){ sb = closestBlock(fromSel.range.startContainer, root); if (sb) so = pointToOffset(sb, fromSel.range.startContainer, fromSel.range.startOffset); }
+    if (fromSel && fromSel.art){ sb = closestBlock(fromSel.range.startContainer, root); if (sb) so = offsetIn(sb, fromSel.range.startContainer, fromSel.range.startOffset); }
     if (!sb){ const br = $('#artBox').getBoundingClientRect(); sb = blocks.find(b => b.getBoundingClientRect().bottom > br.top + 30) || blocks[0]; }
     T.queue = itemsFromBlocks(blocks, sb, so);
   } else if (R.kind === 'epub'){
@@ -2442,7 +2538,7 @@ async function ttsBuild(fromSel){
     }
     let sb = null, so = null;
     if (fromSel && fromSel.contents){
-      try{ const r = c.range(fromSel.cfi); sb = closestBlock(r.startContainer, root); if (sb) so = pointToOffset(sb, r.startContainer, r.startOffset); }catch(e){}
+      try{ const r = c.range(fromSel.cfi); sb = closestBlock(r.startContainer, root); if (sb) so = offsetIn(sb, r.startContainer, r.startOffset); }catch(e){}
     } else if (loc && loc.start){
       try{ const r = c.range(loc.start.cfi); sb = closestBlock(r.startContainer, root) || null; }catch(e){}
     }
@@ -2636,6 +2732,259 @@ function voiceSheet(){
   draw();
 }
 
+/* =========================================================
+   JAPONÉS: diccionario al tocar, vocabulario y app Kanji
+   ========================================================= */
+const JP_CHAR = /[぀-ヿ㐀-鿿豈-﫿々〆ヵヶー]/;
+const HAS_KANJI = /[㐀-鿿豈-﫿々]/;
+const dictCache = new Map();
+let jpSeg = null, D = null;
+if (ajustes.dict === undefined) ajustes.dict = true;
+if (ajustes.furi === undefined) ajustes.furi = 'si';
+
+function caretAt(doc, x, y){
+  try{
+    if (doc.caretRangeFromPoint){ const r = doc.caretRangeFromPoint(x, y); return r && {node:r.startContainer, off:r.startOffset}; }
+    if (doc.caretPositionFromPoint){ const p = doc.caretPositionFromPoint(x, y); return p && {node:p.offsetNode, off:p.offset}; }
+  }catch(e){}
+  return null;
+}
+function clearDictMark(){ try{ T.dictWin && T.dictWin.CSS.highlights.delete('dict'); }catch(e){} T.dictWin = null; }
+/* Toque en el texto: ¿hay una palabra japonesa? → diccionario */
+function dictTap(doc, x, y){
+  if (!ajustes.dict || !isText()) return false;
+  const c = caretAt(doc, x, y); if (!c || !c.node) return false;
+  let node = c.node, off = c.off;
+  if (node.nodeType !== 3) return false;
+  const rt = node.parentElement && node.parentElement.closest('rt, rp');
+  if (rt){ const ruby = rt.closest('ruby'); if (!ruby) return false; const t = textWalker(ruby).nextNode(); if (!t) return false; node = t; off = 0; }
+  const root = doc.body;
+  const block = closestBlock(node, root) || node.parentElement; if (!block) return false;
+  const text = textOf(block);
+  let idx = offsetIn(block, node, off);
+  if (!JP_CHAR.test(text[idx] || '') && JP_CHAR.test(text[idx - 1] || '')) idx--;
+  if (!JP_CHAR.test(text[idx] || '')) return false;
+  let s0, e0, word, q;
+  try{
+    jpSeg = jpSeg || new Intl.Segmenter('ja', {granularity:'word'});
+    const segs = [...jpSeg.segment(text)];
+    const k = segs.findIndex(sg => idx >= sg.index && idx < sg.index + sg.segment.length);
+    s0 = segs[k].index; word = segs[k].segment; e0 = s0 + word.length; q = word;
+    // añadir las terminaciones en hiragana (読み|ま|した → 読みました) para encontrar el verbo
+    const PART = /^(は|が|を|に|で|と|の|へ|も|や|か|ね|よ|から|まで|より|って|だけ|しか|など|ので|のに|けど|けれど)$/;
+    for (let j = k + 1; j < segs.length && HAS_KANJI.test(word) && /^[ぁ-ゟー]+$/.test(segs[j].segment) && !PART.test(segs[j].segment) && q.length - word.length + segs[j].segment.length <= 6; j++) q += segs[j].segment;
+  }catch(e){
+    // sin Intl.Segmenter: kanji seguidos + hiragana
+    s0 = idx; while (s0 > 0 && HAS_KANJI.test(text[s0 - 1]) && HAS_KANJI.test(text[idx])) s0--;
+    e0 = idx + 1; while (e0 < text.length && (HAS_KANJI.test(text[e0]) ? HAS_KANJI.test(text[e0 - 1]) : /[ぁ-ゟ]/.test(text[e0])) && e0 - s0 < 8) e0++;
+    word = text.slice(s0, e0); q = word;
+  }
+  const sc = sentences(text, 'ja').find(([a, b]) => idx >= a && idx < b) || [0, text.length];
+  const raw = text.slice(sc[0], sc[1]), lead = raw.length - raw.trimStart().length;
+  const ctx = {text:raw.trim(), ws:s0 - sc[0] - lead, we:e0 - sc[0] - lead};
+  try{
+    clearDictMark();
+    const r = rangeIn(block, s0, e0), w = doc.defaultView;
+    if (w.CSS && w.CSS.highlights && w.Highlight){ w.CSS.highlights.set('dict', new w.Highlight(r)); T.dictWin = w; }
+  }catch(e){}
+  dictLookup(word, q, ctx);
+  return true;
+}
+async function jotoba(q){
+  if (dictCache.has(q)) return dictCache.get(q);
+  const r = await fetch('https://jotoba.de/api/search/words', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({query:q, language:'Spanish', no_english:false})});
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json(); dictCache.set(q, j); return j;
+}
+async function dictLookup(word, q, ctx){
+  D = {word, q, ctx, words:[], kanji:[], sel:0, offline:false};
+  sheet(`<h3 style="font-family:'Hiragino Mincho ProN',serif">辞 ${esc(word)}</h3><div class="info">Buscando en el diccionario…</div>`);
+  try{
+    let j = await jotoba(q);
+    if ((!j.words || !j.words.length) && q !== word) j = await jotoba(word);
+    D.words = j.words || []; D.kanji = j.kanji || [];
+    // la palabra que coincide con lo tocado, primero
+    const i = D.words.findIndex(w => (w.reading.kanji || w.reading.kana) === word);
+    if (i > 0) D.sel = i;
+  }catch(e){ D.offline = true; }
+  if (D) renderDict();
+}
+function furiHTML(rd){
+  if (!rd) return '';
+  const f = rd.furigana;
+  if (!f) return esc(rd.kanji || rd.kana);
+  return esc(f).replace(/\[([^\]|]+)\|([^\]]+)\]/g, (m, k, r) => {
+    const rs = r.split('|'), ks = [...k];
+    return rs.length === ks.length ? ks.map((c, i) => `<ruby>${c}<rt>${rs[i]}</rt></ruby>`).join('') : `<ruby>${k}<rt>${rs.join('')}</rt></ruby>`;
+  });
+}
+function posES(pos){
+  const out = [];
+  const M = {Noun:'sustantivo', Verb:'verbo', Adjective:'adjetivo', Adverb:'adverbio', Particle:'partícula', Expr:'expresión', Pronoun:'pronombre',
+             Conjunction:'conjunción', Counter:'contador', Suffix:'sufijo', Prefix:'prefijo', Interjection:'interjección', AuxilaryVerb:'verbo auxiliar', Auxilary:'auxiliar', Numeric:'número'};
+  for (const p of pos || []){
+    const k = typeof p === 'string' ? p : Object.keys(p)[0], vs = typeof p === 'string' ? '' : JSON.stringify(p[k]);
+    let x = M[k]; if (!x) continue;
+    if (k === 'Adjective') x = /Keiyoushi/.test(vs) ? 'adjetivo い' : /"Na"|Na\b/.test(vs) ? 'adjetivo な' : x;
+    if (k === 'Verb'){
+      if (/Transitive/.test(vs)) x = 'transitivo'; else if (/Intransitive/.test(vs)) x = 'intransitivo';
+      else if (/Ichidan/.test(vs)) x = 'verbo ichidan (る)'; else if (/Godan/.test(vs)) x = 'verbo godan (う)';
+      else if (/Irregular|Suru|Kuru/.test(vs)) x = 'verbo irregular (する・くる)';
+    }
+    if (!out.includes(x)) out.push(x);
+  }
+  return out.join(' · ');
+}
+function kanjiInfo(k){
+  const a = KD[k];
+  if (a) return {k, m:a[1], on:a[2], kun:a[3], lv:a[0] === 5 ? 'N5' : 'N4', mine:true};
+  const j = (D && D.kanji || []).find(x => x.literal === k);
+  if (j) return {k, m:(j.meanings || []).slice(0, 3).join(', ') + ' (en inglés)', on:(j.onyomi || []).join('、'), kun:(j.kunyomi || []).join('、'), lv:j.jlpt ? 'N' + j.jlpt : '', mine:false};
+  return {k, m:'—', on:'', kun:'', lv:'', mine:false};
+}
+function kanjiAppList(){ try{ const S = JSON.parse(localStorage.getItem('kanji-v1') || '{}'); const L = (S.mine || []).find(m => m.id === 'lector'); return L ? L.ks : []; }catch(e){ return []; } }
+function renderDict(){
+  if (!D) return;
+  const w = D.words[D.sel];
+  const form = w ? (w.reading.kanji || w.reading.kana) : D.word;
+  const chars = [...new Set([...(form + D.word)].filter(c => HAS_KANJI.test(c)))];
+  const es = w ? w.senses.filter(s => s.language === 'Spanish') : [];
+  const en = w ? w.senses.filter(s => s.language === 'English') : [];
+  const mean = (es.length ? es : en).slice(0, 6).map(s => `<li>${esc(s.glosses.join(', '))}</li>`).join('');
+  const ctx = D.ctx && D.ctx.text ? `<div class="jctx">${esc(D.ctx.text.slice(0, Math.max(0, D.ctx.ws)))}<b>${esc(D.ctx.text.slice(Math.max(0, D.ctx.ws), D.ctx.we))}</b>${esc(D.ctx.text.slice(D.ctx.we))}</div>` : '';
+  const inVoc = R.item && (R.item.vocab || []).some(v => v.w === form);
+  const inApp = kanjiAppList();
+  const allIn = chars.length && chars.every(c => inApp.includes(c));
+  const kg = chars.length ? `<div class="lbl">Kanji</div><div class="kgrid">${chars.map(c => { const i = kanjiInfo(c);
+      return `<div class="kc2"><span class="k">${c}</span><div class="d"><b>${esc(i.m)}</b>${i.lv ? `<span class="lv">${i.lv}</span>` : ''}<br>${i.on ? 'ON ' + esc(i.on) : ''}${i.kun ? '<br>kun ' + esc(i.kun) : ''}</div></div>`; }).join('')}</div>` : '';
+  const alts = D.words.length > 1 ? `<div class="jalt">${D.words.slice(0, 6).map((x, i) => `<button data-alt="${i}" class="${i === D.sel ? 'on' : ''}">${esc(x.reading.kanji || x.reading.kana)}</button>`).join('')}</div>` : '';
+  const body = w ? `
+      <div class="jw"><span class="big">${furiHTML(w.reading)}</span>${w.reading.kanji ? `<span class="kana">${esc(w.reading.kana)}</span>` : ''}
+        <button class="btn small ghost" id="dSay" title="Escuchar">🔊</button></div>
+      ${D.q !== form && D.q !== D.word ? `<div class="jpos">En el texto: «${esc(D.q)}» → forma de diccionario: <b>${esc(form)}</b></div>` : D.word !== form ? `<div class="jpos">En el texto: «${esc(D.word)}»</div>` : ''}
+      <div class="jpos">${esc(posES(w.senses.flatMap(s => s.pos || [])))}${w.common ? ' · ⭐ palabra frecuente' : ''}</div>
+      <ol class="jmean">${mean}</ol>${!es.length && en.length ? '<div class="info">(Solo hay traducción en inglés para esta palabra.)</div>' : ''}`
+    : `<div class="info" style="font-size:14px">${D.offline ? '📵 Sin conexión: no puedo consultar el diccionario. Te muestro los kanji que conozco de tu app.' : `No he encontrado «${esc(D.word)}» en el diccionario.`}</div>`;
+  const p = sheet(`<h3 style="font-family:'Hiragino Mincho ProN',serif">辞 ${esc(D.word)}</h3>${body}${ctx}${kg}${alts}
+    <div class="actions">
+      ${w && R.item ? `<button class="btn ${inVoc ? 'ghost' : ''}" id="dVoc" ${inVoc ? 'disabled' : ''}>${inVoc ? '✓ En tu vocabulario' : '＋ Vocabulario'}</button>` : ''}
+      ${chars.length ? `<button class="btn ${allIn ? 'ghost' : ''}" id="dKan" ${allIn ? 'disabled' : ''}>${allIn ? '✓ En tu app Kanji' : `＋ ${chars.join('')} a mi app Kanji`}</button>` : ''}
+      <span class="sp"></span>
+      <a class="btn ghost" style="text-decoration:none" href="https://jisho.org/search/${encodeURIComponent(form)}" target="_blank" rel="noopener">Jisho ↗</a>
+      <button class="btn ghost" data-close>Cerrar</button>
+    </div>`);
+  p.onclick = e => {
+    const a = e.target.closest('[data-alt]'); if (a){ D.sel = +a.dataset.alt; renderDict(); return; }
+    if (e.target.closest('#dSay') && w) speakJa(w.reading.kana || form);
+    if (e.target.closest('#dVoc') && w) saveVocab(w);
+    if (e.target.closest('#dKan')) addKanjiToApp(chars, w);
+  };
+}
+function speakJa(t){
+  if (!TTS_OK) return;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  const u = new SpeechSynthesisUtterance(t); const v = pickVoice('ja');
+  if (v) u.voice = v; u.lang = 'ja-JP'; u.rate = .9;
+  if (T.playing) ttsPause();
+  speechSynthesis.speak(u);
+}
+function vocabFrom(w){
+  const es = w.senses.filter(s => s.language === 'Spanish'), en = w.senses.filter(s => s.language === 'English');
+  return {id:uid(), w:w.reading.kanji || w.reading.kana, k:w.reading.kana, f:furiHTML(w.reading),
+          m:(es.length ? es : en).slice(0, 2).map(s => s.glosses.slice(0, 3).join(', ')).join(' / '),
+          en:en.slice(0, 2).map(s => s.glosses.slice(0, 3).join(', ')).join(' / '),
+          ctx:D && D.ctx ? D.ctx.text.slice(0, 200) : '', created:Date.now()};
+}
+function saveVocab(w){
+  if (!R.item) return;
+  const v = vocabFrom(w);
+  (R.item.vocab = R.item.vocab || []).push(v);
+  saveSoon(); renderDict(); toast(`語 «${v.w}» guardado en tu vocabulario`);
+}
+/* Añade kanji a la lista «Del lector» de tu app Kanji (los que no estén en N5/N4 se crean como kanji propios) */
+function addKanjiToApp(chars, w){
+  let S; try{ S = JSON.parse(localStorage.getItem('kanji-v1') || '{}') || {}; }catch(e){ S = {}; }
+  S.mine = S.mine || []; S.custom = S.custom || {};
+  let L = S.mine.find(m => m.id === 'lector');
+  if (!L){ L = {id:'lector', name:'Del lector 📖', ks:[]}; S.mine.push(L); }
+  const added = [];
+  for (const k of chars){
+    if (!KD[k] && !S.custom[k]){
+      const j = (D && D.kanji || []).find(x => x.literal === k) || {};
+      const es = w ? w.senses.filter(s => s.language === 'Spanish') : [];
+      S.custom[k] = {l:0, m:(j.meanings || []).slice(0, 3).join(', ') || '(sin significado)', on:(j.onyomi || []).join('、') || '—', kun:(j.kunyomi || []).join('、') || '—',
+                     ex:w ? [[w.reading.kanji || w.reading.kana, w.reading.kana, (es[0] ? es[0].glosses.slice(0, 2).join(', ') : '')]] : [], p:null, n:[], c:[], r:''};
+    }
+    if (!L.ks.includes(k)){ L.ks.push(k); added.push(k); }
+  }
+  try{ localStorage.setItem('kanji-v1', JSON.stringify(S)); }
+  catch(e){ toast('No he podido guardar en tu app Kanji'); return; }
+  renderDict();
+  toast(added.length ? `✓ ${added.join(' ')} en tu app Kanji › lista «★ Del lector 📖»` : 'Ya estaban en tu lista');
+}
+$('#rDict').addEventListener('click', () => {
+  ajustes.dict = !ajustes.dict; saveAjustes();
+  $('#rDict').classList.toggle('on', ajustes.dict);
+  toast(ajustes.dict ? '辞 Diccionario activado: toca una palabra en japonés' : '辞 Diccionario desactivado');
+});
+
+/* ----- Vocabulario ----- */
+function allVocab(){ return items.flatMap(it => (it.vocab || []).map(v => Object.assign({src:it.title, itemId:it.id}, v))).sort((a, b) => b.created - a.created); }
+function vocabRows(list, showSrc){
+  if (!list.length) return `<div class="info">Aún no hay palabras. Mientras lees en japonés, toca una palabra (con 辞 activado) y pulsa «＋ Vocabulario».</div>`;
+  return list.map(v => `<div class="vrow"><span class="w">${v.f || esc(v.w)}</span><div class="m">${esc(v.m)}${v.ctx ? `<small>「${esc(v.ctx)}」</small>` : ''}${showSrc ? `<small>📖 ${esc(v.src)}</small>` : ''}</div>
+    <button data-say="${esc(v.k || v.w)}" title="Escuchar">🔊</button><button data-delv="${v.id}" data-item="${v.itemId || ''}" title="Quitar">✕</button></div>`).join('');
+}
+function vocabText(list){ return list.map(v => `${v.w}【${v.k}】 — ${v.m}${v.ctx ? `\n   「${v.ctx}」` : ''}`).join('\n'); }
+function delVocab(itemId, id){
+  const it = items.find(i => i.id === itemId) || R.item; if (!it) return;
+  it.vocab = (it.vocab || []).filter(v => v.id !== id);
+  DB.put(it);
+}
+function vocabSheet(){
+  const list = allVocab();
+  const p = sheet(`<h3 style="font-family:'Hiragino Mincho ProN',serif">語 Mi vocabulario <small style="font-weight:400;color:var(--suave)">${list.length} palabras</small></h3>
+    <div class="actions" style="margin:0 0 10px">${list.length ? '<button class="btn" id="vqFc">🃏 Repasar con tarjetas</button><button class="btn ghost" id="vqCopy">📋 Copiar todo</button>' : ''}</div>
+    ${vocabRows(list, true)}
+    <div class="actions"><span class="sp"></span><button class="btn ghost" data-close>Cerrar</button></div>`);
+  p.onclick = e => {
+    const sy = e.target.closest('[data-say]'); if (sy){ speakJa(sy.dataset.say); return; }
+    const dv = e.target.closest('[data-delv]'); if (dv){ delVocab(dv.dataset.item, dv.dataset.delv); vocabSheet(); return; }
+    if (e.target.closest('#vqFc')) flashcards(list);
+    if (e.target.closest('#vqCopy')) copyText('語 Mi vocabulario\n\n' + vocabText(list));
+  };
+}
+$('#vocBtn').addEventListener('click', vocabSheet);
+/* Tarjetas: japonés → español (o al revés). «Otra vez» la vuelve a poner al final */
+function flashcards(list){
+  let q = list.slice().sort(() => Math.random() - .5), shown = false, ok = 0;
+  const dir = () => ajustes.fcDir || 'jp';
+  const draw = () => {
+    const v = q[0];
+    if (!v){ sheet(`<h3>🃏 ¡Terminado!</h3><div class="info" style="font-size:15px">Has repasado ${ok} ${ok === 1 ? 'palabra' : 'palabras'}. 🎉</div><div class="actions"><span class="sp"></span><button class="btn" data-close>Cerrar</button></div>`); return; }
+    const front = dir() === 'jp' ? `<div class="w">${esc(v.w)}</div>${v.ctx ? `<div class="c">「${esc(v.ctx)}」</div>` : ''}` : `<div class="m">${esc(v.m)}</div>`;
+    const back = `<div class="w">${v.f || esc(v.w)}</div><div class="m">${esc(v.m)}</div>${v.ctx ? `<div class="c">「${esc(v.ctx)}」</div>` : ''}`;
+    sheet(`<h3>🃏 Tarjetas <small style="font-weight:400;color:var(--suave)">quedan ${q.length}</small></h3>
+      <div class="seg" id="fcDir" style="margin-bottom:12px"><button data-d="jp" class="${dir() === 'jp' ? 'on' : ''}">日本語 → español</button><button data-d="es" class="${dir() === 'es' ? 'on' : ''}">español → 日本語</button></div>
+      <div class="fc" id="fcCard">${shown ? back : front}${shown ? '' : '<div class="info">Toca la tarjeta para darle la vuelta</div>'}</div>
+      <div class="actions">${shown ? '<button class="btn ghost" id="fcSay">🔊</button><span class="sp"></span><button class="btn ghost" id="fcBad">😕 Otra vez</button><button class="btn" id="fcOk">✓ Lo sé</button>' : '<span class="sp"></span><button class="btn ghost" data-close>Salir</button>'}</div>`);
+    $('#fcCard').onclick = () => { if (!shown){ shown = true; draw(); speakJa(v.k || v.w); } };
+    $('#fcDir').onclick = e => { const b = e.target.closest('[data-d]'); if (b){ ajustes.fcDir = b.dataset.d; saveAjustes(); shown = false; draw(); } };
+    if ($('#fcSay')) $('#fcSay').onclick = () => speakJa(v.k || v.w);
+    if ($('#fcOk')) $('#fcOk').onclick = () => { q.shift(); ok++; shown = false; draw(); };
+    if ($('#fcBad')) $('#fcBad').onclick = () => { q.push(q.shift()); shown = false; draw(); };
+  };
+  draw();
+}
+
+/* ----- Furigana: mostrar u ocultar ----- */
+function applyFuri(){
+  const hide = ajustes.furi === 'no';
+  $('#artBox').classList.toggle('sin-furi', hide);
+  try{ (R.rend && R.rend.getContents() || []).forEach(c => c.document.documentElement.classList.toggle('sin-furi', hide)); }catch(e){}
+}
+
 /* ----- Ajustes de lectura ----- */
 $('#rSet').addEventListener('click', settingsSheet);
 function settingsSheet(){
@@ -2665,6 +3014,8 @@ function settingsSheet(){
       ${seg('font', [['original', 'Original'], ['serif', 'Serif'], ['sans', 'Sans']])}
       <div class="lbl">Interlineado</div>
       ${seg('lh', [[1.3, 'Junto'], [1.6, 'Normal'], [1.9, 'Amplio']])}
+      <div class="lbl">Furigana (lectura pequeña sobre los kanji)</div>
+      ${seg('furi', [['si', 'Mostrar'], ['no', 'Ocultar para practicar']])}
     ` : `
       <div class="lbl">Ajustar</div>
       ${seg('fit', [['pagina', 'Página entera'], ['ancho', 'Al ancho']])}
@@ -2695,6 +3046,7 @@ function settingsSheet(){
       }
       else if (key === 'doble') relayout(true);
       else if (key === 'fit') renderPages();
+      else if (key === 'furi') applyFuri();
       else applyTextStyle();
       return;
     }
