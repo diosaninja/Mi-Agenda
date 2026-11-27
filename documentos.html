@@ -256,6 +256,8 @@ textarea.in{min-height:90px;resize:vertical}
 .pills button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .cblock{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
 .cblock h4{margin-top:4px}
+#print{display:none}
+@media print{body>*:not(#print){display:none!important}#print{display:block;padding:30px;font-family:Georgia,serif;color:#000}#print ol{font-size:24px;line-height:1.8}#print .f{color:#555;font-size:13px}}
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,30px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:99px;font-size:14.5px;opacity:0;pointer-events:none;transition:.25s;z-index:400;max-width:90vw;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
@@ -340,8 +342,43 @@ const putF=v=>op(FDB,'files','readwrite',o=>o.put(v)), getF=k=>op(FDB,'files','r
 async function getLocal(k){try{LDB=LDB||await openDB('__misdocs_local',[['kv','k']]);const r=await op(LDB,'kv','readonly',o=>o.get(k));return r?r.v:null;}catch(e){return null;}}
 async function setLocal(k,v){LDB=LDB||await openDB('__misdocs_local',[['kv','k']]);return op(LDB,'kv','readwrite',o=>v==null?o.delete(k):o.put({k,v}));}
 
-async function putFile(blob,name,id){id=id||uid();await putF({id,blob,name:name||'',type:blob.type||'',size:blob.size});return id;}
-async function getBlob(id){if(!id)return null;const r=await getF(id);return r?r.blob:null;}
+/* ---------- cifrado (AES-GCM 256) ----------
+   Una llave maestra aleatoria cifra todo. Esa llave se guarda «envuelta» con el PIN,
+   con la frase de recuperación y, en cada aparato, con Face ID.  */
+let MK=null,RAW=null;
+const TE=new TextEncoder(),TD=new TextDecoder();
+const ITER=310000;
+async function kdf(secret,salt){const k=await crypto.subtle.importKey('raw',TE.encode(secret),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(salt),iterations:ITER,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+async function wrapRaw(raw,kek){const iv=rnd(12);const c=await crypto.subtle.encrypt({name:'AES-GCM',iv},kek,raw);return{iv:b64e(iv),c:b64e(new Uint8Array(c))};}
+async function unwrapRaw(w,kek){return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(w.iv)},kek,b64d(w.c)));}
+async function wrapWith(raw,secret){const salt=b64e(rnd(16));return Object.assign({salt},await wrapRaw(raw,await kdf(secret,salt)));}
+async function unwrapWith(w,secret){return unwrapRaw(w,await kdf(secret,w.salt));}
+const importMK=raw=>crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['encrypt','decrypt']);
+async function encU8(u8,key=MK){const iv=rnd(12);const c=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,u8);return{iv:b64e(iv),c:new Uint8Array(c)};}
+async function decU8(iv,c,key=MK){return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(iv)},key,c));}
+async function sealObj(o,key){const r=await encU8(TE.encode(JSON.stringify(o)),key);return{e:1,iv:r.iv,d:b64e(r.c)};}
+async function openObj(r,key){return JSON.parse(TD.decode(await decU8(r.iv,b64d(r.d),key)));}
+async function putFile(blob,name,id){
+  id=id||uid();const bytes=new Uint8Array(await blob.arrayBuffer());const h=TE.encode(JSON.stringify({t:blob.type||'',n:name||''}));
+  const pay=new Uint8Array(4+h.length+bytes.length);new DataView(pay.buffer).setUint32(0,h.length);pay.set(h,4);pay.set(bytes,4+h.length);
+  const r=await encU8(pay);await putF({id,e:1,iv:r.iv,blob:new Blob([r.c]),size:blob.size});return id;
+}
+async function openFileRec(r,key){
+  if(!r)return null;if(!r.e)return r.blob;
+  const pay=await decU8(r.iv,new Uint8Array(await r.blob.arrayBuffer()),key);const n=new DataView(pay.buffer,pay.byteOffset).getUint32(0);
+  const h=JSON.parse(TD.decode(pay.subarray(4,4+n)));return new Blob([pay.subarray(4+n)],{type:h.t||''});
+}
+async function getBlob(id){if(!id)return null;try{return await openFileRec(await getF(id));}catch(e){return null;}}
+async function readItems(){const rs=(await all('items'))||[];const out=[];for(const r of rs){try{out.push(r.e?await openObj(r):r);}catch(e){}}return out;}
+async function writeItem(i){await put('items',Object.assign({id:i.id},await sealObj(i)));}
+async function kvGet(k){const r=await get('kv',k);if(!r)return null;if(r.e){try{return await openObj(r);}catch(e){return null;}}return r.v;}
+async function kvSet(k,v){await put('kv',Object.assign({k},await sealObj(v)));}
+async function encryptLegacy(progress){
+  for(const r of (await all('items'))||[])if(!r.e)await writeItem(r);
+  for(const k of ['folders','settings','calc']){const r=await get('kv',k);if(r&&!r.e)await kvSet(k,r.v);}
+  const fr=await get('kv','firma');if(fr&&fr.v&&!fr.e){await putFile(fr.v,'firma.png','firma');await del('kv','firma');}
+  const ks=await keysF();let n=0;for(const k of ks){const r=await getF(k);if(r&&!r.e)await putFile(r.blob,r.name,r.id);n++;if(progress)progress(n,ks.length);}
+}
 const URLS=new Map();
 async function urlOf(id){if(URLS.has(id))return URLS.get(id);const b=await getBlob(id);if(!b)return '';const u=URL.createObjectURL(b);URLS.set(id,u);return u;}
 function dropUrl(id){const u=URLS.get(id);if(u){URL.revokeObjectURL(u);URLS.delete(id);}}
@@ -357,21 +394,21 @@ const COLORS=['#8a6f9e','#b5545c','#5f8a68','#c08a3e','#5b7aa6','#3f8f9a','#7a6f
 const EMOJIS=['📁','🪪','🩺','🏠','💶','💼','🚗','🧾','✈️','🔗','🔒','🎓','🐾','👶','💊','🏦','📜','⚖️','🧑‍⚕️','🛡️','📦','🎟️','💡','⭐'];
 let ITEMS=[],FOLDERS=[],SET={view:'grid',sort:'recent',compress:true,pencilOnly:true,aviso:30,scanFilter:'copia'};
 async function loadAll(){
-  ITEMS=(await all('items'))||[];
-  const f=await get('kv','folders');FOLDERS=f&&Array.isArray(f.v)?f.v:null;
-  if(!FOLDERS){FOLDERS=DEF_FOLDERS.map(([id,name,emoji,color,secret])=>({id,name,emoji,color,secret:!!secret}));await saveFolders();}
-  const s=await get('kv','settings');if(s&&s.v)SET=Object.assign(SET,s.v);
+  ITEMS=await readItems();
+  FOLDERS=await kvGet('folders');
+  if(!Array.isArray(FOLDERS)){FOLDERS=DEF_FOLDERS.map(([id,name,emoji,color,secret])=>({id,name,emoji,color,secret:!!secret}));await saveFolders();}
+  const st=await kvGet('settings');if(st)SET=Object.assign(SET,st);
 }
-const saveFolders=()=>put('kv',{k:'folders',v:FOLDERS});
-const saveSet=()=>put('kv',{k:'settings',v:SET});
-async function saveItem(i,keepDate){if(!keepDate)i.updated=Date.now();await put('items',i);const k=ITEMS.findIndex(x=>x.id===i.id);if(k<0)ITEMS.push(i);else ITEMS[k]=i;updateAvisos();}
+const saveFolders=()=>kvSet('folders',FOLDERS);
+const saveSet=()=>kvSet('settings',SET);
+async function saveItem(i,keepDate){if(!keepDate)i.updated=Date.now();await writeItem(i);const k=ITEMS.findIndex(x=>x.id===i.id);if(k<0)ITEMS.push(i);else ITEMS[k]=i;updateAvisos();}
 const byId=id=>ITEMS.find(i=>i.id===id);
 const folderById=id=>FOLDERS.find(f=>f.id===id)||null;
 const folderOf=i=>folderById(i.folder);
 const isSecret=i=>{const f=folderOf(i);return !!(f&&f.secret);};
 function updateAvisos(){
   try{
-    const L=ITEMS.filter(i=>!i.deleted&&i.expires).map(i=>{const s=isSecret(i),f=folderOf(i);return{t:s?'Documento privado':i.title,d:i.expires,av:i.aviso||SET.aviso||30,e:s?'🔒':(f?f.emoji:'📄'),id:s?'':i.id};}).sort((a,b)=>a.d<b.d?-1:1);
+    const L=ITEMS.filter(i=>!i.deleted&&i.expires).map(i=>{const s=isSecret(i),f=folderOf(i);return{t:'Documento',d:i.expires,av:i.aviso||SET.aviso||30,e:'🔐',id:''};}).sort((a,b)=>a.d<b.d?-1:1);
     const v=JSON.stringify(L);if(localStorage.getItem('misdocs_avisos')!==v)localStorage.setItem('misdocs_avisos',v);
   }catch(e){}
 }
@@ -423,81 +460,186 @@ function pinPad(o){
       else if('del' in b.dataset)key('del');
       else if(b.dataset.len){len=+b.dataset.len;val='';draw();}
       else if('cancel' in b.dataset){cleanup();resolve(null);}
-      else if('fid' in b.dataset){if(await o.faceid()){cleanup();resolve('faceid');}}
-      else if('forgot' in b.dataset){if(await o.forgot()){cleanup();resolve('reset');}}
+      else if('fid' in b.dataset){const r=await o.faceid();if(r){cleanup();resolve({face:r});}}
+      else if('forgot' in b.dataset){const r=await o.forgot();if(r){cleanup();resolve({reset:r});}}
     };
     const kd=e=>{if($('#ov').children.length)return;if(/^\d$/.test(e.key))key(e.key);else if(e.key==='Backspace')key('del');else if(e.key==='Escape'&&o.cancel){cleanup();resolve(null);}};
     document.addEventListener('keydown',kd);
     function cleanup(){document.removeEventListener('keydown',kd);L.onclick=null;L.hidden=true;L.innerHTML='';}
   });
 }
-async function checkMain(p){
-  const w=waitLeft();if(w)return `Demasiados intentos. Espera ${Math.ceil(w/1000)} s`;
-  const s=getSec();if((await pbk(p,s.salt))===s.hash){resetFail();return true;}
-  addFail();const f=failInfo();return f.n>=5?'PIN incorrecto. Espera un poco antes de volver a probar':`PIN incorrecto (${f.n} de 5)`;
+async function tryPin(p){
+  const w=waitLeft();if(w)return{err:`Demasiados intentos. Espera ${Math.ceil(w/1000)} s`};
+  try{const raw=await unwrapWith(getSec().wPin,p);resetFail();return{raw};}
+  catch(e){addFail();const f=failInfo();return{err:f.n>=5?'PIN incorrecto. Espera un poco antes de volver a probar':`PIN incorrecto (${f.n} de 5)`};}
 }
-async function setupPin(isReset){
-  let first;
+async function askPin(title,sub){
+  let raw=null;
+  const r=await pinPad({title,sub,len:getSec().pinLen||6,cancel:true,check:async p=>{const t=await tryPin(p);if(t.raw){raw=t.raw;return true;}return t.err;}});
+  return r?raw:null;
+}
+async function needRaw(why){return RAW||askPin('Tu PIN',why);}
+const easyPin=p=>/^(\d)\1+$/.test(p)||'0123456789'.includes(p)||'9876543210'.includes(p);
+async function newPinFlow(raw,title){
+  let p1;
   for(;;){
-    first=await pinPad({title:isReset?'Crea un PIN nuevo':'Crea tu PIN',sub:'Protege tus documentos. Elige 4 o 6 cifras.',choose:true,home:!isReset,check:async()=>true});
-    const second=await pinPad({title:'Repite tu PIN',sub:'Para confirmar',len:first.length,cancel:true,check:async p=>p===first||'No coincide, vuelve a probar'});
-    if(second)break;
+    p1=await pinPad({title:title||'Crea tu PIN',sub:'6 cifras. Con él se cifran tus documentos.',len:6,check:async p=>easyPin(p)?'Demasiado fácil, elige otro':true});
+    const p2=await pinPad({title:'Repite tu PIN',sub:'Para confirmar',len:6,cancel:true,check:async p=>p===p1||'No coincide, vuelve a probar'});
+    if(p2)break;
   }
-  const old=getSec()||{};const salt=b64e(rnd(16)),rsalt=b64e(rnd(16));const words=newPhrase();
-  const s=Object.assign(old,{v:1,len:first.length,salt,hash:await pbk(first,salt),rsalt,rhash:await pbk(words.join(' '),rsalt)});
-  if(s.lockMin==null)s.lockMin=5;if(s.lockOnHide==null)s.lockOnHide=true;
-  setSec(s);resetFail();
+  const s=getSec();s.wPin=await wrapWith(raw,p1);s.pinLen=6;setSec(s);resetFail();
+}
+async function phraseFlow(raw){
+  const words=newPhrase();const s=getSec();s.wRec=await wrapWith(raw,words.join(' '));setSec(s);
   await showPhrase(words);
+  const s2=getSec();s2.lastCheck=Date.now();delete s2.snooze;setSec(s2);
 }
 function showPhrase(words){
   return new Promise(res=>{
-    const s=sheet(`<h3>Frase de recuperación <span class="jp">復元</span></h3>
-      <p class="muted" style="margin-top:0">Si algún día olvidas el PIN, con estas 6 palabras podrás crear uno nuevo. <b>Apúntalas en papel</b> y guárdalas en un sitio seguro (no aquí dentro).</p>
+    const txt=words.join(' ');
+    const s=sheet(`<div id="ph1"><h3>Frase de recuperación <span class="jp">復元</span></h3>
+      <p class="muted" style="margin-top:0">Es la <b>llave de repuesto</b> de tus documentos: si olvidas el PIN, con estas 6 palabras entras y creas uno nuevo. Guárdala en <b>dos sitios</b>:</p>
       <div class="words">${words.map((w,k)=>`<span><i>${k+1}</i>${w}</span>`).join('')}</div>
-      <div class="row end"><button class="btn pri" data-ok>Ya la he apuntado</button></div>`,{noClose:true});
-    s.querySelector('[data-ok]').onclick=()=>{s.close();res();};
-  });
-}
-function recoverFlow(){
-  return new Promise(res=>{
-    const s=sheet(`<h3>Recuperar el PIN</h3><p class="muted" style="margin-top:0">Escribe las 6 palabras de tu frase de recuperación, en orden y separadas por espacios.</p>
-      <label class="fld"><textarea class="in" id="rp" style="min-height:70px" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="sol luna mar…"></textarea></label>
-      <div class="lk-s err" id="rpe" style="text-align:left"></div>
-      <div class="row end"><button class="btn" data-x>Cancelar</button><button class="btn pri" data-ok>Comprobar</button></div>`,{onClose:()=>res(false)});
-    s.querySelector('[data-x]').onclick=()=>s.close();
-    s.querySelector('[data-ok]').onclick=async()=>{
-      const sec=getSec();const ok=(await pbk(normPhrase($('#rp',s).value),sec.rsalt))===sec.rhash;
-      if(!ok){$('#rpe',s).textContent='La frase no coincide. Revisa las palabras.';return;}
-      s.onClose=null;s.close();res(true);
+      <button class="opt" data-cp><span class="i">🔑</span><span>1. Copiar para la app Contraseñas<small>Abre Contraseñas › ＋ › Nueva contraseña. En «Sitio web o etiqueta» escribe «Mis Documentos» y en «Contraseña» pega la frase.</small></span></button>
+      <button class="opt" data-pr><span class="i">🖨️</span><span>2. Imprimir la hoja de recuperación<small>O guárdala como PDF. Ponla con tus papeles importantes.</small></span></button>
+      <div class="row end"><button class="btn pri" data-ok>Ya la he guardado ›</button></div></div>
+      <div id="ph2" hidden></div>`,{noClose:true});
+    s.querySelector('[data-cp]').onclick=async()=>{try{await navigator.clipboard.writeText(txt);toast('Frase copiada: pégala en Contraseñas',3500);}catch(e){toast('No se ha podido copiar');}};
+    s.querySelector('[data-pr]').onclick=()=>printPhrase(words);
+    s.querySelector('[data-ok]').onclick=()=>{
+      const r=rnd(2);let a=r[0]%6,b=r[1]%6;if(a===b)b=(a+3)%6;if(a>b)[a,b]=[b,a];
+      $('#ph1',s).hidden=true;const p2=$('#ph2',s);p2.hidden=false;
+      p2.innerHTML=`<h3>Comprobación</h3><p class="muted" style="margin-top:0">Para asegurarnos de que la tienes, escribe estas dos palabras:</p>
+        <div class="two"><label class="fld"><span>Palabra n.º ${a+1}</span><input class="in" id="w1" autocapitalize="off" autocomplete="off" spellcheck="false"></label><label class="fld"><span>Palabra n.º ${b+1}</span><input class="in" id="w2" autocapitalize="off" autocomplete="off" spellcheck="false"></label></div>
+        <div class="lk-s err" id="we" style="text-align:left"></div>
+        <div class="row end"><button class="btn" data-back>‹ Ver la frase</button><button class="btn pri" data-chk>Comprobar</button></div>`;
+      p2.querySelector('[data-back]').onclick=()=>{p2.hidden=true;$('#ph1',s).hidden=false;};
+      p2.querySelector('[data-chk]').onclick=()=>{
+        if(normPhrase($('#w1',s).value)===words[a]&&normPhrase($('#w2',s).value)===words[b]){s.close();toast('✓ Perfecto, frase guardada');res();}
+        else $('#we',s).textContent='No coincide. Revisa la frase.';
+      };
     };
   });
 }
-async function faceSetup(){
+function printPhrase(words){
+  let d=$('#print');if(d)d.remove();d=document.createElement('div');d.id='print';
+  d.innerHTML=`<h1>Mis Documentos · 書類</h1><h2>Hoja de recuperación</h2>
+    <p>Si olvidas el PIN de «Mis Documentos» (Mi Agenda), abre la app, pulsa «¿Has olvidado el PIN?» › «Usar la frase de recuperación» y escribe estas 6 palabras en orden:</p>
+    <ol>${words.map(w=>`<li>${w}</li>`).join('')}</ol>
+    <p><b>Guárdala en un sitio seguro</b>, con tus papeles importantes. Quien tenga esta hoja y acceso a tu iPad o iPhone podría abrir tus documentos.</p>
+    <p class="f">Creada el ${new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})}. Si creas una frase nueva, esta deja de servir.</p>`;
+  document.body.appendChild(d);setTimeout(()=>{window.print();setTimeout(()=>d.remove(),1500);},100);
+}
+function recoverFlow(){
+  return new Promise(async res=>{
+    const fid=await getLocal('fid');const fr=fid&&typeof fid==='object'?fid:null;
+    const s=sheet(`<h3>¿Has olvidado el PIN?</h3>
+      ${fr?'<button class="opt" data-r="face"><span class="i">🙂</span><span>Entrar con Face ID<small>Después creas un PIN nuevo</small></span></button>':''}
+      <button class="opt" data-r="phrase"><span class="i">📝</span><span>Usar la frase de recuperación<small>Las 6 palabras: mira en la app Contraseñas o en tu hoja impresa</small></span></button>
+      <div id="rpb" hidden><label class="fld"><textarea class="in" id="rp" style="min-height:70px" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="sol luna mar…"></textarea></label>
+      <div class="lk-s err" id="rpe" style="text-align:left"></div><div class="row end"><button class="btn pri" data-ok>Comprobar</button></div></div>
+      <div class="row end"><button class="btn" data-x>Cancelar</button></div>`,{onClose:()=>res(null)});
+    const done=raw=>{s.onClose=null;s.close();res(raw);};
+    s.onclick=async e=>{
+      const b=e.target.closest('[data-r],[data-ok]');if(!b)return;
+      if(b.dataset.r==='face'){const raw=await faceRaw(fr);if(raw)done(raw);}
+      else if(b.dataset.r==='phrase'){$('#rpb',s).hidden=false;$('#rp',s).focus();}
+      else if('ok' in b.dataset){
+        b.disabled=true;$('#rpe',s).textContent='Comprobando…';
+        try{done(await unwrapWith(getSec().wRec,normPhrase($('#rp',s).value)));}
+        catch(x){$('#rpe',s).textContent='La frase no coincide. Revisa las palabras y el orden.';b.disabled=false;}
+      }
+    };
+  });
+}
+/* Face ID: si el aparato lo permite (PRF), la llave sale del propio Face ID; si no, de una llave guardada solo en este aparato */
+const PRF_SALT=TE.encode('mis-documentos-prf-v1');
+async function prfGet(cid){
+  const a=await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:b64d(cid)}],userVerification:'required',timeout:60000,extensions:{prf:{eval:{first:PRF_SALT}}}}});
+  const r=a.getClientExtensionResults&&a.getClientExtensionResults().prf;return r&&r.results&&r.results.first?new Uint8Array(r.results.first):null;
+}
+async function faceSetup(raw){
   try{
     if(!window.PublicKeyCredential||!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())){toast('Face ID / Touch ID no está disponible aquí');return false;}
-    const c=await navigator.credentials.create({publicKey:{challenge:rnd(32),rp:{name:'Mi Agenda · Documentos'},user:{id:rnd(16),name:'mis-documentos',displayName:'Mis Documentos'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},timeout:60000,attestation:'none'}});
-    await setLocal('fid',b64e(new Uint8Array(c.rawId)));toast('Face ID activado en este aparato');return true;
+    const cred=await navigator.credentials.create({publicKey:{challenge:rnd(32),rp:{name:'Mi Agenda · Documentos'},user:{id:rnd(16),name:'mis-documentos',displayName:'Mis Documentos'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},timeout:60000,attestation:'none',extensions:{prf:{}}}});
+    const cid=b64e(new Uint8Array(cred.rawId));let rec=null;
+    const ext=cred.getClientExtensionResults?cred.getClientExtensionResults():{};
+    if(ext.prf&&ext.prf.enabled){try{const out=await prfGet(cid);if(out){const kek=await crypto.subtle.importKey('raw',out,{name:'AES-GCM'},false,['encrypt','decrypt']);rec={cid,mode:'prf',w:await wrapRaw(raw,kek)};}}catch(e){}}
+    if(!rec){const dk=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);rec={cid,mode:'dev',dk,w:await wrapRaw(raw,dk)};}
+    await setLocal('fid',rec);toast('✓ Face ID activado en este aparato');return true;
   }catch(e){toast('No se ha podido activar Face ID');return false;}
 }
-async function faceUnlock(fid){
-  try{await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:b64d(fid)}],userVerification:'required',timeout:60000}});resetFail();return true;}
-  catch(e){toast('Face ID no ha funcionado: usa tu PIN');return false;}
+async function faceRaw(rec){
+  try{
+    if(rec.mode==='prf'){const out=await prfGet(rec.cid);if(!out)throw 0;const kek=await crypto.subtle.importKey('raw',out,{name:'AES-GCM'},false,['decrypt']);const raw=await unwrapRaw(rec.w,kek);resetFail();return raw;}
+    await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:b64d(rec.cid)}],userVerification:'required',timeout:60000}});
+    const raw=await unwrapRaw(rec.w,rec.dk);resetFail();return raw;
+  }catch(e){toast('Face ID no ha funcionado: usa tu PIN');return null;}
 }
 async function unlockMain(){
-  const sec=getSec();const fid=await getLocal('fid');
-  const r=await pinPad({title:'Mis Documentos',sub:'Introduce tu PIN',len:sec.len,home:true,forgot:recoverFlow,faceid:fid?()=>faceUnlock(fid):null,check:checkMain});
-  if(r==='reset')await setupPin(true);
+  const sec=getSec();const fid=await getLocal('fid');const fr=fid&&typeof fid==='object'?fid:null;let raw=null;
+  const r=await pinPad({title:'Mis Documentos',sub:'Introduce tu PIN',len:sec.pinLen||6,home:true,forgot:recoverFlow,faceid:fr?()=>faceRaw(fr):null,
+    check:async p=>{const t=await tryPin(p);if(t.raw){raw=t.raw;return true;}return t.err;}});
+  if(r&&r.face)raw=r.face;
+  if(r&&r.reset){raw=r.reset;await newPinFlow(raw,'Crea un PIN nuevo');toast('✓ PIN nuevo guardado');}
+  return raw;
 }
-function recentUnlock(){
-  const s=getSec();const t=+sessionStorage.getItem('misdocs_u')||0;
-  return sessionStorage.getItem('misdocs_ok')==='1'&&Date.now()-t<(s.lockMin||5)*60000;
+async function setKey(raw){RAW=raw;MK=await importMK(raw);try{await setLocal('sess',{k:MK,t:Date.now()});}catch(e){}}
+async function sessionKey(){
+  const s=getSec();if(sessionStorage.getItem('misdocs_ok')!=='1')return null;
+  const t=+sessionStorage.getItem('misdocs_u')||0;if(Date.now()-t>(s.lockMin||5)*60000)return null;
+  const r=await getLocal('sess');return r&&r.k?r.k:null;
 }
-function unlocked(){locked=false;lastAct=Date.now();sessionStorage.setItem('misdocs_ok','1');sessionStorage.setItem('misdocs_u',lastAct);$('#app').hidden=false;render();}
+async function firstSetup(){
+  const raw=rnd(32);const old=getSec()||{};setSec({v:2,lockMin:old.lockMin||5,lockOnHide:old.lockOnHide!==false});
+  await setKey(raw);await newPinFlow(raw,'Crea tu PIN');
+  await infoSheet0('🔐 Tus documentos van cifrados','Ahora vas a ver tu <b>frase de recuperación</b>: 6 palabras que sirven de llave de repuesto si un día olvidas el PIN. Es importante guardarla bien.','Ver mi frase');
+  await phraseFlow(raw);
+}
+function infoSheet0(title,html,btn){return new Promise(res=>{const s=sheet(`<h3>${title}</h3><p class="muted" style="margin-top:0">${html}</p><div class="row end"><button class="btn pri" data-ok>${btn}</button></div>`,{noClose:true});s.querySelector('[data-ok]').onclick=()=>{s.close();res();};});}
+async function migrateFromV1(){
+  const s=getSec();let oldPin=null;
+  const r=await pinPad({title:'Mis Documentos',sub:'Introduce tu PIN',len:s.len||4,home:true,
+    forgot:()=>new Promise(res=>{const sh=sheet(`<h3>Recuperar el PIN</h3><p class="muted" style="margin-top:0">Escribe las 6 palabras de tu frase de recuperación.</p><label class="fld"><textarea class="in" id="rp" style="min-height:70px" autocapitalize="off" autocomplete="off"></textarea></label><div class="lk-s err" id="rpe"></div><div class="row end"><button class="btn" data-x>Cancelar</button><button class="btn pri" data-ok>Comprobar</button></div>`,{onClose:()=>res(null)});
+      sh.querySelector('[data-ok]').onclick=async()=>{if((await pbk(normPhrase($('#rp',sh).value),s.rsalt))===s.rhash){sh.onClose=null;sh.close();res('ok');}else $('#rpe',sh).textContent='La frase no coincide.';};}),
+    check:async p=>{const w=waitLeft();if(w)return `Espera ${Math.ceil(w/1000)} s`;if((await pbk(p,s.salt))===s.hash){resetFail();oldPin=p;return true;}addFail();return 'PIN incorrecto';}});
+  await infoSheet0('🔐 Vamos a cifrar tus documentos','A partir de ahora todo irá cifrado: en el iPad, en el iPhone, en GitHub y en las copias. '+(oldPin&&oldPin.length===6?'Tu PIN sigue siendo el mismo.':'Primero crearás un <b>PIN nuevo de 6 cifras</b>.')+' Después verás tu nueva frase de recuperación. Tarda un momento: no cierres la app.','Empezar');
+  const raw=rnd(32);await setKey(raw);
+  const ns={v:2,lockMin:s.lockMin||5,lockOnHide:s.lockOnHide!==false,mig:true};if(s.shash){ns.ssalt=s.ssalt;ns.shash=s.shash;ns.slen=s.slen;}
+  if(oldPin&&oldPin.length===6){ns.wPin=await wrapWith(raw,oldPin);ns.pinLen=6;setSec(ns);}
+  else{setSec(ns);await newPinFlow(raw,'Crea tu PIN nuevo');}
+  await setLocal('fid',null);
+  await runMigration();
+  await phraseFlow(raw);
+}
+async function runMigration(){
+  const L=$('#lock');L.hidden=false;L.innerHTML='<div class="lk-logo">🔐</div><div class="lk-t">Cifrando tus documentos…</div><div class="lk-s" id="mgs">No cierres la app</div>';
+  try{await encryptLegacy((n,t)=>{const e=$('#mgs');if(e)e.textContent=`Archivo ${n} de ${t} · no cierres la app`;});const s=getSec();delete s.mig;setSec(s);}
+  catch(e){toast('Se terminará de cifrar la próxima vez que abras la app',5000);}
+  L.hidden=true;L.innerHTML='';
+}
+async function afterUnlock(){
+  if(getSec().mig)await runMigration();
+  await loadAll();purgeOld().catch(()=>{});updateAvisos();unlocked();setTimeout(()=>maybeReview(),600);
+}
+function unlocked(){const L=$('#lock');L.hidden=true;L.innerHTML='';locked=false;lastAct=Date.now();sessionStorage.setItem('misdocs_ok','1');sessionStorage.setItem('misdocs_u',lastAct);$('#app').hidden=false;render();}
 async function lockNow(){
   if(locked||!$('#lock').hidden)return;locked=true;secretOpenId=null;sessionStorage.removeItem('misdocs_ok');
   closeViewer();$('#ov').innerHTML='';const sc=$('#scan');if(sc)sc.remove();$$('.scedit').forEach(x=>x.remove());
-  $('#app').hidden=true;$('#main').innerHTML='';revokeAll();
-  await unlockMain();unlocked();
+  $('#app').hidden=true;$('#main').innerHTML='';revokeAll();MK=null;RAW=null;ITEMS=[];CALC.hist=null;setLocal('sess',null).catch(()=>{});
+  const raw=await unlockMain();await setKey(raw);await afterUnlock();
+}
+function maybeReview(force){
+  const s=getSec();if(!s||!s.wRec)return;const now=Date.now();
+  if(!force&&((s.snooze&&s.snooze>now)||now-(s.lastCheck||0)<90*864e5))return;
+  const sh=sheet(`<h3>Repaso de seguridad 🔐</h3><p class="muted" style="margin-top:0">${force?'':'Cada 3 meses comprobamos que sigues teniendo tu llave de repuesto. '}Escribe tu frase de recuperación (está en la app Contraseñas o en tu hoja impresa).</p>
+    <label class="fld"><textarea class="in" id="rv" style="min-height:70px" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea></label><div class="lk-s err" id="rve" style="text-align:left"></div>
+    <div class="row end"><button class="btn sm" data-new>No la encuentro: crear otra</button><span class="sp"></span>${force?'':'<button class="btn" data-later>Más tarde</button>'}<button class="btn pri" data-ok>Comprobar</button></div>`);
+  const later=sh.querySelector('[data-later]');if(later)later.onclick=()=>{const x=getSec();x.snooze=Date.now()+7*864e5;setSec(x);sh.close();};
+  sh.querySelector('[data-ok]').onclick=async e=>{e.target.disabled=true;$('#rve',sh).textContent='Comprobando…';
+    try{await unwrapWith(getSec().wRec,normPhrase($('#rv',sh).value));const x=getSec();x.lastCheck=Date.now();delete x.snooze;setSec(x);sh.close();toast('✓ Perfecto, tu frase funciona');}
+    catch(err){$('#rve',sh).textContent='No coincide. Revisa las palabras y el orden.';e.target.disabled=false;}};
+  sh.querySelector('[data-new]').onclick=async()=>{sh.close();const raw=await needRaw('Para crear una frase nueva');if(raw)await phraseFlow(raw);};
 }
 ['pointerdown','keydown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{lastAct=Date.now();if(!locked)sessionStorage.setItem('misdocs_u',lastAct);},{passive:true,capture:true}));
 setInterval(()=>{const s=getSec();if(!locked&&s&&Date.now()-lastAct>(s.lockMin||5)*60000)lockNow();},10000);
@@ -515,6 +657,7 @@ function sheet(html,opt={}){
   s.close=()=>{bk.remove();if(s.onClose){const f=s.onClose;s.onClose=null;f();}};
   if(!opt.noClose)bk.addEventListener('click',e=>{if(e.target===bk)s.close();});
   $$('[data-x]',s).forEach(b=>b.onclick=()=>s.close());
+  s.addEventListener('change',e=>{if(e.target.name==='noexp'){const f=s.querySelector('.expf');if(f)f.hidden=e.target.checked;}});
   return s;
 }
 function ask(msg,okLabel='Aceptar',danger){
@@ -545,6 +688,9 @@ function pick(accept,capture,multiple){
 }
 const folderSelect=(sel,name='folder')=>`<select class="in" name="${name}">${FOLDERS.map(f=>`<option value="${f.id}" ${f.id===sel?'selected':''}>${f.emoji} ${esc(f.name)}</option>`).join('')}</select>`;
 const parseTags=s=>[...new Set(String(s||'').split(',').map(t=>t.trim().replace(/^#/,'')).filter(Boolean))];
+const expFields=(exp,av,noexp)=>`<div class="fld" style="margin-bottom:6px"><span>Caducidad</span></div>
+  <label class="tog" style="padding-top:0;margin-bottom:10px"><span>♾️ No tiene caducidad<small>Escrituras, títulos, partidas de nacimiento, contratos…</small></span><input type="checkbox" class="sw2" name="noexp" ${noexp?'checked':''}></label>
+  <div class="two expf" ${noexp?'hidden':''}><label class="fld"><span>Caduca el <small>(opcional)</small></span><input class="in" type="date" name="exp" value="${esc(exp||'')}"></label><label class="fld"><span>Avisarme</span>${avisoSelect(av||SET.aviso)}</label></div>`;
 const avisoSelect=v=>`<select class="in" name="aviso">${[7,15,30,60,90].map(d=>`<option value="${d}" ${+v===d?'selected':''}>${d} días antes</option>`).join('')}</select>`;
 
 /* ---------- imágenes ---------- */
@@ -579,6 +725,7 @@ function typeName(i){
   return (extOf(i.fileName)||'archivo').toUpperCase();
 }
 function expBadge(i){
+  if(i.noexp)return{t:'♾️ No caduca',c:'ok'};
   if(!i.expires)return null;const n=daysTo(i.expires),av=i.aviso||SET.aviso||30;
   if(n<0)return{t:'Caducado',c:'bad'};if(n===0)return{t:'Caduca hoy',c:'bad'};
   if(n<=av)return{t:n===1?'Caduca mañana':`Caduca en ${n} días`,c:''};
@@ -604,7 +751,7 @@ async function openFolder(id){
   secretOpenId=f.secret?id:null;V={k:'folder',id};$('#q').value='';render();scrollTo(0,0);
 }
 async function createSecretPin(){
-  const p1=await pinPad({logo:'🔒',title:'PIN de la carpeta secreta',sub:'Crea un PIN distinto al principal, solo para esta carpeta',choose:true,cancel:true,check:async p=>{const s=getSec();return (await pbk(p,s.salt))===s.hash?'Usa uno distinto al PIN principal':true;}});
+  const p1=await pinPad({logo:'🔒',title:'PIN de la carpeta secreta',sub:'Crea un PIN distinto al principal, solo para esta carpeta',choose:true,cancel:true,check:async p=>{try{await unwrapWith(getSec().wPin,p);return 'Usa uno distinto al PIN principal';}catch(e){return true;}}});
   if(!p1)return false;
   const p2=await pinPad({logo:'🔒',title:'Repite el PIN secreto',len:p1.length,cancel:true,check:async p=>p===p1||'No coincide'});
   if(!p2)return false;
@@ -615,7 +762,7 @@ async function openSecret(f){
   const sec=getSec();
   if(!sec.shash)return createSecretPin();
   const r=await pinPad({logo:'🔒',title:f.name,sub:'PIN de la carpeta secreta',len:sec.slen,cancel:true,forgot:recoverFlow,check:checkSecret});
-  if(r==='reset')return createSecretPin();
+  if(r&&r.reset)return createSecretPin();
   return !!r;
 }
 function renderChips(){
@@ -727,14 +874,14 @@ function importFiles(files,fid){
       <label class="fld" id="mtitle" style="margin-top:10px"><span>Nombre del documento unido</span><input class="in" name="mtitle" placeholder="p. ej. DNI (anverso y reverso)"></label>`:''}
     <label class="fld"><span>Carpeta</span>${folderSelect(fid||guessFolder())}</label>
     <label class="fld"><span>Etiquetas <small>(separadas por comas)</small></span><input class="in" name="tags" placeholder="p. ej. original, 2026"></label>
-    <div class="two"><label class="fld"><span>Caduca el <small>(opcional)</small></span><input class="in" type="date" name="exp"></label><label class="fld"><span>Avisarme</span>${avisoSelect(SET.aviso)}</label></div>
+    ${expFields('',SET.aviso,false)}
     ${imgs.length?`<label class="tog"><span>Reducir el tamaño de las fotos<small>Ocupan menos y pasan antes al otro aparato</small></span><input type="checkbox" class="sw2" name="comp" ${SET.compress?'checked':''}></label>`:''}
     ${big.length?`<p class="note warn">⚠️ ${big.length===1?'Este archivo pesa':big.length+' archivos pesan'} más de 25 MB: se ${big.length===1?'guardará':'guardarán'} solo en este aparato, no pasa${big.length===1?'':'n'} al otro.</p>`:''}
     <div class="row end"><button class="btn" data-x>Cancelar</button><button class="btn pri" data-ok>Guardar</button></div>`);
   const mg=s.querySelector('[name=merge]'),mt=$('#mtitle',s);if(mg){const u=()=>mt.hidden=!mg.checked;mg.onchange=u;u();}
   s.querySelector('[data-ok]').onclick=async()=>{
     const v=k=>{const e=s.querySelector(`[name=${k}]`);return e?(e.type==='checkbox'?e.checked:e.value):null;};
-    const o={folder:v('folder'),tags:parseTags(v('tags')),expires:v('exp')||'',aviso:+v('aviso')||SET.aviso,comp:!!v('comp')};
+    const o={folder:v('folder'),tags:parseTags(v('tags')),expires:v('noexp')?'':(v('exp')||''),noexp:!!v('noexp'),aviso:+v('aviso')||SET.aviso,comp:!!v('comp')};
     if(imgs.length){SET.compress=o.comp;saveSet();}
     s.close();toast('Guardando…',60000);
     try{
@@ -746,7 +893,7 @@ function importFiles(files,fid){
     render();
   };
 }
-function baseItem(type,title,o){return{id:uid(),type,title,folder:o.folder,tags:o.tags||[],expires:o.expires||'',aviso:o.aviso||SET.aviso,notes:o.notes||'',fav:false,created:Date.now(),updated:Date.now()};}
+function baseItem(type,title,o){return{id:uid(),type,title,folder:o.folder,tags:o.tags||[],expires:o.expires||'',noexp:!!o.noexp,aviso:o.aviso||SET.aviso,notes:o.notes||'',fav:false,created:Date.now(),updated:Date.now()};}
 async function makeImg(files,title,o){
   const it=baseItem('img',title,o);it.pages=[];it.size=0;it.fileName=files[0].name;
   for(const f of files){const b=o.comp?await shrink(f):f;it.size+=b.size;it.pages.push(await putFile(b,f.name));}
@@ -812,11 +959,11 @@ function scanner(fid){
         <label class="fld"><span>Nombre</span><input class="in" name="title" value="Escaneo ${new Date().toLocaleDateString('es-ES')}"></label>
         <label class="fld"><span>Carpeta</span>${folderSelect(fid||guessFolder())}</label>
         <label class="fld"><span>Etiquetas</span><input class="in" name="tags"></label>
-        <div class="two"><label class="fld"><span>Caduca el <small>(opcional)</small></span><input class="in" type="date" name="exp"></label><label class="fld"><span>Avisarme</span>${avisoSelect(SET.aviso)}</label></div>
+        ${expFields('',SET.aviso,false)}
         <div class="row end"><button class="btn" data-x>Cancelar</button><button class="btn pri" data-ok>Guardar</button></div>`);
       s.querySelector('[data-ok]').onclick=async()=>{
         const g=k=>s.querySelector(`[name=${k}]`).value;
-        const it=baseItem('scan',g('title').trim()||'Escaneo',{folder:g('folder'),tags:parseTags(g('tags')),expires:g('exp'),aviso:+g('aviso')});
+        const it=baseItem('scan',g('title').trim()||'Escaneo',{folder:g('folder'),tags:parseTags(g('tags')),expires:s.querySelector('[name=noexp]').checked?'':g('exp'),noexp:s.querySelector('[name=noexp]').checked,aviso:+g('aviso')});
         s.close();toast('Guardando…',60000);it.pages=[];it.size=0;
         for(const p of S.pages){it.pages.push(await putFile(p.blob,'pagina.jpg'));it.size+=p.blob.size;}
         const tb=await thumbFromImage(S.pages[0].blob);if(tb)it.thumb=await putFile(tb,'mini.jpg');
@@ -1018,13 +1165,13 @@ function infoSheet(i){
     ${i.type==='link'?`<label class="fld"><span>Dirección</span><input class="in" name="url" value="${esc(i.url)}" autocapitalize="off"></label>`:''}
     <label class="fld"><span>Carpeta</span>${folderSelect(i.folder)}</label>
     <label class="fld"><span>Etiquetas <small>(separadas por comas)</small></span><input class="in" name="tags" value="${esc((i.tags||[]).join(', '))}"></label>
-    <div class="two"><label class="fld"><span>Caduca el</span><input class="in" type="date" name="exp" value="${esc(i.expires||'')}"></label><label class="fld"><span>Avisarme</span>${avisoSelect(i.aviso||SET.aviso)}</label></div>
+    ${expFields(i.expires,i.aviso,i.noexp)}
     ${i.type!=='note'?`<label class="fld"><span>Notas</span><textarea class="in" name="notes" style="min-height:70px" placeholder="Número de póliza, dónde está el original…">${esc(i.notes||'')}</textarea></label>`:''}
     <div class="kv"><b>Tipo</b><span>${typeIcon(i)} ${esc(typeName(i))}</span>${i.size?`<b>Tamaño</b><span>${fsize(i.size)}${i.big?' · solo en el aparato donde se guardó':''}</span>`:''}${i.fileName?`<b>Archivo</b><span style="word-break:break-all">${esc(i.fileName)}</span>`:''}<b>Añadido</b><span>${fts(i.created)}</span><b>Cambiado</b><span>${fts(i.updated)}</span></div>
     <div class="row end">${hasAnn?'<button class="btn sm" data-clr>Quitar anotaciones</button>':''}<button class="btn danger" data-del>🗑️ Papelera</button><span class="sp"></span><button class="btn pri" data-ok>Guardar</button></div>`);
   s.querySelector('[data-ok]').onclick=async()=>{
     const g=k=>{const e=s.querySelector(`[name=${k}]`);return e?e.value:null;};
-    i.title=g('title').trim()||i.title;i.folder=g('folder');i.tags=parseTags(g('tags'));i.expires=g('exp')||'';i.aviso=+g('aviso');
+    i.title=g('title').trim()||i.title;i.folder=g('folder');i.tags=parseTags(g('tags'));i.noexp=s.querySelector('[name=noexp]').checked;i.expires=i.noexp?'':(g('exp')||'');i.aviso=+g('aviso');
     if(g('notes')!=null)i.notes=g('notes');if(g('url')!=null)i.url=g('url').trim();
     await saveItem(i);s.close();toast('✓ Guardado');
     if(folderOf(i)&&folderOf(i).secret&&secretOpenId!==i.folder){closeViewer();render();return;}
@@ -1147,8 +1294,8 @@ async function saveAnnot(i){
 }
 function endAnnot(i){if(!VW)return;VW.annot=false;const t=$('#atools');if(t)t.remove();if(VW.sigEl){VW.sigEl.remove();VW.sigEl=null;}if(VW.pdf){VW.pdf.destroy();VW.pdf=null;}if(VW.io)VW.io.disconnect();VW.undo=[];VW.z=1;renderBody(i);}
 async function sigFlow(){
-  const f=await get('kv','firma');
-  if(f&&f.v){const s=sheet(`<h3>Firma</h3><div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center"><img id="fprev" style="max-width:100%;max-height:120px" alt=""></div><div class="row end"><button class="btn" data-new>Hacer otra firma</button><button class="btn pri" data-use>Usar esta firma</button></div>`);
+  const fb=await getBlob('firma');const f=fb?{v:fb}:null;
+  if(f){const s=sheet(`<h3>Firma</h3><div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center"><img id="fprev" style="max-width:100%;max-height:120px" alt=""></div><div class="row end"><button class="btn" data-new>Hacer otra firma</button><button class="btn pri" data-use>Usar esta firma</button></div>`);
     const u=URL.createObjectURL(f.v);$('#fprev',s).src=u;s.onClose=()=>URL.revokeObjectURL(u);
     s.querySelector('[data-use]').onclick=()=>{s.close();placeSig(f.v);};s.querySelector('[data-new]').onclick=()=>{s.close();drawSig();};}
   else drawSig();
@@ -1162,7 +1309,7 @@ function drawSig(){
   c.onpointermove=e=>{if(!last)return;const r=c.getBoundingClientRect();const p=[(e.clientX-r.left)*2,(e.clientY-r.top)*2];x.strokeStyle='#1d2a4a';x.lineCap='round';x.lineWidth=e.pointerType==='pen'?2.5+(e.pressure||.5)*4:4.5;x.beginPath();x.moveTo(last[0],last[1]);x.lineTo(p[0],p[1]);x.stroke();last=p;};
   c.onpointerup=c.onpointercancel=()=>{last=null;};
   s.querySelector('[data-clear]').onclick=()=>{x.clearRect(0,0,c.width,c.height);used=false;};
-  s.querySelector('[data-ok]').onclick=async()=>{if(!used){toast('Primero haz la firma');return;}const t=trimCanvas(c);const b=await toBlobP(t,'image/png');await put('kv',{k:'firma',v:b});s.close();placeSig(b);};
+  s.querySelector('[data-ok]').onclick=async()=>{if(!used){toast('Primero haz la firma');return;}const t=trimCanvas(c);const b=await toBlobP(t,'image/png');await putFile(b,'firma.png','firma');s.close();placeSig(b);};
 }
 function trimCanvas(c){
   const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=0,y1=0;
@@ -1233,15 +1380,17 @@ function foldersSheet(){
 
 /* ---------- ajustes ---------- */
 async function settingsSheet(){
-  const sec=getSec();const fid=await getLocal('fid');let est='';
+  const sec=getSec();const fid=await getLocal('fid');const hasFid=fid&&typeof fid==='object';let est='';
   try{const e=await navigator.storage.estimate();est=`${fsize(e.usage)} usados de unos ${fsize(e.quota)} disponibles`;}catch(e){}
-  const live=ITEMS.filter(i=>!i.deleted);
+  const live=ITEMS.filter(i=>!i.deleted);const days=sec.lastCheck?Math.floor((Date.now()-sec.lastCheck)/864e5):null;
   const s=sheet(`<h3>Ajustes <span class="jp">設定</span></h3>
+    <p class="note">🔐 <b>Cifrado activado (AES-256).</b> Todo va cifrado en tus aparatos, en GitHub y en las copias. Solo se abre con tu PIN, con Face ID o con tu frase de recuperación.</p>
     <h4>Seguridad</h4>
-    <button class="opt" data-s="pin"><span class="i">🔢</span><span>Cambiar el PIN<small>Ahora tiene ${sec.len} cifras</small></span></button>
-    <button class="opt" data-s="spin"><span class="i">🔒</span><span>${sec.shash?'Cambiar el PIN de la carpeta secreta':'Crear el PIN de la carpeta secreta'}</span></button>
-    <button class="opt" data-s="phrase"><span class="i">📝</span><span>Nueva frase de recuperación<small>Por si has perdido la que apuntaste</small></span></button>
-    <label class="tog"><span>Face ID / Touch ID en este aparato<small>Además del PIN. Se activa en cada aparato por separado</small></span><input type="checkbox" class="sw2" name="fid" ${fid?'checked':''}></label>
+    <button class="opt" data-s="pin"><span class="i">🔢</span><span>Cambiar el PIN<small>6 cifras</small></span></button>
+    <label class="tog"><span>Face ID / Touch ID en este aparato<small>Además del PIN. También sirve de llave de repuesto. Se activa en cada aparato</small></span><input type="checkbox" class="sw2" name="fid" ${hasFid?'checked':''}></label>
+    <button class="opt" data-s="check"><span class="i">✅</span><span>Comprobar mi frase de recuperación<small>${days==null?'Todavía no la has comprobado':days===0?'Comprobada hoy':`Comprobada hace ${days} días`} · repaso automático cada 3 meses</small></span></button>
+    <button class="opt" data-s="phrase"><span class="i">📝</span><span>Crear una frase de recuperación nueva<small>Por si has perdido la tuya. La antigua deja de servir</small></span></button>
+    <button class="opt" data-s="spin"><span class="i">🔒</span><span>${sec.shash?'Cambiar el PIN de la carpeta secreta':'Crear el PIN de la carpeta secreta'}<small>Un segundo PIN para entrar en esa carpeta</small></span></button>
     <label class="tog"><span>Bloquear si no la uso durante</span><select name="lockMin">${[1,2,5,10,15,30].map(m=>`<option value="${m}" ${sec.lockMin===m?'selected':''}>${m} min</option>`).join('')}</select></label>
     <label class="tog"><span>Bloquear al salir de la app<small>Si estás fuera más de 15 segundos</small></span><input type="checkbox" class="sw2" name="hide" ${sec.lockOnHide?'checked':''}></label>
     <h4>Documentos</h4>
@@ -1249,7 +1398,7 @@ async function settingsSheet(){
     <label class="tog"><span>Avisar de las caducidades</span><select name="aviso">${[7,15,30,60,90].map(d=>`<option value="${d}" ${SET.aviso===d?'selected':''}>${d} días antes</option>`).join('')}</select></label>
     <label class="tog"><span>En el iPad: el dedo mueve la página y el Apple Pencil escribe</span><input type="checkbox" class="sw2" name="pencil" ${SET.pencilOnly?'checked':''}></label>
     <h4>Copia de seguridad</h4>
-    <button class="opt" data-s="exp"><span class="i">📦</span><span>Hacer una copia (.zip)<small>Todo: documentos, carpetas y anotaciones. Guárdala en un sitio seguro: no lleva PIN</small></span></button>
+    <button class="opt" data-s="exp"><span class="i">📦</span><span>Hacer una copia (.zip)<small>Todo: documentos, carpetas y anotaciones. Va cifrada: para recuperarla necesitarás tu PIN o tu frase</small></span></button>
     <button class="opt" data-s="imp"><span class="i">📥</span><span>Recuperar una copia<small>Añade lo que falte, sin borrar nada</small></span></button>
     <h4>Espacio</h4>
     <p class="muted" style="margin:4px 0">${live.length} elementos · ${fsize(live.reduce((a,i)=>a+(i.size||0),0))}${est?'<br>'+est:''}</p>
@@ -1262,38 +1411,69 @@ async function settingsSheet(){
     else if(n==='comp'){SET.compress=e.target.checked;saveSet();}
     else if(n==='aviso'){SET.aviso=+e.target.value;saveSet();updateAvisos();render();}
     else if(n==='pencil'){SET.pencilOnly=e.target.checked;saveSet();}
-    else if(n==='fid'){if(e.target.checked){if(!(await faceSetup()))e.target.checked=false;}else{await setLocal('fid',null);toast('Face ID desactivado en este aparato');}}
+    else if(n==='fid'){
+      if(!e.target.checked){await setLocal('fid',null);toast('Face ID desactivado en este aparato');return;}
+      if(RAW){if(!(await faceSetup(RAW)))e.target.checked=false;return;}
+      const box=e.target;box.checked=false;s.close();const raw=await askPin('Tu PIN','Para activar Face ID');if(!raw)return;
+      const c=sheet(`<h3>Activar Face ID</h3><p class="muted" style="margin-top:0">Pulsa el botón y mira al iPad o al iPhone.</p><div class="row end"><button class="btn" data-x>Cancelar</button><button class="btn pri" data-ok>🙂 Activar Face ID</button></div>`);
+      c.querySelector('[data-ok]').onclick=async()=>{await faceSetup(raw);c.close();};
+    }
   };
   s.onclick=async e=>{
     const b=e.target.closest('[data-s]');if(!b)return;const a=b.dataset.s;
-    if(a==='pin'){s.close();const ok=await pinPad({title:'PIN actual',sub:'Primero escribe tu PIN de ahora',len:getSec().len,cancel:true,check:checkMain});if(ok){await setupPin(true);toast('✓ PIN cambiado');}}
+    if(a==='pin'){s.close();const raw=await askPin('PIN actual','Primero escribe tu PIN de ahora');if(raw){await newPinFlow(raw,'PIN nuevo');toast('✓ PIN cambiado');}}
     else if(a==='spin'){s.close();const sc=getSec();if(sc.shash){const ok=await pinPad({logo:'🔒',title:'PIN secreto actual',sub:'Primero escribe el PIN secreto de ahora',len:sc.slen,cancel:true,forgot:recoverFlow,check:checkSecret});if(!ok)return;}await createSecretPin();}
-    else if(a==='phrase'){s.close();const ok=await pinPad({title:'Tu PIN',sub:'Para crear una frase nueva',len:getSec().len,cancel:true,check:checkMain});if(!ok)return;const w=newPhrase();const sc=getSec();sc.rsalt=b64e(rnd(16));sc.rhash=await pbk(w.join(' '),sc.rsalt);setSec(sc);await showPhrase(w);}
+    else if(a==='phrase'){s.close();const raw=await askPin('Tu PIN','Para crear una frase nueva');if(raw)await phraseFlow(raw);}
+    else if(a==='check'){s.close();maybeReview(true);}
     else if(a==='exp'){s.close();exportBackup();}
     else if(a==='imp'){const p=pick('.zip,application/zip',null,false);s.close();const fs=await p;if(fs.length)importBackup(fs[0]);}
   };
 }
 async function exportBackup(){
   try{
-    toast('Preparando la copia…',120000);await loadScript(JSZIP);const z=new JSZip();const files=await allF();
-    z.file('misdocumentos.json',JSON.stringify({app:'mis-documentos',v:1,fecha:new Date().toISOString(),folders:FOLDERS,items:ITEMS,settings:SET,files:files.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}))}));
-    for(const f of files)z.file('archivos/'+f.id,f.blob);const fi=await get('kv','firma');if(fi&&fi.v)z.file('firma.png',fi.v);
+    toast('Preparando la copia…',120000);await loadScript(JSZIP);const z=new JSZip();
+    for(const r of (await all('items'))||[])if(!r.e)await writeItem(r);
+    const items=(await all('items'))||[],kv=((await all('kv'))||[]).filter(r=>r.e);
+    const files=[];for(const k of await keysF()){let r=await getF(k);if(!r)continue;if(!r.e){await putFile(r.blob,r.name,r.id);r=await getF(k);}files.push({id:r.id,iv:r.iv,size:r.size});z.file('archivos/'+r.id,r.blob);}
+    const sc=getSec();
+    z.file('misdocumentos.json',JSON.stringify({app:'mis-documentos',v:2,fecha:new Date().toISOString(),sec:{wPin:sc.wPin,wRec:sc.wRec},items,kv,files}));
     const blob=await z.generateAsync({type:'blob'});toast('✓ Copia lista',1200);
-    readyShare(new File([blob],`MisDocumentos-copia-${ymd()}.zip`,{type:'application/zip'}),'Copia de Mis Documentos');
+    readyShare(new File([blob],`MisDocumentos-copia-${ymd()}.zip`,{type:'application/zip'}),'Copia cifrada de Mis Documentos');
   }catch(e){toast('No se ha podido hacer la copia: '+(e.message||e),5000);}
+}
+function askBackupKey(bsec){
+  return new Promise(res=>{
+    const s=sheet(`<h3>Abrir la copia</h3><p class="muted" style="margin-top:0">Esta copia se hizo con otra llave. Escribe el <b>PIN</b> o la <b>frase de recuperación</b> que tenías cuando la hiciste.</p>
+      <label class="fld"><input class="in" id="bk" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="PIN o frase"></label><div class="lk-s err" id="bke" style="text-align:left"></div>
+      <div class="row end"><button class="btn" data-x>Cancelar</button><button class="btn pri" data-ok>Abrir</button></div>`,{onClose:()=>res(null)});
+    s.querySelector('[data-ok]').onclick=async e=>{
+      const v=$('#bk',s).value.trim();e.target.disabled=true;$('#bke',s).textContent='Comprobando…';let raw=null;
+      if(/^\d+$/.test(v)&&bsec.wPin){try{raw=await unwrapWith(bsec.wPin,v);}catch(x){}}
+      if(!raw&&bsec.wRec){try{raw=await unwrapWith(bsec.wRec,normPhrase(v));}catch(x){}}
+      if(raw){s.onClose=null;s.close();res(raw);}else{$('#bke',s).textContent='No sirve. Prueba con el PIN o la frase de entonces.';e.target.disabled=false;}
+    };
+  });
 }
 async function importBackup(file){
   try{
     toast('Leyendo la copia…',120000);await loadScript(JSZIP);const z=await JSZip.loadAsync(file);const j=z.file('misdocumentos.json');if(!j)throw new Error('no es una copia de Mis Documentos');
     const data=JSON.parse(await j.async('string'));const have=new Set(await keysF());let nf=0,ni=0;
-    for(const m of data.files||[]){if(have.has(m.id))continue;const e=z.file('archivos/'+m.id);if(!e)continue;const ab=await e.async('arraybuffer');await putF({id:m.id,blob:new Blob([ab],{type:m.type||''}),name:m.name,type:m.type,size:m.size});nf++;}
-    for(const f of data.folders||[])if(!folderById(f.id)){FOLDERS.push(f);}await saveFolders();
-    for(const it of data.items||[]){const cur=byId(it.id);if(!cur||(it.updated||0)>(cur.updated||0)){await saveItem(it,true);ni++;}}
-    const fp=z.file('firma.png');if(fp&&!(await get('kv','firma')))await put('kv',{k:'firma',v:new Blob([await fp.async('arraybuffer')],{type:'image/png'})});
+    if(data.v===2){
+      let key=MK;const test=(data.items||[]).find(r=>r.e)||(data.kv||[]).find(r=>r.e);
+      if(test){try{await openObj(test,MK);}catch(e){toast('',1);const raw=await askBackupKey(data.sec||{});if(!raw){toast('Copia no recuperada');return;}key=await importMK(raw);toast('Recuperando…',120000);}}
+      for(const m of data.files||[]){if(have.has(m.id))continue;const e=z.file('archivos/'+m.id);if(!e)continue;const blob=new Blob([await e.async('arraybuffer')]);
+        if(key===MK)await putF({id:m.id,e:1,iv:m.iv,blob,size:m.size});else{const b=await openFileRec({e:1,iv:m.iv,blob},key);await putFile(b,'',m.id);}nf++;}
+      const fk=(data.kv||[]).find(r=>r.k==='folders');if(fk){try{for(const f of await openObj(fk,key))if(!folderById(f.id))FOLDERS.push(f);await saveFolders();}catch(e){}}
+      for(const r of data.items||[]){let it;try{it=r.e?await openObj(r,key):r;}catch(e){continue;}const cur=byId(it.id);if(!cur||(it.updated||0)>(cur.updated||0)){await saveItem(it,true);ni++;}}
+    }else{
+      for(const m of data.files||[]){if(have.has(m.id))continue;const e=z.file('archivos/'+m.id);if(!e)continue;await putFile(new Blob([await e.async('arraybuffer')],{type:m.type||''}),m.name,m.id);nf++;}
+      for(const f of data.folders||[])if(!folderById(f.id))FOLDERS.push(f);await saveFolders();
+      for(const it of data.items||[]){const cur=byId(it.id);if(!cur||(it.updated||0)>(cur.updated||0)){await saveItem(it,true);ni++;}}
+      const fp=z.file('firma.png');if(fp&&!(await getBlob('firma')))await putFile(new Blob([await fp.async('arraybuffer')],{type:'image/png'}),'firma.png','firma');
+    }
     toast(`✓ Copia recuperada: ${ni} elementos y ${nf} archivos`,4000);render();
   }catch(e){toast('No se ha podido leer: '+(e.message||e),5000);}
 }
-
 
 /* ---------- calculadora ---------- */
 const CALC={e:'',hist:null,tab:'calc',ut:'iva'};
@@ -1314,8 +1494,8 @@ function calcEval(src){
     return{v};}
   const r=expr().v;if(i<t.length)throw 0;return r;
 }
-async function calcHist(){if(!CALC.hist){const r=await get('kv','calc');CALC.hist=r&&Array.isArray(r.v)?r.v:[];}return CALC.hist;}
-const saveHist=()=>put('kv',{k:'calc',v:CALC.hist.slice(0,40)});
+async function calcHist(){if(!CALC.hist){const r=await kvGet('calc');CALC.hist=Array.isArray(r)?r:[];}return CALC.hist;}
+const saveHist=()=>kvSet('calc',CALC.hist.slice(0,40));
 async function calcSheet(){
   await calcHist();
   const s=sheet(`<h3>Calculadora <span class="jp">電卓</span><span class="sp"></span><button class="btn sm" data-x>Cerrar</button></h3>
@@ -1460,12 +1640,14 @@ async function purgeOld(){const lim=Date.now()-30*864e5;for(const i of ITEMS.fil
 async function boot(){
   try{DB=await openDB('misdocs',[['items','id'],['kv','k']]);FDB=await openDB('misdocs_files',[['files','id']]);}
   catch(e){document.body.innerHTML='<p style="padding:30px;text-align:center">No se puede abrir el almacenamiento de este navegador. Prueba a cerrar y abrir la app.</p>';return;}
-  await loadAll();purgeOld().catch(()=>{});updateAvisos();
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
   const h=decodeURIComponent(location.hash||'');
   if(h==='#caducan')V={k:'soon'};else if(h==='#enlaces')V={k:'links'};
-  if(!getSec())await setupPin(false);else if(!recentUnlock())await unlockMain();
-  unlocked();
+  const s=getSec();
+  if(!s||(s.v===2&&!s.wPin))await firstSetup();
+  else if(!s.wPin)await migrateFromV1();
+  else{const k=await sessionKey();if(k){MK=k;RAW=null;}else await setKey(await unlockMain());}
+  await afterUnlock();
   const m=h.match(/^#doc=(.+)$/);if(m&&byId(m[1]))openItem(m[1]);
 }
 $('#main').addEventListener('click',onNav);
