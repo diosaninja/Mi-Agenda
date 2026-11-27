@@ -502,6 +502,14 @@ function kanjiInfo(){
   return{started:ks.length,dom:ks.filter(k=>srs[k]&&srs[k].iv>=21).length,streak:streakDays(S.days),today:(S.days||[]).includes(todayStr()),
     month:((S.month||{})[monthKey()]||[]).length};
 }
+function docsCard(){
+  const a=readJSON('misdocs_avisos');if(!Array.isArray(a)||!a.length)return '';
+  const h=new Date();h.setHours(0,0,0,0);
+  const L=a.map(x=>({...x,n:Math.round((new Date(x.d+'T00:00:00')-h)/864e5)})).filter(x=>x.n<=(x.av||30)).sort((p,q)=>p.n-q.n);
+  if(!L.length)return '';
+  const txt=n=>n<0?'Caducado':n===0?'Caduca hoy':n===1?'Caduca mañana':`Caduca en ${n} días`;
+  return `<section class="card c12"><h3>Documentos por renovar <span class="jp">書類</span><a class="more" href="documentos.html#caducan">Ver ›</a></h3><div class="list">${L.slice(0,5).map(x=>`<a class="it" href="documentos.html${x.id?'#doc='+encodeURIComponent(x.id):'#caducan'}" style="text-decoration:none;color:inherit;align-items:center"><span style="font-size:20px">${esc(x.e||'📄')}</span><span style="flex:1;font-weight:600">${esc(x.t)}</span><span class="small" style="font-weight:700;color:${x.n<=0?'#b5545c':'#c08a3e'}">${txt(x.n)}</span></a>`).join('')}</div></section>`;
+}
 function letteringInfo(){
   const S=readJSON('lt-stats');const days=readJSON('lt-days');if(!S&&!days)return null;
   const R=readJSON('lt-reto')||{days:{}};const rd=R.days||{};
@@ -663,7 +671,7 @@ const CALI=['Calentamiento: óvalos y bucles, 3 filas','Trazos básicos: vertica
 'Repasa una ficha del Cuaderno de tinta','Escribe la fecha de hoy en japonés: '+'今日'];
 const dayIndex=(ds,n)=>{const d=fromYmd(ds);const s=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5;return((Math.floor(s)%n)+n)%n;};
 const APPS=[['calendario.html','📅','Calendario'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['libreta-japones.html','練','Libreta japonés'],['caligrafia.html','✒️','Caligrafía'],
-['cuaderno.html','📓','Cuaderno de tinta'],['lettering.html','🖌️','Lettering'],['libreta.html','📝','Mi Libreta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['../colorear/?v=13','🎨','Colorear'],['cuentas.html','💶','Cuentas'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['index.html?biblioteca','🗂️','Biblioteca']];
+['cuaderno.html','📓','Cuaderno de tinta'],['lettering.html','🖌️','Lettering'],['libreta.html','📝','Mi Libreta'],['ocio.html','📚','Estantería'],['bujo.html','•','Bullet journal'],['../colorear/?v=13','🎨','Colorear'],['cuentas.html','💶','Cuentas'],['documentos.html','📂','Documentos'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['index.html?biblioteca','🗂️','Biblioteca']];
 </script>
 <script>
 /* ---------- navegación ---------- */
@@ -766,6 +774,7 @@ VIEWS.hoy=()=>{
     <form class="row" data-f="quick" style="margin-top:10px"><input class="f" name="t" placeholder="Nueva tarea para hoy…" autocomplete="off"><button class="btn icon sage" aria-label="Añadir">${ico('plus')}</button></form>
   </section>
 
+  ${docsCard()}
   <section class="card c6"><h3>Hábitos <span class="jp">習慣</span><button class="more" data-a="go" data-s="habitos">Gestionar ›</button></h3>${habitChips(t)}</section>
   <section class="card c6"><h3>Aprendizaje de hoy<button class="more" data-a="go" data-s="aprender">Abrir ›</button></h3>
     <div class="row"><b style="font-size:24px">${fmtMin(mn.total)}</b><span class="muted">de ${fmtMin(goal)}</span><span class="sp"></span>${timerMini()}</div>
