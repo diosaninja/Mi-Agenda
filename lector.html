@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Mi Lector">
 <meta name="theme-color" content="#faf6f0">
+<script src="sync.js"></script>
 <title>読書 · Mi Lector</title>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
@@ -70,6 +71,8 @@ h2{font-size:15px;font-weight:600;color:var(--suave);margin:4px 0 12px;letter-sp
 .gen .ic{font-size:26px}
 .badge{position:absolute;left:7px;bottom:7px;background:rgba(255,255,255,.92);color:#333;border-radius:7px;font-size:10px;padding:3px 6px;font-weight:700;letter-spacing:.4px}
 .more{position:absolute;top:6px;right:6px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.92);font-size:18px;line-height:1;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.card.lejos .cover > img,.card.lejos .cover > .gen{opacity:.45;filter:grayscale(.4)}
+.far{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);z-index:2;background:rgba(255,255,255,.95);color:#333;padding:6px 8px;border-radius:9px;font-size:11px;font-weight:700;text-align:center;line-height:1.25;width:86%;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .done{position:absolute;top:7px;left:7px;background:#3f7d58;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
 .bar{height:4px;background:var(--linea);border-radius:4px;margin-top:8px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--acento);border-radius:4px}
@@ -300,6 +303,7 @@ ol.steps{padding-left:20px;line-height:1.55;font-size:14px}
 <input type="file" id="fileInput" multiple hidden>
 <input type="file" id="imgInput" accept="image/*" multiple hidden>
 <input type="file" id="coverInput" accept="image/*" hidden>
+<input type="file" id="relinkInput" hidden>
 
 <script>
 'use strict';
@@ -383,48 +387,110 @@ const ajustes = load('lector-ajustes', {
 function saveAjustes(){ store('lector-ajustes', ajustes); }
 const isScroll = () => ajustes.modo === 'scroll';
 
-/* ---------- Base de datos (IndexedDB) ---------- */
+/* ---------- Bases de datos (IndexedDB) ----------
+   · «lector-datos»: lo que se sincroniza entre el iPad y el iPhone (sync.js):
+       fichas de los libros, progreso, subrayados, notas, marcadores, dibujos y artículos.
+   · «__lector-archivos»: los archivos pesados (EPUB, PDF, fotos). Se quedan en cada aparato
+       (sync.js no toca las bases que empiezan por «__»).                                    */
+const FF = String.fromCharCode(0xffff);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let fileIds = new Set();
 const DB = {
-  db: null,
-  open(){
-    return new Promise((res, rej) => {
-      const r = indexedDB.open('mi-lector', 2);
-      r.onupgradeneeded = () => {
-        const d = r.result;
-        if (!d.objectStoreNames.contains('items')) d.createObjectStore('items', {keyPath:'id'});
-        if (!d.objectStoreNames.contains('files')) d.createObjectStore('files');
-        if (!d.objectStoreNames.contains('ink')) d.createObjectStore('ink');
-      };
-      r.onsuccess = () => { this.db = r.result; res(); };
-      r.onerror = () => rej(r.error);
+  db: null, fdb: null,
+  async open(){
+    this.db = await openIDB('lector-datos', 1, d => {
+      if (!d.objectStoreNames.contains('items')) d.createObjectStore('items', {keyPath:'id'});
+      if (!d.objectStoreNames.contains('ink')) d.createObjectStore('ink');
+      if (!d.objectStoreNames.contains('art')) d.createObjectStore('art');
+    });
+    this.fdb = await openIDB('__lector-archivos', 1, d => {
+      if (!d.objectStoreNames.contains('files')) d.createObjectStore('files');
+      if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta');
     });
   },
-  tx(store, mode, fn){
-    return new Promise((res, rej) => {
-      const t = this.db.transaction(store, mode);
-      const q = fn(t.objectStore(store));
-      let out;
-      if (q) q.onsuccess = () => { out = q.result; };
-      t.oncomplete = () => res(out);
-      t.onerror = () => rej(t.error);
-      t.onabort = () => rej(t.error);
-    });
+  /* Mientras la sincronización aplica cambios, escribir da error: se reintenta */
+  async tx(db, store, mode, fn){
+    for (let i = 0; ; i++){
+      try{ return await idbDo(db, store, mode, fn); }
+      catch(e){ if (mode === 'readwrite' && i < 10 && (!e || e.name === 'AbortError' || /Sincronizando/.test(e.message || ''))){ await sleep(1200); continue; } throw e; }
+    }
   },
-  all(){ return this.tx('items', 'readonly', s => s.getAll()); },
-  put(it){ return this.tx('items', 'readwrite', s => s.put(it)); },
-  putFile(id, data){ return this.tx('files', 'readwrite', s => s.put(data, id)); },
-  getFile(id){ return this.tx('files', 'readonly', s => s.get(id)); },
-  getInk(k){ return this.tx('ink', 'readonly', s => s.get(k)); },
-  putInk(k, v){ return this.tx('ink', 'readwrite', s => (v && v.length) ? s.put(v, k) : s.delete(k)); },
-  inkKeys(id){ return this.tx('ink', 'readonly', s => s.getAllKeys(IDBKeyRange.bound(id + ':', id + ':￿'))); },
-  del(id){
-    return Promise.all([
-      this.tx('items', 'readwrite', s => s.delete(id)),
-      this.tx('files', 'readwrite', s => s.delete(id)),
-      this.tx('ink', 'readwrite', s => s.delete(IDBKeyRange.bound(id + ':', id + ':￿')))
-    ]);
+  all(){ return this.tx(this.db, 'items', 'readonly', s => s.getAll()); },
+  put(it){ return this.tx(this.db, 'items', 'readwrite', s => s.put(it)); },
+  getArt(id){ return this.tx(this.db, 'art', 'readonly', s => s.get(id)); },
+  putArt(id, html){ return this.tx(this.db, 'art', 'readwrite', s => s.put(html, id)); },
+  async putFile(id, data){
+    if (typeof data === 'string') return this.putArt(id, data);
+    await this.tx(this.fdb, 'files', 'readwrite', s => s.put(data, id));
+    fileIds.add(id);
+  },
+  getFile(id){ return this.tx(this.fdb, 'files', 'readonly', s => s.get(id)); },
+  fileKeys(){ return this.tx(this.fdb, 'files', 'readonly', s => s.getAllKeys()); },
+  getMeta(k){ return this.tx(this.fdb, 'meta', 'readonly', s => s.get(k)); },
+  putMeta(k, v){ return this.tx(this.fdb, 'meta', 'readwrite', s => s.put(v, k)); },
+  getInk(k){ return this.tx(this.db, 'ink', 'readonly', s => s.get(k)); },
+  putInk(k, v){ return this.tx(this.db, 'ink', 'readwrite', s => (v && v.length) ? s.put(v, k) : s.delete(k)); },
+  inkKeys(id){ return this.tx(this.db, 'ink', 'readonly', s => s.getAllKeys(IDBKeyRange.bound(id + ':', id + ':' + FF))); },
+  async delFile(id){ await this.tx(this.fdb, 'files', 'readwrite', s => s.delete(id)); fileIds.delete(id); },
+  async del(id){
+    await this.tx(this.db, 'items', 'readwrite', s => s.delete(id));
+    await this.tx(this.db, 'art', 'readwrite', s => s.delete(id));
+    await this.tx(this.db, 'ink', 'readwrite', s => s.delete(IDBKeyRange.bound(id + ':', id + ':' + FF)));
+    await this.delFile(id);
   }
 };
+const needsFile = it => it && (it.type === 'epub' || it.type === 'pdf' || it.type === 'images');
+const isAway = it => needsFile(it) && !fileIds.has(it.id);
+
+/* Mudanza desde la versión anterior («mi-lector», que guardaba todo junto).
+   No se borra nada hasta que, en una visita posterior, se comprueba que todo está en su sitio nuevo. */
+async function migrateOld(){
+  try{
+    if (indexedDB.databases){ const n = (await indexedDB.databases()).map(d => d.name); if (!n.includes('mi-lector')) return; }
+  }catch(e){}
+  const old = await new Promise(res => {
+    let created = false;
+    const r = indexedDB.open('mi-lector');
+    r.onupgradeneeded = () => { created = true; try{ r.transaction.abort(); }catch(e){} };
+    r.onsuccess = () => { if (created){ r.result.close(); res(null); } else res(r.result); };
+    r.onerror = e => { try{ e.preventDefault(); }catch(x){} res(null); };
+    r.onblocked = () => res(null);
+  });
+  if (!old) return;
+  let added = 0, ok = true, oItems = [];
+  try{
+    const has = n => old.objectStoreNames.contains(n);
+    oItems = has('items') ? await idbDo(old, 'items', 'readonly', s => s.getAll()) : [];
+    const have = new Set(items.map(i => i.id));
+    for (const it of oItems){
+      try{
+        if (!have.has(it.id)){ await DB.put(it); items.push(it); have.add(it.id); added++; }
+        if (has('files')){
+          const data = await idbDo(old, 'files', 'readonly', s => s.get(it.id));
+          if (typeof data === 'string'){ if (!(await DB.getArt(it.id))) await DB.putArt(it.id, data); }
+          else if (data && !fileIds.has(it.id)) await DB.putFile(it.id, data);
+        }
+      }catch(e){ ok = false; console.warn(e); }
+    }
+    if (has('ink')){
+      const keys = await idbDo(old, 'ink', 'readonly', s => s.getAllKeys());
+      for (const k of keys){
+        try{ if (!(await DB.getInk(k))){ const v = await idbDo(old, 'ink', 'readonly', s => s.get(k)); if (v && v.length) await DB.putInk(k, v); } }
+        catch(e){ ok = false; }
+      }
+    }
+  }catch(e){ ok = false; console.warn(e); }
+  try{ old.close(); }catch(e){}
+  if (added) render();
+  // ¿Se puede borrar ya la base antigua? Solo si una mudanza anterior ya terminó y todo sigue aquí
+  try{
+    const prev = await DB.getMeta('mudanza');
+    const now = new Set(((await DB.all()) || []).map(i => i.id));
+    const complete = ok && oItems.every(i => now.has(i.id));
+    if (complete && prev && Date.now() - prev > 60000) indexedDB.deleteDatabase('mi-lector');
+    else if (complete && !prev) await DB.putMeta('mudanza', Date.now());
+  }catch(e){}
+}
 
 let items = [];
 
@@ -474,8 +540,9 @@ function cardHTML(it){
   const pct = Math.round((it.progress || 0) * 100);
   const nh = (it.hl || []).length + Object.keys(it.pnotes || {}).length;
   const sub = [esc(it.author || (it.url ? hostOf(it.url) : '')), pct ? pct + '%' : '', nh ? '🖍️ ' + nh : ''].filter(Boolean).join(' · ');
-  return `<div class="card" data-id="${it.id}">
-    <div class="cover">
+  const away = isAway(it);
+  return `<div class="card${away ? ' lejos' : ''}" data-id="${it.id}">
+    <div class="cover">${away ? '<span class="far">📲 En tu otro aparato</span>' : ''}
       ${it.cover ? `<img src="${esc(it.cover)}" alt="" loading="lazy" onerror="this.remove()">` : genCover(it)}
       ${it.state === 'terminado' ? '<span class="done">✓</span>' : ''}
       <span class="badge">${KIND[it.type]}</span>
@@ -537,7 +604,14 @@ async function updateFoot(){
       txt += ` Espacio usado: ${fmtSize(e.usage || 0)}.`;
     }
   }catch(e){}
-  $('#foot').innerHTML = `${txt}<br>${items.length} ${items.length === 1 ? 'elemento' : 'elementos'} en tu biblioteca · 読書 Mi Lector`;
+  const ids = new Set(items.map(i => i.id));
+  const orph = items.length ? [...fileIds].filter(id => !ids.has(id)).length : 0;
+  const away = items.filter(isAway).length;
+  const synced = (() => { try{ return !!(window.MiAgendaSync && MiAgendaSync._dbg && (MiAgendaSync._dbg().cfg || {}).setup); }catch(e){ return false; } })();
+  $('#foot').innerHTML = `${txt}<br>${synced ? '☁️ Progreso, subrayados, notas, marcadores y artículos se sincronizan con tu otro aparato.<br>' : ''}`
+    + `${items.length} ${items.length === 1 ? 'elemento' : 'elementos'} en tu biblioteca${away ? ` · 📲 ${away} en tu otro aparato` : ''} · 読書 Mi Lector`
+    + (orph ? `<br><button class="btn small ghost" id="orphBtn" style="margin-top:8px">🧹 Liberar espacio: ${orph} ${orph === 1 ? 'archivo' : 'archivos'} de libros borrados</button>` : '');
+  if ($('#orphBtn')) $('#orphBtn').onclick = cleanOrphans;
 }
 function fmtSize(b){
   if (b < 1024 * 1024) return (b / 1024).toFixed(0) + ' KB';
@@ -611,12 +685,21 @@ async function importFiles(files){
     catch(err){ console.error(err); fails.push('las imágenes'); }
   }
   unbusy(); render();
-  if (added) toast(added === 1 ? '✓ Añadido a tu biblioteca' : `✓ ${added} elementos añadidos`);
+  const rel = items.filter(i => i.relinked); rel.forEach(i => delete i.relinked);
+  added -= rel.length;
+  if (added > 0) toast(added === 1 ? '✓ Añadido a tu biblioteca' : `✓ ${added} elementos añadidos`);
+  if (rel.length) toast(`📲 ${rel.length === 1 ? '«' + rel[0].title + '» vinculado' : rel.length + ' libros vinculados'}: conservas tu progreso y tus subrayados`);
   if (fails.length) toast(`No he podido importar: ${fails.join(', ')}. Usa EPUB, PDF o imágenes.`);
   if (lastImg) openEdit(lastImg.id, true);
 }
 
 async function addItem(meta, data){
+  // ¿Es un libro que ya está en la biblioteca (desde el otro aparato) pero sin archivo aquí? → se vincula
+  if (needsFile(meta) && data !== undefined){
+    const t = norm(meta.title);
+    const twin = items.find(i => i.type === meta.type && isAway(i) && norm(i.title) === t);
+    if (twin){ await DB.putFile(twin.id, data); twin.relinked = true; return twin; }
+  }
   const it = Object.assign({id:uid(), state:'pendiente', progress:0, loc:null, added:Date.now(), lastRead:0, author:'', cover:null}, meta);
   if (data !== undefined) await DB.putFile(it.id, data);
   await DB.put(it);
@@ -695,6 +778,45 @@ async function addImages(files){
   URL.revokeObjectURL(url);
   const size = blobs.reduce((s, b) => s + b.size, 0);
   return addItem({type:'images', title:cleanName(files[0].name), cover, pages:blobs.length, shelf:defShelf('images'), size}, blobs);
+}
+
+/* ---------- Libro guardado en el otro aparato ---------- */
+function relinkSheet(it){
+  const what = {epub:'el archivo EPUB', pdf:'el PDF', images:'las imágenes'}[it.type];
+  const nh = (it.hl || []).length + (it.marks || []).length + Object.keys(it.pnotes || {}).length;
+  sheet(`<h3>📲 «${esc(it.title)}»</h3>
+    <div class="info" style="font-size:14px;margin-top:0">Este ${it.type === 'images' ? 'documento' : 'libro'} lo añadiste en tu otro aparato. Aquí ya tienes tu progreso (${Math.round((it.progress || 0) * 100)}%)${nh ? `, tus ${nh} subrayados, notas y marcadores` : ''}, pero los archivos no viajan para no llenar tu GitHub.</div>
+    <div class="info" style="font-size:14px">Para leerlo aquí, elige ${what} en este aparato (desde Archivos, iCloud Drive o Drive). Se vinculará y lo conservarás todo.</div>
+    <div class="actions"><span class="sp"></span><button class="btn ghost" data-close>Ahora no</button><button class="btn" id="rlPick">📂 Elegir ${what}</button></div>`);
+  $('#rlPick').onclick = () => {
+    const inp = $('#relinkInput');
+    inp.multiple = it.type === 'images';
+    if (it.type === 'images') inp.setAttribute('accept', 'image/*'); else inp.removeAttribute('accept');
+    inp.onchange = async () => {
+      const files = [...inp.files]; inp.value = '';
+      if (!files.length) return;
+      const f = files[0], ext = (f.name.split('.').pop() || '').toLowerCase();
+      const okType = it.type === 'images' ? files.every(isImg) : it.type === 'epub' ? (ext === 'epub' || f.type === 'application/epub+zip') : (ext === 'pdf' || f.type === 'application/pdf');
+      if (!okType){ toast(`Ese archivo no es ${what}`); return; }
+      closeSheet(); busy('Vinculando…');
+      try{
+        let data;
+        if (it.type === 'images'){ const fs = files.sort((a, b) => a.name.localeCompare(b.name, 'es', {numeric:true})); data = []; for (const x of fs) data.push(new Blob([await x.arrayBuffer()], {type:x.type || 'image/jpeg'})); }
+        else data = new Blob([await f.arrayBuffer()], {type:it.type === 'epub' ? 'application/epub+zip' : 'application/pdf'});
+        await DB.putFile(it.id, data);
+        unbusy(); render(); toast('✓ Vinculado. ¡A leer!'); openItem(it.id);
+      }catch(err){ console.error(err); unbusy(); toast('No he podido guardar el archivo'); }
+    };
+    inp.click();
+  };
+}
+/* Archivos de libros que ya borraste (en este o en el otro aparato) */
+async function cleanOrphans(){
+  if (!items.length) return;
+  const ids = new Set(items.map(i => i.id));
+  const orph = [...fileIds].filter(id => !ids.has(id));
+  for (const id of orph){ try{ await DB.delFile(id); }catch(e){} }
+  toast(`🧹 ${orph.length} ${orph.length === 1 ? 'archivo borrado' : 'archivos borrados'}`); render();
 }
 
 /* =========================================================
@@ -1112,10 +1234,11 @@ async function openItem(id){
     $('#kDl').onclick = async () => { closeSheet(); const r = await downloadArticle(it.url, it.shelf, it); if (r){ render(); openItem(it.id); } };
     return;
   }
+  if (isAway(it)){ relinkSheet(it); return; }
   busy('Abriendo…');
   let data;
-  try{ data = await DB.getFile(id); }catch(e){}
-  if (!data){ unbusy(); toast('No encuentro el archivo en este aparato'); return; }
+  try{ data = it.type === 'article' ? await DB.getArt(id) : await DB.getFile(id); }catch(e){}
+  if (!data){ unbusy(); if (needsFile(it)){ fileIds.delete(id); relinkSheet(it); } else toast('No encuentro el texto en este aparato'); return; }
   for (const k of Object.keys(R)) delete R[k];
   Object.assign(R, {item:it, kind:it.type, page:0, total:0, ended:false, toc:[], ink:{}, inkDirty:new Set(), undo:[]});
   const rd = $('#reader');
@@ -2633,12 +2756,14 @@ window.addEventListener('pagehide', saveNow);
 (async function init(){
   try{
     await DB.open();
+    fileIds = new Set((await DB.fileKeys()) || []);
     items = (await DB.all()) || [];
   }catch(e){
     console.error(e);
     toast('No he podido abrir la biblioteca de este aparato');
   }
   render();
+  await migrateOld().catch(e => console.warn(e));
   // Abrir directamente: lector.html?abrir=ID (desde el separador de libros) o #ID al volver
   const want = new URLSearchParams(location.search).get('abrir') || decodeURIComponent(location.hash.slice(1));
   if (want && items.some(i => i.id === want)) openItem(want);
