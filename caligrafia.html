@@ -380,6 +380,59 @@ const kvGet=k=>kv('readonly',st=>st.get(k));
 const kvSet=(k,v)=>kv('readwrite',st=>st.put(v,k));
 const kvDel=k=>kv('readwrite',st=>st.delete(k));
 
+/* ---- Hojas e imágenes bajo demanda ----
+   Antes la app cargaba TODAS las hojas, trazos e imágenes importadas al abrirse,
+   y guardaba en memoria cada imagen que mirabas. Con 4-5 hojas con foto/PDF
+   el iPad se quedaba sin memoria y la app se colgaba.
+   Ahora solo se tiene en memoria la hoja abierta. */
+function countInk(arr){let n=0;for(let i=arr.length-1;i>=0;i--){if(arr[i].t==='clear')break;n++}return n}
+function trimCleared(arr){for(let i=arr.length-1;i>=0;i--)if(arr[i].t==='clear')return arr.slice(i+1);return arr}
+const loadingSheets={},loadingImgs={};
+function ensureSheet(id){
+  if(strokes[id])return Promise.resolve(strokes[id]);
+  if(loadingSheets[id])return loadingSheets[id];
+  return loadingSheets[id]=(async()=>{
+    let arr=[];
+    try{
+      const r=idb?await kvGet('sheet-'+id):null;
+      if(r)arr=JSON.parse(r);
+      else if(cloud.ok&&cloud.blobs['sheet-'+id])arr=JSON.parse(await getBlob('sheet-'+id,cloud.blobs['sheet-'+id]));
+    }catch(e){console.warn('hoja',id,e)}
+    const t=trimCleared(arr); // lo borrado con «Borrar tu escritura» deja de ocupar espacio
+    if(!strokes[id])strokes[id]=t;
+    const sh=state.sheets.find(x=>x.id===id);if(sh)sh.n=countInk(strokes[id]);
+    if(t.length!==arr.length){dirty.local.sheets.add(id);dirty.cloud.sheets.add(id);dirty.local.state=dirty.cloud.state=true;scheduleFlush()}
+    delete loadingSheets[id];return strokes[id];
+  })();
+}
+function ensureImage(id){
+  if(imgData[id])return Promise.resolve(imgData[id]);
+  if(loadingImgs[id])return loadingImgs[id];
+  return loadingImgs[id]=(async()=>{
+    try{
+      const r=idb?await kvGet('img-'+id):null;
+      if(r)imgData[id]=r;
+      else if(cloud.ok&&cloud.blobs['img-'+id])imgData[id]=await getBlob('img-'+id,cloud.blobs['img-'+id]);
+    }catch(e){console.warn('imagen',id,e)}
+    delete loadingImgs[id];return imgData[id];
+  })();
+}
+async function rawFromDevice(key){if(!idb)return null;try{const r=await kvGet(key);return r==null?null:r}catch(e){return null}}
+async function sheetJSON(id){return strokes[id]?JSON.stringify(strokes[id]):await rawFromDevice('sheet-'+id)}
+async function imageRaw(id){return imgData[id]||await rawFromDevice('img-'+id)}
+// Suelta de la memoria las hojas e imágenes que no estás viendo (siguen guardadas en el iPad)
+function releaseOthers(){
+  const curId=state.currentId,cs=state.sheets.find(x=>x.id===curId);const keepImg=cs&&cs.bg&&cs.bg.img;
+  const busy=k=>dirty.local.sheets.has(k); // la nube lee lo guardado en el iPad
+  for(const id of Object.keys(strokes))if(id!==curId&&!busy(id)&&!(redoStack[id]&&redoStack[id].length)&&idb)delete strokes[id];
+  for(const id of Object.keys(imgCache))if(id!==keepImg){try{imgCache[id].src=''}catch(e){}delete imgCache[id]}
+  for(const id of Object.keys(imgData))if(id!==keepImg&&!dirty.local.imgs.has(id)&&idb)delete imgData[id];
+}
+function scheduleFlush(){
+  clearTimeout(localTimer);localTimer=setTimeout(flushLocalIdle,1200);
+  if(cloud.ok){clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloud,4000)}
+}
+
 const mkDirty=()=>({state:false,sheets:new Set(),fonts:new Set(),imgs:new Set(),del:new Set()});
 const dirty={local:mkDirty(),cloud:mkDirty()};
 let localTimer=null,cloudTimer=null;
@@ -393,11 +446,18 @@ function touch(kind,id){
     if(kind==='del')d.del.add(id);
   }
   state.updatedAt=Date.now();
-  clearTimeout(localTimer);localTimer=setTimeout(flushLocalIdle,1200);
-  if(cloud.ok){clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloud,2500)}
+  if(kind==='sheet'){const sh=state.sheets.find(x=>x.id===id);if(sh){sh.updated=Date.now();if(strokes[id])sh.n=countInk(strokes[id])}}
+  scheduleFlush();
   if(!cloud.ok)setPill(idb?'ok':'err',idb?'Guardado en este dispositivo':'Sin guardado: descarga una copia');
 }
 function markAll(d){d.state=true;state.sheets.forEach(s=>d.sheets.add(s.id));state.fonts.forEach(f=>d.fonts.add(f.id));state.images.forEach(m=>d.imgs.add(m.id))}
+// Solo lo que la nube aún no tiene o tiene antiguo (antes se volvía a subir TODO cada vez que abrías la app)
+function markChangedForCloud(){
+  const d=dirty.cloud;d.state=true;
+  state.sheets.forEach(s=>{const k='sheet-'+s.id;if(!cloud.blobs[k]||(cloud.ver[k]||0)<(s.updated||0))d.sheets.add(s.id)});
+  state.fonts.forEach(f=>{if(!cloud.blobs['font-'+f.id])d.fonts.add(f.id)});
+  state.images.forEach(m=>{if(!cloud.blobs['img-'+m.id])d.imgs.add(m.id)});
+}
 
 function flushLocalIdle(){
   if(curSt){localTimer=setTimeout(flushLocalIdle,800);return}   // no guardar a mitad de un trazo
@@ -407,16 +467,18 @@ async function flushLocal(){
   if(!idb)return;
   const d=dirty.local;const sh=[...d.sheets],fo=[...d.fonts],im=[...d.imgs],de=[...d.del];
   d.state=false;d.sheets.clear();d.fonts.clear();d.imgs.clear();d.del.clear();
+  const w=[];
+  for(const id of im)if(imgData[id])w.push(['img-'+id,imgData[id]]);
+  w.push(['state',JSON.stringify(state)]);
+  for(const id of sh)if(strokes[id]&&state.sheets.some(s=>s.id===id))w.push(['sheet-'+id,JSON.stringify(strokes[id])]);
+  for(const id of fo)if(fontData[id])w.push(['font-'+id,fontData[id]]);
   try{
-    for(const id of im)if(imgData[id])await kvSet('img-'+id,imgData[id]);
-    await kvSet('state',JSON.stringify(state));
-    for(const id of sh)if(state.sheets.some(s=>s.id===id))await kvSet('sheet-'+id,JSON.stringify(strokes[id]||[]));
-    for(const id of fo)if(fontData[id])await kvSet('font-'+id,fontData[id]);
+    for(const [k,v] of w)await kvSet(k,v);
     for(const k of de)await kvDel(k);
   }catch(e){setPill('err','No se pudo guardar en el dispositivo')}
 }
 
-const cloud={ok:false,busy:false,again:false,col:null,stateDoc:null,blobs:{}};
+const cloud={ok:false,busy:false,again:false,col:null,stateDoc:null,blobs:{},ver:{}};
 const CHUNK=180000;
 async function putBlob(key,str){
   const n=Math.max(1,Math.ceil(str.length/CHUNK));
@@ -429,7 +491,7 @@ async function getBlob(key,n){
   const parts=await Promise.all(Array.from({length:n},(_,i)=>cloud.col.doc(`b_${key}_${i}`).get()));
   return parts.map(p=>p.exists?(p.data().d||''):'').join('');
 }
-async function delBlob(key){const n=cloud.blobs[key]||0;for(let i=0;i<n;i++)await cloud.col.doc(`b_${key}_${i}`).delete();delete cloud.blobs[key]}
+async function delBlob(key){const n=cloud.blobs[key]||0;for(let i=0;i<n;i++)await cloud.col.doc(`b_${key}_${i}`).delete();delete cloud.blobs[key];delete cloud.ver[key]}
 
 async function flushCloud(){
   if(!cloud.ok)return;
@@ -441,11 +503,15 @@ async function flushCloud(){
   d.state=false;d.sheets.clear();d.fonts.clear();d.imgs.clear();d.del.clear();
   setPill('busy','Guardando en tu cuenta…');
   try{
-    for(const id of sh)if(state.sheets.some(s=>s.id===id))await putBlob('sheet-'+id,JSON.stringify(strokes[id]||[]));
-    for(const id of fo)if(fontData[id])await putBlob('font-'+id,fontData[id]);
-    for(const id of im)if(imgData[id])await putBlob('img-'+id,imgData[id]);
+    for(const id of sh){
+      const s=state.sheets.find(x=>x.id===id);if(!s)continue;
+      const j=await sheetJSON(id);if(j==null)continue;
+      await putBlob('sheet-'+id,j);cloud.ver['sheet-'+id]=s.updated||0;await sleep(0);
+    }
+    for(const id of fo)if(fontData[id]){await putBlob('font-'+id,fontData[id]);cloud.ver['font-'+id]=1;await sleep(0)}
+    for(const id of im){if(!state.images.some(m=>m.id===id))continue;const r=await imageRaw(id);if(r){await putBlob('img-'+id,r);cloud.ver['img-'+id]=1;await sleep(0)}}
     for(const k of de)await delBlob(k);
-    await cloud.stateDoc.set({updatedAt:state.updatedAt,json:JSON.stringify(state),blobs:cloud.blobs});
+    await cloud.stateDoc.set({updatedAt:state.updatedAt,json:JSON.stringify(state),blobs:cloud.blobs,ver:cloud.ver});
     setPill('ok','Guardado en tu cuenta · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){
     sh.forEach(x=>d.sheets.add(x));fo.forEach(x=>d.fonts.add(x));im.forEach(x=>d.imgs.add(x));de.forEach(x=>d.del.add(x));d.state=true;
@@ -478,21 +544,21 @@ async function initCloud(){
     setPill('busy','Conectando con tu cuenta…');
     const snap=await withTimeout(cloud.stateDoc.get(),10000);
     if(snap.exists){
-      const d=snap.data();cloud.blobs={...(d.blobs||{})};
+      const d=snap.data();cloud.blobs={...(d.blobs||{})};cloud.ver={...(d.ver||{})};
       if((d.updatedAt||0)>(state.updatedAt||0)&&d.json){
         setPill('busy','Cargando tus hojas…');
         const st=JSON.parse(d.json);const ns={},nf={};
-        for(const s of st.sheets||[]){const k='sheet-'+s.id;if(cloud.blobs[k]){try{ns[s.id]=JSON.parse(await getBlob(k,cloud.blobs[k]))}catch(e){ns[s.id]=[]}}}
+        for(const s of st.sheets||[]){const k='sheet-'+s.id;if(cloud.blobs[k]){try{ns[s.id]=JSON.parse(await getBlob(k,cloud.blobs[k]))}catch(e){ns[s.id]=[]}await sleep(0)}}
         for(const f of st.fonts||[]){const k='font-'+f.id;if(cloud.blobs[k])nf[f.id]=await getBlob(k,cloud.blobs[k])}
-        const ni={};for(const m of st.images||[]){const k='img-'+m.id;if(cloud.blobs[k])ni[m.id]=await getBlob(k,cloud.blobs[k])}
+        const ni={};for(const m of st.images||[]){const k='img-'+m.id;if(cloud.blobs[k]){ni[m.id]=await getBlob(k,cloud.blobs[k]);await sleep(0)}}
         if((d.updatedAt||0)>(state.updatedAt||0)){ // sigue siendo más reciente
-          state=normalizeState(st);strokes=ns;fontData=nf;imgData=ni;redoStack={};
+          state=normalizeState(st);strokes=ns;fontData=nf;imgData=ni;redoStack={};state.sheets.forEach(s=>{strokes[s.id]=strokes[s.id]||[];s.n=countInk(strokes[s.id])});
           await registerAllFonts();
-          markAll(dirty.local);flushLocal();
-          renderAll();
+          markAll(dirty.local);await flushLocal();
+          renderAll();releaseOthers();
         }
-      }else markAll(dirty.cloud);
-    }else markAll(dirty.cloud);
+      }else markChangedForCloud();
+    }else markChangedForCloud();
     cloud.ok=true;
     await flushCloud();
     if(!dirty.cloud.state)setPill('ok','Guardado en tu cuenta');
@@ -502,6 +568,18 @@ async function initCloud(){
 }
 
 let downloads=null;
+
+// Hojas antiguas sin contador de trazos: se cuentan poco a poco, sin bloquear
+async function countMissing(){
+  if(!idb)return;let changed=false;
+  for(const s of state.sheets){
+    if(s.n!=null)continue;
+    if(strokes[s.id]){s.n=countInk(strokes[s.id]);changed=true;continue}
+    try{const r=await kvGet('sheet-'+s.id);s.n=r?countInk(JSON.parse(r)):0;changed=true}catch(e){}
+    await sleep(40);
+  }
+  if(changed){dirty.local.state=true;scheduleFlush();if(state.settings.tab==='sheets')renderTab()}
+}
 
 function normalizeState(s){
   const d=defaultState();
@@ -754,7 +832,7 @@ function paintPaper(ctx,s){
 }
 function bgImage(id){
   if(imgCache[id])return imgCache[id].complete&&imgCache[id].naturalWidth?imgCache[id]:null;
-  if(!imgData[id])return null;
+  if(!imgData[id]){ensureImage(id).then(d=>{if(d)schedulePaper()});return null}
   const im=new Image();im.onload=()=>schedulePaper();im.src=imgData[id];imgCache[id]=im;return null;
 }
 function drawBg(ctx,s){
@@ -906,6 +984,7 @@ live.addEventListener('pointerdown',e=>{
   if(state.settings.penOnly&&e.pointerType==='touch'){
     const ws=$('#ws');pan={id:e.pointerId,x:e.clientX,y:e.clientY,sl:ws.scrollLeft,st:ws.scrollTop};return}
   if(curSt)return;
+  if(!strokes[state.currentId]){e.preventDefault();return} // la hoja aún se está abriendo
   e.preventDefault();
   try{live.setPointerCapture(e.pointerId)}catch(_){}
   const t=state.settings.tool;
@@ -1039,7 +1118,7 @@ function zoomStep(d){const z=state.settings.zoom;let i=ZOOMS.findIndex(x=>x>=z-0
 function renderTab(){
   const tab=state.settings.tab;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
-  const backupOld=state.sheets.some(s=>(strokes[s.id]||[]).length)&&(Date.now()-(state.settings.lastBackup||0)>7*864e5);
+  const backupOld=state.sheets.some(s=>(s.n||0)>0||(strokes[s.id]||[]).length)&&(Date.now()-(state.settings.lastBackup||0)>7*864e5);
   const bt=$('#tabs [data-tab=backup]');bt.innerHTML='Copia'+(backupOld?'<i class="badge"></i>':'');
   const fn={tpl:tabTpl,paper:tabPaper,fonts:tabFonts,sheets:tabSheets,backup:tabBackup}[tab]||tabTpl;
   $('#tabBody').innerHTML=fn();
@@ -1164,7 +1243,7 @@ function tabSheets(){
     <button class="btn primary" style="flex:1" data-act="newSame">+ Repetir esta plantilla</button>
     <button class="btn" style="flex:1" data-act="newBlank">+ Hoja desde cero</button></div>
   <p class="note" style="margin-top:-4px">«Repetir» crea una hoja nueva con la misma plantilla y el papel limpio: ideal para practicar cada día.</p>
-  <div class="list">${state.sheets.map((s,i)=>{const n=(strokes[s.id]||[]).filter(x=>x.t!=='clear').length;
+  <div class="list">${state.sheets.map((s,i)=>{const n=s.n!=null?s.n:(strokes[s.id]?countInk(strokes[s.id]):'…');
     return `<div class="item${s.id===state.currentId?' on':''}">
     <div class="t">${i+1}. ${esc(s.name)}</div>
     <div class="m">${esc(PRESETS[s.tpl.preset]?.name||'')} · ${esc(fontLabel(s.tpl.font).split(' (')[0])} · ${n} trazos · ${fmtDate(s.updated)}</div>
@@ -1216,7 +1295,15 @@ function setPaper(k,v){
   const lb=document.querySelector(`[data-lbl="${k}"]`);if(lb&&FMT[k])lb.textContent=FMT[k](v);
   schedulePaper();touch('state');
 }
-function openSheet(id){state.currentId=id;redrawInk();renderPaper();updatePageLbl();renderTab();touch('state');$('#ws').scrollTop=0}
+async function openSheet(id){
+  state.currentId=id;inkCtx.clearRect(0,0,W,H);
+  releaseOthers();
+  renderPaper();updatePageLbl();renderTab();touch('state');$('#ws').scrollTop=0;
+  await ensureSheet(id);
+  if(state.currentId!==id)return;
+  redrawInk();
+  if(state.settings.tab==='sheets')renderTab();
+}
 
 $('#tabBody').addEventListener('input',e=>{
   const el=e.target;
@@ -1271,7 +1358,7 @@ $('#tabBody').addEventListener('click',async e=>{
       if(r){sh.name=r;sh.autoName=false;touch('state');renderTab()}break}
     case 'dup':{
       const sh=state.sheets.find(x=>x.id===v);const ns=newSheet(sh.name+' (copia)',sh.tpl,sh.paper);ns.autoName=false;if(sh.bg)ns.bg={...sh.bg};
-      strokes[ns.id]=JSON.parse(JSON.stringify(strokes[sh.id]||[]));
+      strokes[ns.id]=JSON.parse(JSON.stringify(await ensureSheet(sh.id)));ns.n=countInk(strokes[ns.id]);
       state.sheets.splice(state.sheets.indexOf(sh)+1,0,ns);touch('sheet',ns.id);renderTab();updatePageLbl();toast('Hoja duplicada');break}
     case 'up':{const i=state.sheets.findIndex(x=>x.id===v);if(i>0){const[x]=state.sheets.splice(i,1);state.sheets.splice(i-1,0,x);touch('state');renderTab();updatePageLbl()}break}
     case 'del':{
@@ -1293,7 +1380,7 @@ $('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');i
 /* =========================================================
    Importar imágenes y PDF (Fototeca, Archivos, enlace)
    ========================================================= */
-const MAX_SIDE=2400;
+const MAX_SIDE=1800; // la hoja mide 1240×1754 px: más resolución solo gasta memoria
 function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error('img'));im.src=src})}
 function canvasToData(c,hasAlpha){
   if(hasAlpha){const png=c.toDataURL('image/png');if(png.length<2.5e6)return png}
@@ -1307,7 +1394,7 @@ async function blobToImageData(blob){
     const x=c.getContext('2d');const alpha=/png|gif|webp/.test(blob.type);
     if(!alpha){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}
     x.imageSmoothingQuality='high';x.drawImage(im,0,0,c.width,c.height);
-    return{data:canvasToData(c,alpha),w:c.width,h:c.height};
+    const out={data:canvasToData(c,alpha),w:c.width,h:c.height};c.width=c.height=0;return out;
   }finally{URL.revokeObjectURL(url)}
 }
 let pdfLib=null;
@@ -1444,7 +1531,11 @@ async function saveFile(filename,data,okMsg){
   return null; // no disponible
 }
 async function downloadBackup(){
-  const json=JSON.stringify({app:'cuaderno-caligrafia',v:1,exportedAt:new Date().toISOString(),state,strokes,fonts:fontData,images:imgData});
+  toast('Preparando la copia…');
+  const allS={},allI={};
+  for(const s of state.sheets){const j=await sheetJSON(s.id);allS[s.id]=strokes[s.id]||(j?JSON.parse(j):[]);await sleep(0)}
+  for(const m of state.images){const r=await imageRaw(m.id);if(r)allI[m.id]=r;await sleep(0)}
+  const json=JSON.stringify({app:'cuaderno-caligrafia',v:1,exportedAt:new Date().toISOString(),state,strokes:allS,fonts:fontData,images:allI});
   const name=`caligrafia-copia-${dkey(new Date())}.json`;
   const r=await saveFile(name,new Blob([json],{type:'application/json'}),'Copia descargada ✓');
   if(r){state.settings.lastBackup=Date.now();touch('state');renderTab();return}
@@ -1461,7 +1552,7 @@ async function restoreFrom(file){
   const n=(data.state.sheets||[]).length;
   if(!await confirmDlg('¿Restaurar la copia?',`La copia del <b>${esc(String(data.exportedAt||'').slice(0,10))}</b> tiene ${n} hoja(s) y ${(data.state.fonts||[]).length} tipografía(s).<br><br>Sustituirá lo que tienes ahora en el cuaderno.`,'Restaurar'))return;
   const oldSheets=state.sheets.map(s=>s.id),oldFonts=state.fonts.map(f=>f.id),oldImgs=state.images.map(m=>m.id);
-  state=normalizeState(data.state);strokes=data.strokes||{};fontData=data.fonts||{};imgData=data.images||{};redoStack={};
+  state=normalizeState(data.state);strokes=data.strokes||{};fontData=data.fonts||{};imgData=data.images||{};redoStack={};state.sheets.forEach(s=>{strokes[s.id]=strokes[s.id]||[];s.n=countInk(strokes[s.id])});
   oldImgs.filter(id=>!state.images.some(m=>m.id===id)).forEach(id=>touch('del','img-'+id));
   oldSheets.filter(id=>!state.sheets.some(s=>s.id===id)).forEach(id=>touch('del','sheet-'+id));
   oldFonts.filter(id=>!state.fonts.some(f=>f.id===id)).forEach(id=>touch('del','font-'+id));
@@ -1581,15 +1672,17 @@ async function init(){
       const raw=await kvGet('state');
       if(raw){
         state=normalizeState(JSON.parse(raw));
-        for(const s of state.sheets){const r=await kvGet('sheet-'+s.id);strokes[s.id]=r?JSON.parse(r):[]}
+        await ensureSheet(state.currentId); // las demás hojas se cargan cuando las abres
         for(const f of state.fonts){const r=await kvGet('font-'+f.id);if(r)fontData[f.id]=r}
-        for(const m of state.images){const r=await kvGet('img-'+m.id);if(r)imgData[m.id]=r}
+        {const cs=cur();if(cs&&cs.bg&&cs.bg.img)await ensureImage(cs.bg.img)} // solo la imagen de la hoja abierta
       }
     }catch(e){console.warn(e)}
   }
   if(!state.sheets.length){state=normalizeState(state);state.updatedAt=0}
+  if(!strokes[state.currentId])strokes[state.currentId]=[];
   await registerAllFonts();
   renderAll();
+  countMissing();
   setPill(idb?'ok':'err',idb?'Guardado en este dispositivo':'Sin guardado: descarga una copia');
   document.fonts.ready.then(()=>renderPaper());
   setTimeout(preloadFonts,1200);
