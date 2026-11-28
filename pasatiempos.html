@@ -683,8 +683,9 @@ const norm = s => String(s).toUpperCase().normalize('NFD').replace(/(?<!N)[̀-ͯ
 
 /* ---------- datos ---------- */
 const KEY = 'pasatiempos';
-const DEF = { v: 1, modo: 'normal', tema: 'auto', tranquilo: false, errores: true, verTrad: true, nivel: {}, listas: [], webs: [], partidas: {} };
+const DEF = { v: 1, modo: 'normal', tema: 'auto', tiempo: 'crono', limite: 10, errores: true, verTrad: true, nivel: {}, listas: [], webs: [], partidas: {} };
 let S = load();
+if (S.tranquilo !== undefined) { if (S.tranquilo) S.tiempo = 'libre'; delete S.tranquilo; }
 function load() { try { return Object.assign(structuredClone(DEF), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return structuredClone(DEF); } }
 let _saveT = 0;
 function save(now) { clearTimeout(_saveT); const f = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('No se ha podido guardar (memoria llena)'); } }; if (now) f(); else _saveT = setTimeout(f, 300); }
@@ -821,16 +822,50 @@ const RETO_ROT = ['sudoku', 'sopa', 'murdoku', 'crucigrama', 'diferencias', 'aut
 function retoHoy() { const ds = dayKey(); const g = RETO_ROT[dayNum(ds) % RETO_ROT.length]; return { g, seed: 'reto-' + ds, nivel: 'medio', reto: ds, variante: '9', tema: JP() ? 'jp:todo' : 'es:todo', script: 'hira' }; }
 function retoHecho(A, ds = dayKey()) { return !!(A.d[ds] && A.d[ds].reto); }
 
-/* ---------- reloj de partida ---------- */
+/* ---------- reloj de partida: con tiempo, sin tiempo o contrarreloj ---------- */
+const TIEMPOS = [['crono', '⏱ Con tiempo', 'El cronómetro cuenta y guarda tus récords.'], ['libre', '🍃 Sin tiempo', 'Sin reloj ni prisas.'], ['limite', '⏳ Contrarreloj', 'Tienes un tiempo límite para terminar.']];
+const LIMITES = [3, 5, 10, 15, 20, 30, 45, 60];
+let CLK = null;
 function Clock(el, start = 0) {
-  let acc = start, t0 = performance.now(), run = true, iv;
+  let acc = start, t0 = performance.now(), run = true, iv, avisado = false;
   const now = () => acc + (run && !document.hidden ? (performance.now() - t0) / 1000 : 0);
-  const paint = () => { if (el) { el.textContent = '⏱ ' + fmtT(now()); el.classList.toggle('hidden', !!S.tranquilo); } };
+  const me = { expired: false, libre: false };
+  const paint = () => {
+    if (!el) return;
+    const modo = me.libre ? 'libre' : S.tiempo;
+    el.classList.remove('hidden'); el.style.color = ''; el.style.background = '';
+    if (modo === 'libre') el.textContent = '🍃 Sin tiempo';
+    else if (modo === 'limite') {
+      const rest = S.limite * 60 - now();
+      if (rest <= 0) { el.textContent = '⏳ 0:00'; el.style.background = 'var(--rose-l)'; el.style.color = 'var(--warn)'; if (!me.expired && run) { me.expired = true; timeUp(); } }
+      else { el.textContent = '⏳ ' + fmtT(Math.ceil(rest)); if (rest <= 30) { el.style.color = 'var(--warn)'; el.style.background = 'var(--rose-l)'; if (!avisado) { avisado = true; toast('⏳ ¡Quedan 30 segundos!'); } } }
+    } else el.textContent = '⏱ ' + fmtT(now());
+  };
+  function timeUp() {
+    if (navigator.vibrate) navigator.vibrate([80, 60, 80]);
+    const m = modal(`<div style="text-align:center"><div style="font-size:44px">⏳</div><h2>${JP() ? '時間切れ！ ' : ''}¡Se acabó el tiempo!</h2><p class="small muted">Tus ${S.limite} minutos han pasado. ¿Qué quieres hacer?</p>
+      <div class="row wrap" style="justify-content:center;gap:10px;margin-top:12px"><button class="btn" data-x="nuevo">Empezar otro</button><button class="btn primary" data-x="seguir">Seguir sin tiempo</button></div></div>`);
+    m.onclick = e => { const b = e.target.closest('[data-x]'); if (!b) return; m.remove(); if (b.dataset.x === 'seguir') { me.libre = true; paint(); } else { const nb = document.querySelector('[data-a=nuevo]'); if (GAME) GAME.persist = null; delete S.partidas[CUR]; save(); nb ? (GAME && (GAME.dirty = () => false), nb.click()) : go('home'); } };
+  }
   const vis = () => { if (document.hidden) { acc += (performance.now() - t0) / 1000; } t0 = performance.now(); };
   document.addEventListener('visibilitychange', vis);
-  iv = setInterval(paint, 1000); paint();
-  return { get: now, stop() { if (run) { acc = now(); run = false; } clearInterval(iv); document.removeEventListener('visibilitychange', vis); paint(); } };
+  iv = setInterval(paint, 500); paint();
+  if (el) el.onclick = () => elegirTiempo(paint, me);
+  Object.assign(me, { get: now, paint, stop() { if (run) { acc = now(); run = false; } clearInterval(iv); document.removeEventListener('visibilitychange', vis); paint(); } });
+  CLK = me; return me;
 }
+function elegirTiempo(repaint, clk) {
+  const m = modal(`<h2>Tiempo <span class="jpf" style="font-size:16px;color:var(--rose-d)">時間</span></h2>
+    <div class="list">${TIEMPOS.map(([k, n, d]) => `<div class="it" data-t="${k}" style="cursor:pointer"><div class="tx"><div class="t">${n}</div><div class="m">${d}</div></div>${S.tiempo === k ? '<b style="color:var(--sage-d)">✓</b>' : ''}</div>`).join('')}</div>
+    <div class="field" id="limBox" style="${S.tiempo === 'limite' ? '' : 'display:none'}"><label>Tiempo límite</label><div class="chips">${LIMITES.map(n => `<button data-l="${n}" class="${S.limite === n ? 'on' : ''}">${n} min</button>`).join('')}</div></div>
+    <p class="tiny muted">Se guarda para todos los pasatiempos. En contrarreloj los récords solo cuentan si terminas a tiempo.</p>
+    <div class="row"><span class="sp"></span><button class="btn primary" data-close>Hecho</button></div>`);
+  m.addEventListener('click', e => {
+    const t = e.target.closest('[data-t]'); if (t) { S.tiempo = t.dataset.t; if (clk) { clk.libre = false; if (S.tiempo !== 'limite') clk.expired = false; } save(); $$('[data-t]', m).forEach(x => { const b = x.querySelector('b'); b && b.remove(); if (x === t) x.insertAdjacentHTML('beforeend', '<b style="color:var(--sage-d)">✓</b>'); }); $('#limBox', m).style.display = S.tiempo === 'limite' ? '' : 'none'; repaint && repaint(); }
+    const l = e.target.closest('[data-l]'); if (l) { S.limite = +l.dataset.l; if (clk) clk.expired = false; save(); $$('[data-l]', m).forEach(x => x.classList.toggle('on', x === l)); repaint && repaint(); }
+  });
+}
+const conRecord = () => S.tiempo !== 'libre' && !(CLK && (CLK.libre || CLK.expired));
 
 /* ---------- fin de partida ---------- */
 function finish(g, { secs, variante = '', extra = '', params = {} }) {
@@ -842,7 +877,7 @@ function finish(g, { secs, variante = '', extra = '', params = {} }) {
   if (params.reto === ds) d.reto = 1;
   const before = sellosGanados(); let record = false;
   const bk = g + (variante ? '-' + variante : '') + '-' + nv;
-  if (!S.tranquilo && secs > 3) { const A = allStats(); if (!A.best[bk] || secs < A.best[bk]) { record = !!A.best[bk]; ST.best[bk] = Math.round(secs); } }
+  if (conRecord() && secs > 3) { const A = allStats(); if (!A.best[bk] || secs < A.best[bk]) { record = !!A.best[bk]; ST.best[bk] = Math.round(secs); } }
   stSave();
   if (S.partidas[params.slot || g]) { delete S.partidas[params.slot || g]; save(); }
   const nuevos = sellosGanados().filter(s => !before.includes(s));
@@ -850,7 +885,7 @@ function finish(g, { secs, variante = '', extra = '', params = {} }) {
   const A = allStats();
   const m = modal(`<div style="text-align:center"><div style="font-size:44px">${JP() ? '🎉' : '🎉'}</div><h2>${JP() ? 'よくできました！' : '¡Conseguido!'}</h2>
     ${JP() ? '<div class="muted small">¡Muy bien hecho!</div>' : ''}
-    <p style="font-size:17px">${extra}${!S.tranquilo ? `⏱ <b>${fmtT(secs)}</b>${record ? ' · <span class="pill o">🏆 ¡Nuevo récord!</span>' : ''}` : ''}</p>
+    <p style="font-size:17px">${extra}${S.tiempo !== 'libre' ? `${S.tiempo === 'limite' && CLK && !CLK.expired && !CLK.libre ? '⏳ ¡A tiempo! · ' : ''}⏱ <b>${fmtT(secs)}</b>${record ? ' · <span class="pill o">🏆 ¡Nuevo récord!</span>' : ''}` : ''}</p>
     <p class="small muted">🔥 Racha: ${racha(A)} día${racha(A) === 1 ? '' : 's'} · Hoy: ${doneOn(A, ds)} pasatiempo${doneOn(A, ds) === 1 ? '' : 's'}${params.reto === ds ? ' · ⭐ Reto del día hecho' : ''}</p>
     ${nuevos.length ? `<div style="margin:12px 0"><div class="small" style="font-weight:700;margin-bottom:8px">Nuevo sello 判子</div><div class="sellos" style="justify-content:center;grid-template-columns:repeat(${nuevos.length},96px)">${nuevos.map(id => selloHTML(SELLOS.find(s => s.id === id), true)).join('')}</div></div>` : ''}
     <div class="row" style="justify-content:center;margin-top:14px;gap:10px"><button class="btn" data-a="home">Volver</button><button class="btn primary" data-a="otro">${g === 'importado' ? 'Mis importados' : 'Otro ' + esc(JN.toLowerCase())}</button></div></div>`);
@@ -902,7 +937,7 @@ function descartar(slot) {
 function gameBar(g, p, extraBtns = '') {
   return `<div class="gbar">
     ${p.reto ? '<span class="pill o">⭐ Reto del día</span>' : ''}${p.amiga ? '<span class="pill r">💌 Reto compartido</span>' : ''}
-    <span class="timer" id="tm"></span><span class="sp"></span>${extraBtns}
+    <button class="timer" id="tm" style="border:0" title="Con tiempo, sin tiempo o contrarreloj"></button><span class="sp"></span>${extraBtns}
     <button class="ibtn" data-a="share" title="Compartir este reto">📤</button>
     <button class="ibtn" data-a="nuevo" title="Nuevo">＋ Nuevo</button></div>`;
 }
@@ -943,7 +978,7 @@ SCREENS.home = {
         <button class="tool" data-a="go" data-s="listas"><span class="e">📝</span><span><b>Mis listas</b><small>Tus palabras para crucigramas y sopas</small></span></button>
         <button class="tool" data-a="go" data-s="stats"><span class="e">📊</span><span><b>Estadísticas</b><small>Rachas, récords y sellos 判子</small></span></button>
         <button class="tool" data-a="abrirReto"><span class="e">💌</span><span><b>Abrir un reto</b><small>Un archivo de diferencias que te han enviado</small></span></button>
-        <button class="tool" data-a="ajustes"><span class="e">⚙️</span><span><b>Ajustes</b><small>Tema, modo tranquilo, errores…</small></span></button>
+        <button class="tool" data-a="ajustes"><span class="e">⚙️</span><span><b>Ajustes</b><small>Tema, tiempo, errores…</small></span></button>
       </div></section></div>`;
     v.onclick = async e => {
       const a = e.target.closest('[data-a]'); if (!a) return;
@@ -962,11 +997,11 @@ function relDia(ds) { const t = dayKey(); if (ds === t) return 'hoy'; if (ds ===
 function ajustes() {
   const m = modal(`<h2>Ajustes <span class="jpf" style="font-size:16px;color:var(--rose-d)">設定</span></h2>
     <div class="field"><label>Tema</label><div class="chips" data-g="tema">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Oscuro']].map(([v, n]) => `<button data-v="${v}" class="${S.tema === v ? 'on' : ''}">${n}</button>`).join('')}</div></div>
-    <div class="field"><label><input type="checkbox" data-k="tranquilo" ${S.tranquilo ? 'checked' : ''}> Modo tranquilo · sin cronómetro</label><div class="tiny muted">El tiempo no se ve ni cuenta para récords; tu tiempo de juego sí se suma en las estadísticas.</div></div>
+    <div class="field"><label>Tiempo en los pasatiempos</label><button class="btn small" data-a="tiempo" style="width:100%;text-align:left">${(TIEMPOS.find(t => t[0] === S.tiempo) || TIEMPOS[0])[1]}${S.tiempo === 'limite' ? ' · ' + S.limite + ' min' : ''} ›</button><div class="tiny muted" style="margin-top:4px">También puedes cambiarlo tocando el reloj dentro de cada pasatiempo.</div></div>
     <div class="field"><label><input type="checkbox" data-k="errores" ${S.errores ? 'checked' : ''}> Marcar los errores en rojo al momento</label></div>
     <div class="field"><label><input type="checkbox" data-k="verTrad" ${S.verTrad ? 'checked' : ''}> En modo japonés, ver la traducción al español</label></div>
     <div class="row" style="margin-top:14px"><span class="sp"></span><button class="btn primary" data-close>Hecho</button></div>`, { onclose: () => render() });
-  m.addEventListener('click', e => { const b = e.target.closest('.chips button'); if (!b) return; S.tema = b.dataset.v; save(); applyTheme(); $$('.chips button', m).forEach(x => x.classList.toggle('on', x === b)); });
+  m.addEventListener('click', e => { if (e.target.closest('[data-a=tiempo]')) { m.remove(); elegirTiempo(); return; } const b = e.target.closest('.chips button'); if (!b) return; S.tema = b.dataset.v; save(); applyTheme(); $$('.chips button', m).forEach(x => x.classList.toggle('on', x === b)); });
   m.addEventListener('change', e => { const k = e.target.dataset.k; if (k) { S[k] = e.target.checked; save(); } });
 }
 
@@ -1908,7 +1943,7 @@ SCREENS.impver = {
         <div class="seg" id="tl">${Object.entries(TOOLS).map(([k, t]) => `<button data-t="${k}">${t.n}</button>`).join('')}</div>
         <div class="colors" id="cl">${INK.map(c => `<button data-c="${c}" style="background:${c}"></button>`).join('')}</div>
         <button class="ibtn" data-a="undo">↶</button><button class="ibtn" data-a="dedo" title="Dibujar con el dedo">✍️ Dedo</button>
-        <span class="sp"></span><span class="timer" id="tm"></span>
+        <span class="sp"></span><button class="timer" id="tm" style="border:0"></button>
         <button class="ibtn" data-a="prev">‹</button><span class="small" id="pn"></span><button class="ibtn" data-a="next">›</button>
         <button class="btn small sage" data-a="hecho">✓ Terminado</button></div>
       <div class="pg" id="pg"><img id="pim" draggable="false"><canvas id="cv"></canvas></div>
