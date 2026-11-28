@@ -581,6 +581,15 @@ function lectorDays(){
   _lecC={t:Date.now(),d:any?d:null};return _lecC.d;
 }
 const lectorMin=ds=>{const d=lectorDays();return d?(d[ds]||0)/60:0;};
+/* tiempo.js: minutos que cada app cuenta sola, por área (suma de todos tus aparatos) */
+let _tieC=null;
+function tiempoDays(){
+  if(_tieC&&Date.now()-_tieC.t<3000)return _tieC.d;
+  const d={};
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';if(!k.startsWith('tiempo-'))continue;const o=readJSON(k)||{};
+    for(const[ds,v]of Object.entries(o.d||{})){const t=d[ds]||(d[ds]={apps:{}});for(const[a,x]of Object.entries(v)){if(a==='apps'){for(const[n,y]of Object.entries(x||{}))t.apps[n]=(t.apps[n]||0)+(+y||0);}else t[a]=(t[a]||0)+(+x||0);}}}}catch(e){}
+  _tieC={t:Date.now(),d};return d;
+}
 function lectorInfo(){
   const d=lectorDays(),R=readJSON('lector-resumen');if(!d&&!R)return null;
   const A=readJSON('lector-ajustes')||{};const goal=+A.goalMin||20;const th=A.streakRule==='goal'?goal*60:300;
@@ -591,6 +600,7 @@ function minutesOn(ds){
   const r={japones:0,caligrafia:0,lectura:0,medicina:0,otro:0,plan:0};
   for(const s of D.learn.sessions)if(s.date===ds&&r[s.area]!=null)r[s.area]+=+s.min||0;
   r.lectura+=lectorMin(ds);
+  {const tz=tiempoDays()[ds];if(tz)for(const a of ['japones','caligrafia','lectura','medicina','otro'])if(tz[a])r[a]+=tz[a]/60;}
   if(D.timer&&D.timer.date===ds){const m=timerMs()/60000;if(r[D.timer.area]!=null)r[D.timer.area]+=m;}
   const p=planDay(ds);if(p){r.plan=p.mins;r.japones+=p.mins;}
   r.total=r.japones+r.caligrafia+r.lectura+r.medicina+r.otro;return r;
@@ -1299,6 +1309,11 @@ VIEWS.stats=()=>{
     <div class="stat"><b>${mDone}/${metas.length}</b><span>metas mensuales</span></div>
     <div class="stat"><b>${days.filter(d=>D.journal[d]&&(D.journal[d].text||D.journal[d].mood||D.journal[d].ink)).length}</b><span>días con diario</span></div></div></section>
   <section class="card c12"><h3>Tiempo dedicado al aprendizaje <span class="jp">学習時間</span></h3>${stackChart(days)}</section>
+  ${(()=>{const N={kanji:['漢','Kanji'],silabarios:['あ','Silabarios'],'libreta-japones':['練','Libreta de japonés'],caligrafia:['✒️','Caligrafía'],cuaderno:['📓','Cuaderno de tinta'],lettering:['🖌️','Lettering'],mandalas:['🌀','Mandalas'],cardiologia:['🫀','Cardiología'],anatomia:['🦴','Anatomía'],patologias:['🩺','Patologías']};
+    const tot={};const td=tiempoDays();for(const ds of days){const v=td[ds];if(v)for(const[n,x]of Object.entries(v.apps||{}))tot[n]=(tot[n]||0)+x/60;}
+    let lec=0;for(const ds of days)lec+=lectorMin(ds);if(lec)tot.__lector=lec;
+    const L=Object.entries(tot).filter(([,m])=>m>=1).sort((a,b)=>b[1]-a[1]);if(!L.length)return'';const mx=L[0][1];
+    return`<section class="card c12"><h3>Tiempo por app <span class="jp">アプリ</span></h3><p class="small muted" style="margin:0 0 10px">Contado solo mientras usas cada app.</p>${L.map(([n,m])=>{const k=n==='__lector'?['📖','読書 Mi Lector']:(N[n]||['✨',n]);return`<div style="margin:8px 0"><div class="row small"><span>${k[0]} ${esc(k[1])}</span><span class="sp"></span><b>${fmtMin(m)}</b></div><div class="bar" style="margin-top:4px"><i style="width:${Math.round(m/mx*100)}%"></i></div></div>`;}).join('')}</section>`;})()}
   ${healthStats(days)}
   <section class="card c6"><h3>Hábitos completados <span class="jp">習慣</span></h3>${C.habits.list.length?`<div class="list">${C.habits.list.map(h=>{const n=days.filter(d=>hDone(h,d)).length;const p=Math.round(n/days.length*100);
     return`<div class="it"><span style="font-size:20px">${esc(h.emoji||'⭐')}</span><div class="tx"><div class="row"><span class="t">${esc(h.name)}</span><span class="sp"></span><span class="small"><b>${n}/${days.length}</b> días</span></div>
