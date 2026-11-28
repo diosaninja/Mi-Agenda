@@ -572,9 +572,25 @@ function pickImage(cb){pickCb=cb;const f=$('#fileIn');f.value='';f.click();}
 
 /* ---------- aprendizaje: minutos ---------- */
 const AREAS={japones:{n:'Japonés',c:'var(--s1)',e:'🇯🇵'},caligrafia:{n:'Caligrafía',c:'var(--s2)',e:'✒️'},lectura:{n:'Lectura',c:'var(--s3)',e:'📖'},medicina:{n:'Medicina',c:'var(--s5)',e:'🩺'},otro:{n:'Otro',c:'var(--s4)',e:'✨'}};
+/* 読書 Mi Lector: minutos leídos por día (suma de todos tus aparatos), racha y libros */
+let _lecC=null;
+function lectorDays(){
+  if(_lecC&&Date.now()-_lecC.t<3000)return _lecC.d;
+  const d={};let any=false;
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';if(!k.startsWith('lector-stats-'))continue;any=true;const o=readJSON(k)||{};for(const[ds,v]of Object.entries(o.d||{}))d[ds]=(d[ds]||0)+(+v.s||0);}}catch(e){}
+  _lecC={t:Date.now(),d:any?d:null};return _lecC.d;
+}
+const lectorMin=ds=>{const d=lectorDays();return d?(d[ds]||0)/60:0;};
+function lectorInfo(){
+  const d=lectorDays(),R=readJSON('lector-resumen');if(!d&&!R)return null;
+  const A=readJSON('lector-ajustes')||{};const goal=+A.goalMin||20;const th=A.streakRule==='goal'?goal*60:300;
+  const ok=ds=>d&&(d[ds]||0)>=th;let ds=todayStr();if(!ok(ds))ds=addDays(ds,-1);let st=0;while(ok(ds)&&st<5000){st++;ds=addDays(ds,-1);}
+  return{today:lectorMin(todayStr()),goal,streak:st,met:ok(todayStr()),reading:(R&&R.reading)||[],finished:(R&&R.finished)||[],articles:(R&&R.articles)||0};
+}
 function minutesOn(ds){
   const r={japones:0,caligrafia:0,lectura:0,medicina:0,otro:0,plan:0};
   for(const s of D.learn.sessions)if(s.date===ds&&r[s.area]!=null)r[s.area]+=+s.min||0;
+  r.lectura+=lectorMin(ds);
   if(D.timer&&D.timer.date===ds){const m=timerMs()/60000;if(r[D.timer.area]!=null)r[D.timer.area]+=m;}
   const p=planDay(ds);if(p){r.plan=p.mins;r.japones+=p.mins;}
   r.total=r.japones+r.caligrafia+r.lectura+r.medicina+r.otro;return r;
@@ -784,6 +800,7 @@ VIEWS.hoy=()=>{
       ${ki?`<a class="pill${ki.today?' g':''}" href="kanji.html">漢 🔥${ki.streak} · ${ki.started} kanji</a>`:''}
       ${ka?`<a class="pill${ka.today?' g':''}" href="silabarios.html">あ 🔥${ka.streak} · ${ka.h}/46 · ${ka.k}/46</a>`:''}
       ${pa?`<a class="pill${pa.today?' g':''}" href="patologias.html#repaso">🩺 ${pa.due?pa.due+' por repasar':'repaso al día'}${pa.streak?' · 🔥'+pa.streak:''}</a>`:''}
+      ${(()=>{const li=lectorInfo();return li?`<a class="pill${li.today>=li.goal?' g':''}" href="lector.html" title="読書 Mi Lector">📖 ${li.streak?'🔥'+li.streak+' · ':''}${Math.round(li.today)}/${li.goal} min</a>`:'';})()}
       ${(()=>{const lt=letteringInfo();return lt?`<a class="pill${lt.today?' g':''}" href="lettering.html" title="Lettering: reto del día">🖌️ ${lt.retoDone?'Reto ✓':'Reto'+(lt.reto?': '+esc(lt.reto):' pendiente')} · 🔥${lt.retoStreak}</a>`:'';})()}
       <span class="pill">✒️ ${CALI[dayIndex(t,CALI.length)]}</span>
     </div></section>
@@ -1078,18 +1095,25 @@ function lCali(){
 function sesRow(s){return`<div class="it"><span>${AREAS[s.area].e}</span><div class="tx"><div class="t">${esc(s.note||AREAS[s.area].n)}</div><div class="m">${esc(relDay(s.date))} · ${fmtMin(+s.min||0)}${s.img?' · 📷':''}</div></div><button class="btn small icon" data-a="sesEdit" data-id="${s.id}" aria-label="Editar">${ico('edit')}</button></div>`;}
 function lLectura(){
   const t=todayStr(),y=t.slice(0,4);const reading=BOOKS.filter(b=>b.status==='encurso');
+  const nt=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\u3040-\u9fff]+/g,' ').trim();
+  const li=lectorInfo();
   const fin=BOOKS.filter(b=>b.status==='terminado'&&(b.end||'').slice(0,4)===y);const goal=D.learn.readGoal||12;
-  const ses=D.learn.sessions.filter(s=>s.area==='lectura');const wk=ses.filter(s=>s.date>=addDays(t,-6)).reduce((a,s)=>a+(+s.min||0),0);
-  const mo=ses.filter(s=>s.date.slice(0,7)===t.slice(0,7)).reduce((a,s)=>a+(+s.min||0),0);
+  if(li){const have=new Set(fin.map(b=>nt(b.title)));li.finished.filter(f=>(f.date||'').slice(0,4)===y&&!have.has(nt(f.title))).forEach(f=>{have.add(nt(f.title));fin.push({title:f.title,author:f.author,end:f.date,lector:true});});}
+  const ses=D.learn.sessions.filter(s=>s.area==='lectura');let wk=ses.filter(s=>s.date>=addDays(t,-6)).reduce((a,s)=>a+(+s.min||0),0);
+  let mo=ses.filter(s=>s.date.slice(0,7)===t.slice(0,7)).reduce((a,s)=>a+(+s.min||0),0);
+  if(li){for(let i=0;i<7;i++)wk+=lectorMin(addDays(t,-i));const d=lectorDays()||{};for(const ds of Object.keys(d))if(ds.slice(0,7)===t.slice(0,7)&&ds<=t)mo+=d[ds]/60;}
+  const lr=li?li.reading.map(r=>`<a class="book" href="lector.html?abrir=${encodeURIComponent(r.id)}" style="text-decoration:none;color:inherit"><div class="cv">${r.type==='article'?'📰':r.type==='pdf'?'📄':'📖'}</div><div style="flex:1;min-width:0"><b>${esc(r.title)}</b><div class="small muted">${esc(r.author||'')}${r.author?' · ':''}読書 Mi Lector</div><div class="bar" style="margin-top:6px"><i style="width:${r.pct}%;background:var(--s3)"></i></div><div class="small muted">${r.pct}% · Seguir leyendo ›</div></div></a>`).join(''):'';
   const bk=b=>{const p=b.prog||{};const pct=p.total?Math.min(100,Math.round((p.cur||0)/p.total*100)):null;
     return`<div class="book"><div class="cv"${b.cover&&/^https?:|^data:/.test(b.cover)?` style="background-image:url('${esc(b.cover)}')"`:''}>${b.cover?'':'📖'}</div><div style="flex:1;min-width:0"><b>${esc(b.title||'Libro')}</b><div class="small muted">${esc(b.author||b.who||'')}</div>
     ${pct!=null?`<div class="bar" style="margin-top:6px"><i style="width:${pct}%;background:var(--s3)"></i></div><div class="small muted">pág. ${p.cur||0}/${p.total} · ${pct}%</div>`:p.cur?`<div class="small muted">pág. ${p.cur}</div>`:''}</div></div>`;};
   return`<div class="grid">${timerCard('lectura')}
-  <section class="card c6"><h3>📖 Leyendo ahora<a class="more" href="ocio.html">Estantería ›</a></h3>${reading.length?reading.map(bk).join(''):'<p class="empty">No tienes libros «Leyendo» en tu Estantería.</p>'}</section>
+  <section class="card c6"><h3>📖 Leyendo ahora<a class="more" href="lector.html">Mi Lector ›</a></h3>${lr}${reading.length?reading.map(bk).join(''):lr?'':'<p class="empty">No tienes libros «Leyendo» en tu Estantería ni en Mi Lector.</p>'}
+    ${li?`<p class="small muted" style="margin:10px 0 0">読書 Hoy <b style="color:var(--ink)">${fmtMin(li.today)}</b> de ${li.goal} min${li.streak?` · racha <b style="color:var(--ink)">🔥 ${li.streak}</b>`:''}${li.articles?` · 📰 ${li.articles} artículos leídos este año`:''}</p>`:''}</section>
   <section class="card c6"><h3>Reto ${y}</h3><div class="row" style="gap:18px"><div class="ring">${ringSVG(fin.length/goal*100,96,9,'var(--s3)')}<b>${fin.length}<small style="margin-top:26px">de ${goal}</small></b></div>
     <div><div class="stat"><b>${fmtMin(wk)}</b><span>leídos esta semana</span></div><div class="stat" style="margin-top:8px"><b>${fmtMin(mo)}</b><span>este mes</span></div></div></div>
     <div class="row" style="margin-top:12px"><span class="small muted">Libros del reto:</span><input class="f" type="number" min="1" max="365" data-in="readGoal" value="${goal}" style="width:90px"></div>
-    ${fin.length?`<p class="small muted" style="margin:10px 0 0">Terminados: ${fin.map(b=>esc(b.title)).join(' · ')}</p>`:''}</section>
+    ${fin.length?`<p class="small muted" style="margin:10px 0 0">Terminados: ${fin.map(b=>esc(b.title)+(b.lector?' 📖':'')).join(' · ')}</p>`:''}
+    ${li?'<p class="small muted" style="margin:6px 0 0">Los minutos incluyen el tiempo de lectura de 読書 Mi Lector (📖).</p>':''}</section>
   <section class="card c12"><h3>Sesiones de lectura</h3>${ses.length?`<div class="list">${ses.slice().sort((a,b)=>a.date<b.date?1:-1).slice(0,20).map(sesRow).join('')}</div>`:'<p class="empty">Usa el cronómetro o apunta los minutos que lees.</p>'}
     <button class="btn small" style="margin-top:8px" data-a="addSession" data-area="lectura">${ico('plus')}Apuntar minutos</button></section></div>`;
 }

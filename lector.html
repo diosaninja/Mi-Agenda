@@ -241,6 +241,42 @@ mark.mi-hl{color:inherit;border-radius:3px;padding:0 1px;cursor:pointer}
 code.bm{display:block;background:#f4efe8;border-radius:10px;padding:10px;font-size:11px;word-break:break-all;max-height:110px;overflow:auto;margin-top:8px}
 ol.steps{padding-left:20px;line-height:1.55;font-size:14px}
 
+/* ---------- Estadísticas ---------- */
+.stpill{white-space:nowrap}
+@media(max-width:600px){.hide-s{display:none}}
+.sthero{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.ring2{position:relative;width:112px;height:112px;flex:none}
+.ring2 svg{transform:rotate(-90deg)}
+.ring2 .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.1}
+.ring2 .c b{font-size:26px}.ring2 .c span{font-size:11px;color:var(--suave)}
+.streak{flex:1;min-width:160px}
+.streak .n{font-size:30px;font-weight:700}
+.streak .s{font-size:13px;color:var(--suave);line-height:1.5}
+.stx{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;margin-top:6px}
+.stx div{background:#fbf8f3;border-radius:12px;padding:10px 12px}
+.stx b{display:block;font-size:20px}
+.stx span{font-size:12px;color:var(--suave)}
+.wk{position:relative;display:flex;align-items:flex-end;gap:8px;height:150px;padding:18px 0 0;border-bottom:1px solid var(--linea)}
+.wk .wcol{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;cursor:pointer;position:relative}
+.wk .bar2{width:100%;max-width:38px;background:#e9c3b6;border-radius:4px 4px 0 0;min-height:2px}
+.wk .wcol.hit .bar2{background:var(--acento)}
+.wk .wcol.today .bar2{outline:2px solid var(--tinta);outline-offset:1px}
+.wk .v{position:absolute;font-size:11px;font-weight:600;color:var(--tinta);transform:translateY(-16px)}
+.wk .goal{position:absolute;left:0;right:0;border-top:1.5px dashed var(--suave);pointer-events:none}
+.wk .goal span{position:absolute;right:0;top:-16px;font-size:10px;color:var(--suave);background:var(--card);padding:0 3px}
+.wkl{display:flex;gap:8px;font-size:11px;color:var(--suave);margin-top:4px}.wkl span{flex:1;text-align:center}
+.cap{font-size:12px;color:var(--suave);min-height:18px;margin-top:6px}
+.hmw{overflow-x:auto}
+.hm{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,14px);gap:3px;width:max-content}
+.hm i{width:14px;height:14px;border-radius:3px;background:#efe7dc;cursor:pointer}
+.hm i.l1{background:#f2d3c8}.hm i.l2{background:#e3a28c}.hm i.l3{background:#c9684c}.hm i.l4{background:#8f3b27}
+.hm i.out{visibility:hidden}.hm i.now{outline:1.5px solid var(--tinta)}
+.hml{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--suave);margin-top:6px}.hml i{width:11px;height:11px;border-radius:2px;display:inline-block}
+.fin{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linea)}
+.fin .cv{width:36px;height:54px;border-radius:5px;background:#e8dfd3 center/cover;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px}
+.fin b{font-size:14px;display:block}.fin small{color:var(--suave);font-size:12px}
+.topb{height:6px;background:var(--linea);border-radius:4px;margin-top:4px;overflow:hidden}.topb i{display:block;height:100%;background:var(--acento);border-radius:4px}
+
 /* ---------- Avisos ---------- */
 #toasts{position:fixed;left:50%;bottom:calc(var(--sb) + 76px);transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:92vw}
 .toast{background:#2b2622;color:#fff;border-radius:14px;padding:11px 16px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center;animation:up .2s}
@@ -257,7 +293,8 @@ ol.steps{padding-left:20px;line-height:1.55;font-size:14px}
   <div class="row">
     <a class="back" href="index.html">‹ Mi Agenda</a>
     <span class="sp"></span>
-    <button class="btn ghost" id="vocBtn" title="Mi vocabulario de japonés" style="font-family:'Hiragino Mincho ProN',serif">語 Vocabulario</button>
+    <button class="btn ghost stpill" id="statBtn" title="Estadísticas de lectura">📊</button>
+    <button class="btn ghost" id="vocBtn" title="Mi vocabulario de japonés" style="font-family:'Hiragino Mincho ProN',serif">語<span class="hide-s"> Vocabulario</span></button>
     <button class="btn" id="addBtn">＋ Añadir</button>
   </div>
   <h1 class="mincho"><span class="kanji">読書</span><span>Mi Lector <small>どくしょ</small></span></h1>
@@ -640,6 +677,7 @@ function render(){
     ? `<span class="big mincho">読書</span>Tu biblioteca está vacía.<br>Toca <b>＋ Añadir</b> para importar tu primer libro (EPUB),<br>PDF de apuntes, revista escaneada o enlace de una noticia.`
     : `Aquí no hay nada con estos filtros.`;
   updateFoot();
+  if (typeof statPill === 'function'){ statPill(); clearTimeout(ST.resT); ST.resT = setTimeout(writeResumen, 1500); }
 }
 
 async function updateFoot(){
@@ -1243,7 +1281,7 @@ function openEdit(id, isNew){
       ${it.cover ? '<button class="btn ghost" id="eNoCov">Quitar portada</button>' : ''}
       ${it.progress ? '<button class="btn ghost" id="eReset">↺ Empezar de nuevo</button>' : ''}
     </div>
-    <div class="info" id="eInfo">${KIND[it.type]}${it.pages ? ` · ${it.pages} págs.` : ''}${it.size ? ` · ${fmtSize(it.size)}` : ''} · añadido el ${d}</div>
+    <div class="info" id="eInfo">${KIND[it.type]}${it.pages ? ` · ${it.pages} págs.` : ''}${it.size ? ` · ${fmtSize(it.size)}` : ''} · añadido el ${d}${(() => { const sx = itemSeconds(it.id); return sx >= 60 ? ` · ⏱ ${fmtM(sx)} leídos` : ''; })()}</div>
     <div class="actions">
       <button class="btn ghost danger" id="eDel">Borrar</button><span class="sp"></span>
       <button class="btn ghost" data-close>Cancelar</button><button class="btn" id="eOk">Guardar</button>
@@ -1271,10 +1309,13 @@ function openEdit(id, isNew){
     it.title = $('#eT').value.trim() || it.title;
     it.author = $('#eA').value.trim();
     it.shelf = $('#eS').value;
-    if (it.state !== st){ it.state = st; if (st === 'terminado') it.progress = Math.max(it.progress || 0, 1); }
+    if (it.state !== st){
+      it.state = st;
+      if (st === 'terminado'){ it.progress = Math.max(it.progress || 0, 1); it.finishedAt = Date.now(); } else delete it.finishedAt;
+    }
     if ($('#eU')){ const u = $('#eU').value.trim(); if (u) it.url = u; }
     if (newCover !== undefined) it.cover = newCover;
-    if (reset){ it.progress = 0; it.loc = null; if (it.state === 'terminado') it.state = 'leyendo'; }
+    if (reset){ it.progress = 0; it.loc = null; if (it.state === 'terminado'){ it.state = 'leyendo'; delete it.finishedAt; } }
     await DB.put(it); closeSheet(); render(); toast('✓ Guardado');
   };
 }
@@ -1337,7 +1378,7 @@ async function openItem(id){
 }
 
 async function closeReader(){
-  autoStop(); stopDrawing(); ttsClose();
+  autoStop(); stopDrawing(); ttsClose(); flushStats();
   await saveNow();
   if (R.obs) R.obs.disconnect();
   try{ R.rend && R.rend.destroy(); }catch(e){}
@@ -1600,6 +1641,7 @@ function onArtScroll(){
   if (!R.item || R.kind !== 'article') return;
   const f = artFrac();
   R.item.loc = f; R.item.progress = f > .985 ? 1 : f;
+  if (f > .985 && !R.item.readAt) R.item.readAt = Date.now();
   updateLabel(); updateMarkBtn(); saveSoon();
   if (f > .985) reachedEnd();
 }
@@ -1850,7 +1892,9 @@ function reachedEnd(force){
   R.ended = true;
   const it = R.item;
   toast('¡Has llegado al final! 🎉', {label:'Marcar como terminado', fn: async () => {
-    it.state = 'terminado'; it.progress = 1; await DB.put(it); toast('✓ Terminado. ¡Enhorabuena!');
+    it.state = 'terminado'; it.progress = 1; it.finishedAt = Date.now(); await DB.put(it);
+    const y = new Date().getFullYear(), n = finishedIn(y).length, g = yearGoal();
+    toast(`✓ Terminado. ¡Enhorabuena! 📚 ${n} de ${g} libros en ${y}`); writeResumen();
   }});
 }
 
@@ -1860,6 +1904,7 @@ function toggleBars(){ $('#reader').classList.toggle('hide'); }
 function attachGestures(target, isEpub){
   let sx = 0, sy = 0, st = 0, active = false;
   target.addEventListener('pointerdown', e => {
+    markAct();
     if (!e.isPrimary) return;
     if (R.drawing && (e.pointerType !== 'touch' || ajustes.dedo)) { active = false; return; }
     sx = e.screenX; sy = e.screenY; st = Date.now(); active = true;
@@ -1892,6 +1937,7 @@ $('#gR').addEventListener('click', goRight);
 $('#rClose').addEventListener('click', closeReader);
 
 function onKey(e){
+  markAct();
   if (!$('#reader').classList.contains('open')) return;
   if (!$('#sheet').hidden){ if (e.key === 'Escape') closeSheet(); return; }
   if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName || '')) return;
@@ -2978,6 +3024,231 @@ function flashcards(list){
   draw();
 }
 
+/* =========================================================
+   ESTADÍSTICAS Y RACHA
+   · Cada aparato guarda sus minutos en «lector-stats-<aparato>» (localStorage, se sincroniza).
+     Así el iPad y el iPhone nunca se pisan: el total es la suma de los dos.
+   · «lector-resumen»: lo que lee el Dashboard (libros en curso y terminados).
+   ========================================================= */
+const ST = {dev:null, pend:{}, lastAct:Date.now(), ticks:0, goalToast:null, lastRes:''};
+const pad2 = n => String(n).padStart(2, '0');
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const keyToDate = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDay = (k, n) => { const d = keyToDate(k); d.setDate(d.getDate() + n); return dayKey(d); };
+const DIAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const DIAS_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+if (ajustes.goalMin === undefined) ajustes.goalMin = 20;
+if (ajustes.streakRule === undefined) ajustes.streakRule = '5';
+const fmtM = sec => { const m = Math.round(sec / 60); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); };
+function markAct(){ ST.lastAct = Date.now(); }
+
+async function statsInit(){
+  try{
+    ST.dev = await DB.getMeta('devId');
+    if (!ST.dev){ ST.dev = uid(); await DB.putMeta('devId', ST.dev); }
+  }catch(e){ ST.dev = ST.dev || 'local'; }
+}
+/* Todos los días de todos los aparatos (+ lo pendiente de guardar) → {día: {s, it:{id:s}}} */
+function statsAll(){
+  const out = {};
+  const add = (d, v) => {
+    const o = out[d] || (out[d] = {s:0, it:{}});
+    o.s += v.s || 0;
+    for (const [id, x] of Object.entries(v.it || {})) o.it[id] = (o.it[id] || 0) + x;
+  };
+  try{
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i) || '';
+      if (!k.startsWith('lector-stats-')) continue;
+      const o = JSON.parse(localStorage.getItem(k) || '{}');
+      for (const [d, v] of Object.entries(o.d || {})) add(d, v);
+    }
+  }catch(e){}
+  for (const [d, v] of Object.entries(ST.pend)) add(d, v);
+  return out;
+}
+function flushStats(){
+  if (!ST.dev || !Object.keys(ST.pend).length) return;
+  const key = 'lector-stats-' + ST.dev;
+  let o; try{ o = JSON.parse(localStorage.getItem(key) || '{}'); }catch(e){ o = {}; }
+  o.v = 1; o.d = o.d || {};
+  for (const [d, v] of Object.entries(ST.pend)){
+    const t = o.d[d] || (o.d[d] = {s:0, it:{}});
+    t.s += v.s;
+    for (const [id, x] of Object.entries(v.it)) t.it[id] = (t.it[id] || 0) + x;
+  }
+  // guardar como mucho ~15 meses
+  const lim = addDay(dayKey(), -460);
+  for (const d of Object.keys(o.d)) if (d < lim) delete o.d[d];
+  try{ localStorage.setItem(key, JSON.stringify(o)); ST.pend = {}; }catch(e){}
+  writeResumen();
+}
+function threshold(){ return ajustes.streakRule === 'goal' ? ajustes.goalMin * 60 : 300; }
+function streakInfo(all){
+  all = all || statsAll();
+  const th = threshold(), ok = d => (all[d] && all[d].s >= th);
+  let d = dayKey(); if (!ok(d)) d = addDay(d, -1);
+  let cur = 0; while (ok(d) && cur < 5000){ cur++; d = addDay(d, -1); }
+  let best = 0, run = 0, prev = null;
+  for (const k of Object.keys(all).filter(ok).sort()){
+    run = prev && addDay(prev, 1) === k ? run + 1 : 1; prev = k; if (run > best) best = run;
+  }
+  return {cur, best:Math.max(best, cur), today:ok(dayKey())};
+}
+/* Cada 15 s: si el lector está abierto y la estás usando (o escuchando), suma el tiempo */
+setInterval(() => {
+  if (!R.item || document.hidden || !$('#reader').classList.contains('open')) return;
+  const active = Date.now() - ST.lastAct < 120000 || T.playing || R.auto;
+  if (!active) return;
+  const d = dayKey(), p = ST.pend[d] || (ST.pend[d] = {s:0, it:{}});
+  p.s += 15; p.it[R.item.id] = (p.it[R.item.id] || 0) + 15;
+  if (++ST.ticks % 8 === 0) flushStats();
+  // ¿objetivo cumplido hoy?
+  if (ST.goalToast !== d){
+    const all = statsAll();
+    if (all[d] && all[d].s >= ajustes.goalMin * 60){
+      ST.goalToast = d;
+      try{ sessionStorage.setItem('lector-goal-toast', d); }catch(e){}
+      const si = streakInfo(all);
+      toast(`🎯 ¡Objetivo cumplido! ${ajustes.goalMin} min hoy${si.cur ? ` · 🔥 racha de ${si.cur} ${si.cur === 1 ? 'día' : 'días'}` : ''}`);
+    }
+  }
+}, 15000);
+try{ ST.goalToast = sessionStorage.getItem('lector-goal-toast'); }catch(e){}
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => document.addEventListener(ev, markAct, {passive:true, capture:true}));
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushStats(); else markAct(); });
+window.addEventListener('pagehide', flushStats);
+
+/* Reto anual: el mismo número que en tu Dashboard */
+function yearGoal(){ try{ const d = JSON.parse(localStorage.getItem('midashboard.v1') || 'null'); if (d && d.learn && d.learn.readGoal) return +d.learn.readGoal; }catch(e){} return ajustes.yearGoal || 12; }
+function setYearGoal(n){
+  ajustes.yearGoal = n; saveAjustes();
+  try{ const d = JSON.parse(localStorage.getItem('midashboard.v1') || 'null'); if (d && d.learn){ d.learn.readGoal = n; localStorage.setItem('midashboard.v1', JSON.stringify(d)); } }catch(e){}
+}
+const finDate = it => it.finishedAt || it.lastRead || it.added || 0;
+function finishedIn(year){ return items.filter(i => i.state === 'terminado' && i.type !== 'article' && i.type !== 'link' && new Date(finDate(i)).getFullYear() === year).sort((a, b) => finDate(b) - finDate(a)); }
+function articlesIn(year){ return items.filter(i => i.type === 'article' && (i.progress || 0) >= .98 && new Date(i.readAt || i.lastRead || 0).getFullYear() === year); }
+function itemSeconds(id, all){ all = all || statsAll(); let s = 0; for (const v of Object.values(all)) s += (v.it[id] || 0); return s; }
+
+/* Resumen para el Dashboard (solo se escribe si cambia) */
+function writeResumen(){
+  const y = new Date().getFullYear();
+  const r = {v:1,
+    reading:items.filter(i => i.state === 'leyendo' && i.type !== 'link').sort((a, b) => (b.lastRead || 0) - (a.lastRead || 0)).slice(0, 4)
+      .map(i => ({id:i.id, title:i.title, author:i.author || '', type:i.type, pct:Math.round((i.progress || 0) * 100)})),
+    finished:finishedIn(y).concat(finishedIn(y - 1)).slice(0, 60).map(i => ({id:i.id, title:i.title, author:i.author || '', date:dayKey(new Date(finDate(i)))})),
+    articles:articlesIn(y).length, goalMin:ajustes.goalMin, rule:ajustes.streakRule};
+  const js = JSON.stringify(r);
+  if (js === ST.lastRes) return;
+  ST.lastRes = js;
+  try{ if (localStorage.getItem('lector-resumen') !== js) localStorage.setItem('lector-resumen', js); }catch(e){}
+}
+
+/* Botón de la biblioteca: 📊 🔥 racha · minutos de hoy */
+function statPill(){
+  const all = statsAll(), si = streakInfo(all), today = Math.round(((all[dayKey()] || {}).s || 0) / 60);
+  const b = $('#statBtn'); if (!b) return;
+  b.innerHTML = `📊 ${si.cur ? '🔥' + si.cur : ''}<span class="hide-s"> · ${today}/${ajustes.goalMin} min</span>`;
+  b.classList.toggle('on', today >= ajustes.goalMin);
+}
+$('#statBtn').addEventListener('click', statsSheet);
+
+function ringSvg(frac, size = 112, sw = 10){
+  const r = (size - sw) / 2, c = 2 * Math.PI * r, f = clamp(frac, 0, 1);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#efe7dc" stroke-width="${sw}"/>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${f >= 1 ? '#3f7d58' : '#b5523b'}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}"/></svg>`;
+}
+function statsSheet(){
+  flushStats();
+  const all = statsAll(), today = dayKey(), now = new Date(), y = now.getFullYear();
+  const si = streakInfo(all), g = ajustes.goalMin * 60, th = threshold();
+  const sec = d => (all[d] || {}).s || 0;
+  // semana (lunes a domingo)
+  const dow = (now.getDay() + 6) % 7, mon = addDay(today, -dow);
+  const week = [...Array(7)].map((_, i) => addDay(mon, i));
+  const wkSec = week.reduce((a, d) => a + sec(d), 0);
+  const maxV = Math.max(g * 1.25, ...week.map(sec), 60);
+  const H = 132;
+  const bars = week.map((d, i) => {
+    const v = sec(d), h = Math.round(v / maxV * H);
+    return `<div class="wcol${v >= g ? ' hit' : ''}${d === today ? ' today' : ''}" data-cap="${DIAS_L[i]} ${keyToDate(d).getDate()}: ${v ? fmtM(v) : 'sin lectura'}">
+      ${d === today && v ? `<span class="v" style="bottom:${h}px">${Math.round(v / 60)}</span>` : ''}<div class="bar2" style="height:${Math.max(2, h)}px"></div></div>`;
+  }).join('');
+  const goalY = Math.round(g / maxV * H);
+  // calendario de calor: 17 semanas hasta hoy
+  const W = 17, start = addDay(mon, -7 * (W - 1));
+  const lvl = v => !v ? 0 : v < th ? 1 : v < g ? 2 : v < 2 * g ? 3 : 4;
+  let cells = '', months = '', lastM = -1;
+  for (let w = 0; w < W; w++){
+    const d0 = addDay(start, w * 7), m = keyToDate(d0).getMonth();
+    months += `<span style="width:17px;display:inline-block;font-size:10px;color:var(--suave)">${m !== lastM ? MES[m] : ''}</span>`; lastM = m;
+    for (let i = 0; i < 7; i++){
+      const d = addDay(d0, i), v = sec(d);
+      if (d > today){ cells += '<i class="out"></i>'; continue; }
+      const dt = keyToDate(d);
+      cells += `<i class="l${lvl(v)}${d === today ? ' now' : ''}" data-cap="${DIAS_L[i]} ${dt.getDate()} ${MES[dt.getMonth()]}: ${v ? fmtM(v) : 'sin lectura'}"></i>`;
+    }
+  }
+  const sumFrom = from => Object.entries(all).filter(([d]) => d >= from && d <= today).reduce((a, [, v]) => a + v.s, 0);
+  const moSec = sumFrom(`${y}-${pad2(now.getMonth() + 1)}-01`), yrSec = sumFrom(`${y}-01-01`);
+  const fin = finishedIn(y), yg = yearGoal(), arts = articlesIn(y).length;
+  const nHl = items.reduce((a, i) => a + (i.hl || []).length + Object.keys(i.pnotes || {}).length, 0);
+  const nVoc = items.reduce((a, i) => a + (i.vocab || []).length, 0);
+  // lo más leído este mes
+  const moFrom = `${y}-${pad2(now.getMonth() + 1)}-01`, perIt = {};
+  for (const [d, v] of Object.entries(all)) if (d >= moFrom) for (const [id, x] of Object.entries(v.it)) perIt[id] = (perIt[id] || 0) + x;
+  const top = Object.entries(perIt).map(([id, x]) => [items.find(i => i.id === id), x]).filter(([i]) => i).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topMax = top.length ? top[0][1] : 1;
+  const GOALS = [5, 10, 15, 20, 30, 45, 60, 90, 120];
+  const p = sheet(`<h3>📊 Mis estadísticas de lectura</h3>
+    <div class="sthero">
+      <div class="ring2">${ringSvg(sec(today) / g)}<div class="c"><b>${Math.round(sec(today) / 60)}</b><span>de ${ajustes.goalMin} min<br>hoy</span></div></div>
+      <div class="streak"><div class="n">🔥 ${si.cur} ${si.cur === 1 ? 'día' : 'días'}</div>
+        <div class="s">${si.today ? '¡Hoy ya cuenta para tu racha! ✓' : si.cur ? `Lee ${ajustes.streakRule === 'goal' ? ajustes.goalMin : 5} min hoy para no perderla` : 'Lee hoy para empezar una racha'}<br>Mejor racha: <b>${si.best}</b> ${si.best === 1 ? 'día' : 'días'}</div></div>
+    </div>
+    <div class="lbl">Esta semana · ${fmtM(wkSec)}</div>
+    <div class="wk" id="stWk">${bars}<div class="goal" style="bottom:${goalY}px"><span>objetivo ${ajustes.goalMin} min</span></div></div>
+    <div class="wkl">${DIAS.map(x => `<span>${x}</span>`).join('')}</div>
+    <div class="lbl">Últimos 4 meses</div>
+    <div class="hmw" id="stHm"><div style="white-space:nowrap;margin-left:0">${months}</div><div class="hm">${cells}</div></div>
+    <div class="hml">menos <i style="background:#efe7dc"></i><i style="background:#f2d3c8"></i><i style="background:#e3a28c"></i><i style="background:#c9684c"></i><i style="background:#8f3b27"></i> más
+      <span class="sp"></span><span>${ajustes.streakRule === 'goal' ? '' : 'color medio: ≥ 5 min · '}oscuro: objetivo cumplido</span></div>
+    <div class="cap" id="stCap">Toca una barra o un día para ver los minutos.</div>
+    <div class="stx">
+      <div><b>${fmtM(sec(today))}</b><span>hoy</span></div>
+      <div><b>${fmtM(wkSec)}</b><span>esta semana</span></div>
+      <div><b>${fmtM(moSec)}</b><span>este mes</span></div>
+      <div><b>${fmtM(yrSec)}</b><span>en ${y}</span></div>
+      <div><b>${fin.length} / ${yg}</b><span>📚 libros del reto ${y}</span></div>
+      <div><b>${arts}</b><span>📰 artículos leídos</span></div>
+      <div><b>${nHl}</b><span>🖍️ subrayados y notas</span></div>
+      <div><b>${nVoc}</b><span>語 palabras guardadas</span></div>
+    </div>
+    <div class="lbl">📚 Terminados en ${y} ${fin.length ? `· ${Math.round(fin.length / yg * 100)}% del reto` : ''}</div>
+    <div class="topb" style="height:8px"><i style="width:${clamp(fin.length / yg * 100, 0, 100)}%;background:#3f7d58"></i></div>
+    ${fin.length ? fin.map(i => `<div class="fin"><span class="cv" ${i.cover ? `style="background-image:url('${esc(i.cover)}')"` : ''}>${i.cover ? '' : '📖'}</span><div><b>${esc(i.title)}</b><small>${new Date(finDate(i)).toLocaleDateString('es', {day:'numeric', month:'long'})}${itemSeconds(i.id, all) ? ' · ⏱ ' + fmtM(itemSeconds(i.id, all)) : ''}</small></div></div>`).join('')
+      : '<div class="info">Cuando termines un libro, márcalo como «Terminado» y aparecerá aquí.</div>'}
+    ${top.length ? `<div class="lbl">⏱ Lo que más has leído este mes</div>${top.map(([i, x]) => `<div style="padding:6px 0"><div class="row" style="font-size:14px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.title)}</span><b style="font-size:13px">${fmtM(x)}</b></div><div class="topb"><i style="width:${Math.round(x / topMax * 100)}%"></i></div></div>`).join('')}` : ''}
+    <div class="lbl">🎯 Objetivos</div>
+    <div class="row" style="flex-wrap:wrap;gap:14px">
+      <div style="flex:1;min-width:200px"><div class="info" style="margin:0 0 4px">Minutos al día</div><div class="step"><button data-g="-1">−</button><output>${ajustes.goalMin} min</output><button data-g="1">+</button></div></div>
+      <div style="flex:1;min-width:200px"><div class="info" style="margin:0 0 4px">Libros en ${y} (igual que en tu Dashboard)</div><div class="step"><button data-y="-1">−</button><output>${yg}</output><button data-y="1">+</button></div></div>
+    </div>
+    <div class="info" style="margin:12px 0 4px">La racha cuenta un día si lees…</div>
+    <div class="seg" id="stRule"><button data-r="5" class="${ajustes.streakRule !== 'goal' ? 'on' : ''}">al menos 5 min</button><button data-r="goal" class="${ajustes.streakRule === 'goal' ? 'on' : ''}">tu objetivo diario</button></div>
+    <div class="info">⏱ Se cuenta el tiempo con un libro abierto mientras lo usas o lo escuchas (si lo dejas abierto sin tocarlo, a los 2 minutos deja de contar). Se suman tu iPad y tu iPhone.</div>
+    <div class="actions"><span class="sp"></span><button class="btn" data-close>Cerrar</button></div>`);
+  p.onclick = e => {
+    const c = e.target.closest('[data-cap]'); if (c){ $('#stCap').textContent = c.dataset.cap; return; }
+    const gb = e.target.closest('[data-g]');
+    if (gb){ let i = GOALS.indexOf(ajustes.goalMin); if (i < 0) i = 3; ajustes.goalMin = GOALS[clamp(i + +gb.dataset.g, 0, GOALS.length - 1)]; saveAjustes(); writeResumen(); statsSheet(); statPill(); return; }
+    const yb = e.target.closest('[data-y]'); if (yb){ setYearGoal(clamp(yg + +yb.dataset.y, 1, 365)); statsSheet(); return; }
+    const rb = e.target.closest('[data-r]'); if (rb){ ajustes.streakRule = rb.dataset.r; saveAjustes(); writeResumen(); statsSheet(); statPill(); }
+  };
+  const hm = $('#stHm'); if (hm) hm.scrollLeft = hm.scrollWidth;
+}
+
 /* ----- Furigana: mostrar u ocultar ----- */
 function applyFuri(){
   const hide = ajustes.furi === 'no';
@@ -3108,6 +3379,7 @@ window.addEventListener('pagehide', saveNow);
 (async function init(){
   try{
     await DB.open();
+    await statsInit();
     fileIds = new Set((await DB.fileKeys()) || []);
     items = (await DB.all()) || [];
   }catch(e){
