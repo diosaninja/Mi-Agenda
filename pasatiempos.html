@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<script src="sync.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pasatiempos">
+<meta name="theme-color" content="#F8F4ED">
+<title>遊び · Mis Pasatiempos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Klee+One:wght@400;600&family=Caveat:wght@500;700&display=swap">
+<style>
+:root{
+  --ivory:#F8F4ED; --paper:#FFFDF8; --sand:#EDE5D8; --beige:#DCCDB7; --sage:#A3B19B; --sage-d:#6F8068; --sage-l:#E3EADF;
+  --rose:#D9B5AE; --rose-d:#B98A82; --rose-l:#F4E6E2; --stone:#8F8A83; --stone-l:#C9C4BC; --ink:#38332E; --ink-2:#5E5750;
+  --gold:#C99A4B; --gold-l:#F3E7CF; --warn:#A65E55; --line:rgba(56,51,46,.12); --card:rgba(255,253,248,.95);
+  --shadow:0 10px 30px rgba(60,45,30,.10),0 2px 6px rgba(60,45,30,.06);
+  --ui:"DM Sans",-apple-system,"Helvetica Neue",sans-serif; --display:"Cormorant Garamond","Didot",Georgia,serif;
+  --jp:"Klee One","Hiragino Mincho ProN","Hiragino Sans",serif; --hand:"Caveat",cursive;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px); --r:16px;
+  --cellbg:#FFFDF8; --sel:#F3E7CF; --hl:#F4EEE4; --given:#38332E; --user:#4F6E8C;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --ivory:#24211E; --paper:#2A2622; --sand:#35302B; --beige:#4A423A; --sage:#7F927A; --sage-d:#9DB596; --sage-l:#2F3A2E;
+  --rose:#8E6A63; --rose-d:#D9A79E; --rose-l:#3A2C29; --stone:#A39C93; --stone-l:#625B53; --ink:#EFE8DE; --ink-2:#CFC6BA;
+  --gold:#D9B26A; --gold-l:#3B3224; --warn:#E08A80; --line:rgba(239,232,222,.13); --card:rgba(42,38,34,.96);
+  --shadow:0 10px 30px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.25);
+  --cellbg:#2E2A26; --sel:#4A3E2A; --hl:#34302B; --given:#EFE8DE; --user:#9CC0E0;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--ivory);color:var(--ink);font-family:var(--ui);-webkit-text-size-adjust:100%;padding-bottom:calc(var(--sb) + 20px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+a{color:inherit}
+.jp,.jpf{font-family:var(--jp)}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0}
+.muted{color:var(--stone)} .small{font-size:13px} .tiny{font-size:11px}
+.hidden{display:none!important}
+.row{display:flex;align-items:center;gap:8px} .wrap{flex-wrap:wrap} .sp{flex:1}
+/* cabecera */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--ivory) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);padding:calc(var(--st) + 8px) 14px 8px;display:flex;align-items:center;gap:10px}
+header.top .back{font-size:15px;text-decoration:none;color:var(--rose-d);font-weight:600;white-space:nowrap;background:none;border:0;padding:6px 2px}
+header.top h1{font-size:24px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top h1 .jp{font-size:17px;color:var(--rose-d);margin-right:6px}
+.seg{display:inline-flex;background:var(--sand);border-radius:999px;padding:3px}
+.seg button{white-space:nowrap;border:0;background:none;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.seg button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.ibtn{border:1px solid var(--line);background:var(--paper);border-radius:12px;min-width:38px;height:38px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600}
+.ibtn:active{transform:scale(.96)}
+.ibtn.on{background:var(--gold-l);border-color:var(--gold)}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-weight:600;background:var(--sand);color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--ivory)} .btn.sage{background:var(--sage-d);color:#fff} .btn.rose{background:var(--rose-d);color:#fff}
+.btn.small{padding:7px 12px;font-size:13px;border-radius:10px}
+.btn:active{transform:scale(.97)}
+main{max-width:1180px;margin:0 auto;padding:16px 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px}
+.card h3{font-size:21px;margin-bottom:10px;display:flex;align-items:baseline;gap:8px}
+.card h3 .jp{font-size:14px;color:var(--rose-d);font-weight:400}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(12,1fr)}
+.c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}
+@media (max-width:820px){.c8,.c6,.c4{grid-column:span 12}}
+/* inicio */
+.hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.hero .big{font-family:var(--display);font-size:30px;line-height:1.1}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;background:var(--sand);font-size:13px;font-weight:600;text-decoration:none}
+.pill.g{background:var(--sage-l);color:var(--sage-d)} .pill.r{background:var(--rose-l);color:var(--rose-d)} .pill.o{background:var(--gold-l);color:#8a6420}
+:root[data-theme="dark"] .pill.o{color:var(--gold)}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.game{border:1px solid var(--line);background:var(--paper);border-radius:18px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:128px;position:relative;box-shadow:var(--shadow)}
+.game .ico{font-size:30px;line-height:1;font-family:var(--jp)}
+.game b{font-family:var(--display);font-size:21px}
+.game span.d{font-size:12.5px;color:var(--stone);line-height:1.3}
+.game .badge{position:absolute;top:10px;right:10px;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--gold-l);font-weight:700}
+.game:active{transform:scale(.98)}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tool{border:1px dashed var(--beige);background:transparent;border-radius:14px;padding:12px;text-align:left;display:flex;gap:10px;align-items:center}
+.tool .e{font-size:22px}
+.tool b{display:block;font-size:14.5px} .tool small{color:var(--stone)}
+.reto{background:linear-gradient(135deg,var(--rose-l),var(--gold-l));border-color:transparent}
+/* juego */
+.gwrap{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.gside{flex:1;min-width:270px;max-width:440px;display:flex;flex-direction:column;gap:12px}
+.gbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;padding:6px 12px;border-radius:10px;background:var(--sand)}
+.opts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.opts label{font-size:13px;color:var(--stone)}
+select.f,input.f,textarea.f{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:8px 10px;width:100%}
+select.f{width:auto}
+/* sudoku */
+.sudo{display:grid;background:var(--ink);gap:1px;border:2.5px solid var(--ink);border-radius:8px;overflow:hidden;width:min(94vw,560px,calc(100vh - 290px));min-width:280px;aspect-ratio:1;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.sudo .c{background:var(--cellbg);display:flex;align-items:center;justify-content:center;position:relative;font-size:clamp(17px,4.6vw,30px);font-weight:500;color:var(--user)}
+.sudo .c.g{color:var(--given);font-weight:700}
+.sudo .c.hl{background:var(--hl)} .sudo .c.same{background:var(--rose-l)} .sudo .c.sel{background:var(--sel)}
+.sudo .c.err{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--cellbg))}
+.sudo .c.br{border-right:2px solid var(--ink)} .sudo .c.bb{border-bottom:2px solid var(--ink)}
+.sudo .notes{position:absolute;inset:2px;display:grid;font-size:clamp(8px,1.7vw,12px);color:var(--stone);font-weight:600}
+.sudo .notes span{display:flex;align-items:center;justify-content:center}
+.sudo .cage{position:absolute;inset:2px;border:1.5px dashed var(--stone);pointer-events:none}
+.sudo .csum{position:absolute;top:1px;left:3px;font-size:clamp(8px,1.5vw,11px);color:var(--ink-2);font-weight:700;background:var(--cellbg);padding:0 1px;line-height:1.1;z-index:1}
+.sudo.jpnum .c{font-family:var(--jp)}
+.keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.keypad button{border:1px solid var(--line);background:var(--paper);border-radius:12px;height:52px;font-size:22px;font-weight:600;box-shadow:0 2px 0 var(--line)}
+.keypad button small{display:block;font-size:10px;color:var(--stone);font-weight:500}
+.keypad button.done{opacity:.35}
+.keypad.jpnum button{font-family:var(--jp)}
+/* murdoku */
+.mur{display:grid;width:min(94vw,540px,calc(100vh - 260px));min-width:270px;aspect-ratio:1;border:3px solid var(--ink);border-radius:6px;overflow:hidden;user-select:none;-webkit-user-select:none}
+.mur .c{position:relative;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,5vw,30px);border:.5px solid rgba(56,51,46,.18)}
+.mur .c .o{position:absolute;bottom:2px;right:3px;font-size:clamp(12px,3vw,20px);opacity:.9}
+.mur .c.alf{background-image:repeating-linear-gradient(45deg,rgba(185,138,130,.35) 0 4px,transparent 4px 9px)!important}
+.mur .c .rl{position:absolute;top:2px;left:4px;font-size:clamp(8px,1.6vw,11px);color:rgba(56,51,46,.7);font-weight:700;max-width:95%;overflow:hidden;white-space:nowrap}
+.mur .c .x{color:var(--warn);font-size:.8em;opacity:.7}
+.mur .c.sel{outline:3px solid var(--gold);outline-offset:-3px}
+.av{width:1.45em;height:1.45em;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.62em;box-shadow:0 2px 4px rgba(0,0,0,.25)}
+.mur .lbl{font-size:12px;font-weight:700;color:var(--stone);display:flex;align-items:center;justify-content:center}
+.clue{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px;line-height:1.4}
+.clue:last-child{border:0}
+.clue input{margin-top:3px;width:18px;height:18px;accent-color:var(--sage-d)}
+.clue.tick span{text-decoration:line-through;color:var(--stone)}
+.clue .tr{display:block;font-size:12.5px;color:var(--stone)}
+.people{display:flex;flex-wrap:wrap;gap:8px}
+.people button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 12px 5px 5px;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-size:clamp(14px,1.6vw,15px)}
+.people button .av{font-size:22px}
+.people button.used{opacity:.45}
+/* palabras */
+.cw{display:grid;gap:0;user-select:none;-webkit-user-select:none;touch-action:manipulation;margin:0 auto}
+.cw .c{position:relative;background:transparent;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.cw .c.l{z-index:1;background:var(--cellbg);border:1px solid var(--ink-2);margin:-.5px;font-weight:700;text-transform:uppercase;color:var(--user)}
+.cw .c.l.inw{background:var(--hl)} .cw .c.l.sel{background:var(--sel)} .cw .c.l.err{color:var(--warn)} .cw .c.l.ok{color:var(--sage-d)} .cw .c.l.rev{color:var(--rose-d)}
+.cw .c .num{position:absolute;top:1px;left:2px;font-size:.36em;font-weight:600;color:var(--stone);line-height:1}
+.cw .c.k{background:var(--sand);border:1px solid var(--ink-2);margin:-.5px;font-size:.25em;line-height:1.05;padding:1px;flex-direction:column;align-items:stretch;justify-content:space-around;color:var(--ink);overflow:hidden;font-weight:600;text-align:center}
+.cw .c.k div{overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;position:relative}
+.cw .c.k div+div{border-top:1px solid var(--stone-l)}
+.cw .c.k.on{background:var(--gold-l)}
+.cw .c.blk{background:repeating-linear-gradient(135deg,var(--sand) 0 3px,transparent 3px 7px)}
+.cw.jpw .c.l{font-family:var(--jp);font-weight:600}
+.cluebar{background:var(--ink);color:var(--ivory);border-radius:12px;padding:10px 14px;font-size:15px;min-height:44px;display:flex;align-items:center;gap:8px}
+.cluebar b{color:var(--gold)}
+.clist{max-height:42vh;overflow:auto;font-size:14px}
+.clist div{padding:5px 6px;border-radius:8px;cursor:pointer}
+.clist div.on{background:var(--gold-l)} .clist div.done{color:var(--stone);text-decoration:line-through}
+.kb{display:flex;flex-direction:column;gap:5px;user-select:none;-webkit-user-select:none}
+.kb .r{display:flex;gap:4px;justify-content:center}
+.kb button{flex:1;max-width:46px;height:44px;border:1px solid var(--line);border-radius:9px;background:var(--paper);font-weight:700;font-size:17px;padding:0}
+.kb button.w{max-width:90px;flex:1.6;font-size:13px}
+.kb.kana button{font-family:var(--jp);font-weight:600;height:40px;font-size:17px;max-width:40px}
+/* sopa */
+.sopa{display:grid;position:relative;user-select:none;-webkit-user-select:none;touch-action:none;width:min(94vw,600px,calc(100vh - 240px));min-width:270px;aspect-ratio:1;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:var(--shadow)}
+.sopa .c{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(14px,3.6vw,25px);position:relative;z-index:2}
+.sopa.jpw .c{font-family:var(--jp);font-weight:600}
+.sopa svg{position:absolute;inset:6px;z-index:1;pointer-events:none;width:calc(100% - 12px);height:calc(100% - 12px)}
+.wlist{display:flex;flex-wrap:wrap;gap:6px}
+.wlist span{padding:5px 10px;border-radius:999px;background:var(--sand);font-size:14px;font-weight:600}
+.wlist span.f{background:var(--sage-l);color:var(--sage-d);text-decoration:line-through}
+.wlist span small{font-weight:400;color:var(--stone);margin-left:4px}
+/* diferencias */
+.difw{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+.difw .im{position:relative;flex:1 1 380px;max-width:640px;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);line-height:0;touch-action:manipulation}
+.difw.zoom .im{flex-basis:100%;max-width:100%}
+.difw canvas{width:100%;height:auto;display:block}
+.difw .mk{position:absolute;border:3px solid var(--sage-d);border-radius:50%;pointer-events:none;box-shadow:0 0 0 2px rgba(255,255,255,.7);animation:pop .35s}
+.difw .mk.hint{border-color:var(--gold);border-style:dashed;animation:pulse 1s 3}
+.difw .miss{position:absolute;color:var(--warn);font-size:26px;font-weight:700;pointer-events:none;transform:translate(-50%,-50%);animation:fade 1s forwards;line-height:1}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes pulse{50%{opacity:.2}}
+@keyframes fade{to{opacity:0;transform:translate(-50%,-90%)}}
+/* importados */
+.pg{position:relative;margin:0 auto;max-width:900px;line-height:0;border-radius:6px;overflow:hidden;box-shadow:var(--shadow);background:#fff}
+.pg img{width:100%;display:block;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;pointer-events:none}
+.pg canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-x pan-y}
+.pg.finger canvas{touch-action:none}
+.colors{display:flex;gap:6px}
+.colors button{width:28px;height:28px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 0 0 1px var(--line)}
+.colors button.on{box-shadow:0 0 0 2.5px var(--ink)}
+.list .it{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.list .it:last-child{border:0}
+.list .it .tx{flex:1;min-width:0} .list .it .t{font-weight:600} .list .it .m{font-size:12.5px;color:var(--stone)}
+.thumb{width:54px;height:54px;border-radius:10px;object-fit:cover;background:var(--sand);flex:none}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{font-family:var(--display);font-size:28px;display:block;line-height:1}
+.stat span{font-size:12.5px;color:var(--stone)}
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:3px;overflow-x:auto}
+.heat i{width:14px;height:14px;border-radius:3px;background:var(--sand);display:block}
+.heat i.l1{background:#d5ddcf}.heat i.l2{background:#a3b19b}.heat i.l3{background:#6f8068}
+.sellos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.sello{text-align:center;font-size:12px;color:var(--stone);opacity:.45}
+.sello .h{width:62px;height:62px;margin:0 auto 6px;border-radius:50%;border:3px solid var(--stone-l);display:flex;align-items:center;justify-content:center;font-family:var(--jp);font-size:28px;font-weight:600;color:var(--stone-l);transform:rotate(-8deg)}
+.sello.on{opacity:1;color:var(--ink)} .sello.on .h{border-color:#c0392b;color:#c0392b;background:rgba(192,57,43,.06)}
+.bar{height:8px;border-radius:999px;background:var(--sand);overflow:hidden}.bar i{display:block;height:100%;background:var(--sage-d);border-radius:999px}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px} .tbl td,.tbl th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left} .tbl .n{text-align:right;font-variant-numeric:tabular-nums}
+/* modal */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(30,25,20,.42);display:flex;align-items:center;justify-content:center;padding:16px;animation:fi .2s}
+.modal .box{background:var(--paper);border-radius:22px;max-width:520px;width:100%;max-height:88vh;overflow:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h2{font-size:26px;margin-bottom:8px}
+@keyframes fi{from{opacity:0}}
+.toast{position:fixed;left:50%;bottom:calc(var(--sb) + 20px);transform:translateX(-50%);background:var(--ink);color:var(--ivory);padding:10px 18px;border-radius:999px;z-index:80;font-size:14px;font-weight:600;animation:fi .2s;max-width:90vw;text-align:center}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:70}
+.empty{color:var(--stone);font-size:14px;padding:10px 0}
+.field{margin:10px 0} .field>label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--ink-2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:13.5px;font-weight:600}
+.chips button.on{background:var(--ink);color:var(--ivory);border-color:var(--ink)}
+@media (max-width:600px){header.top{gap:6px;padding-left:10px;padding-right:10px} header.top h1{font-size:19px} header.top h1 .jp{display:none} header.top .back{font-size:14px} .seg button{padding:5px 9px;font-size:12px} main{padding:12px 10px} .card{padding:13px} .keypad button{height:46px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ Mi Agenda</a>
+  <h1 id="ttl"><span class="jp">遊び</span>Mis Pasatiempos</h1>
+  <span class="sp"></span>
+  <div class="seg" id="modoSeg"><button data-m="normal">Normal</button><button data-m="jp" class="jpf">日本語</button></div>
+</header>
+<main id="view"></main>
+<input type="file" id="filePick" class="hidden">
+<script>
+/* ============ BANCOS DE PALABRAS ============ */
+const BANCO_ES = {
+  general: { n: 'General', e: '🌍', w: [
+    ['SOL','Estrella que nos da luz y calor'],['LUNA','Satélite natural de la Tierra'],['MAR','Gran masa de agua salada'],
+    ['RIO','Corriente de agua que desemboca en el mar'],['MONTAÑA','Gran elevación natural del terreno'],['ARBOL','Planta de tronco leñoso y alto'],
+    ['FLOR','Parte de la planta con pétalos de colores'],['NUBE','Masa de vapor de agua en el cielo'],['LLUVIA','Agua que cae de las nubes'],
+    ['NIEVE','Agua helada que cae en copos'],['VIENTO','Aire en movimiento'],['CASA','Edificio para vivir'],['PUERTA','Abertura para entrar y salir'],
+    ['VENTANA','Abertura en la pared para que entre la luz'],['LIBRO','Hojas impresas y encuadernadas'],['LAPIZ','Barra de grafito para escribir o dibujar'],
+    ['PAPEL','Hoja delgada para escribir'],['RELOJ','Instrumento que marca la hora'],['ESPEJO','Superficie que refleja la imagen'],
+    ['LLAVE','Sirve para abrir una cerradura'],['GATO','Felino doméstico que maúlla'],['PERRO','El mejor amigo del hombre'],
+    ['CABALLO','Animal que relincha'],['PAJARO','Animal con plumas que vuela'],['PEZ','Vive en el agua y tiene aletas'],
+    ['TORTUGA','Reptil con caparazón'],['ABEJA','Insecto que fabrica miel'],['LEON','Rey de la selva'],['PAN','Alimento de harina horneada'],
+    ['QUESO','Se hace cuajando la leche'],['LECHE','Bebida blanca que dan las vacas'],['CAFE','Bebida oscura que despierta'],
+    ['ARROZ','Cereal de la paella y del sushi'],['NARANJA','Fruta cítrica y también un color'],['MANZANA','Fruta del cuento de Blancanieves'],
+    ['TREN','Transporte que va sobre raíles'],['AVION','Vehículo que vuela con alas'],['BARCO','Vehículo que navega'],['COCHE','Automóvil'],
+    ['MUSICA','Arte de combinar los sonidos'],['PIANO','Instrumento de teclas blancas y negras'],['GUITARRA','Instrumento de seis cuerdas'],
+    ['PINTURA','Arte de los colores sobre un lienzo'],['AMIGO','Persona con la que tienes amistad'],['FAMILIA','Padres, hijos, hermanos…'],
+    ['VERANO','La estación más calurosa'],['INVIERNO','La estación más fría'],['OTOÑO','Estación en la que caen las hojas'],
+    ['PRIMAVERA','Estación de las flores'],['LUNES','Primer día de la semana'],['DOMINGO','Último día de la semana'],
+    ['AGENDA','Libreta para organizar el día'],['SUDOKU','Pasatiempo de números del 1 al 9'],['JARDIN','Terreno con plantas y flores'],
+    ['PLAYA','Orilla de arena junto al mar'],['ISLA','Tierra rodeada de agua'],['CIELO','Espacio azul sobre nosotros'],
+    ['ESTRELLA','Punto brillante del cielo nocturno'],['TIERRA','Nuestro planeta'],['FUEGO','Luz y calor de la combustión'],
+    ['HIELO','Agua en estado sólido'],['SAL','Condimento blanco que viene del mar'],['AZUCAR','Endulza el café'],['MIEL','Dulce que hacen las abejas'],
+    ['SILLA','Asiento con respaldo'],['MESA','Mueble con tablero y patas'],['CAMA','Mueble para dormir'],['SOFA','Asiento mullido para varias personas'],
+    ['TAZA','Recipiente con asa para beber'],['PLATO','Recipiente para servir la comida'],['CUCHARA','Cubierto para la sopa'],
+    ['MADRID','Capital de España'],['PARIS','Capital de Francia'],['TOKIO','Capital de Japón'],['KIMONO','Vestido tradicional japonés'],
+    ['SUSHI','Arroz con pescado típico de Japón'],['ANIME','Animación japonesa'],['ORIGAMI','Arte japonés de doblar papel'],
+    ['MAPA','Dibujo de un territorio'],['MALETA','Se llena de ropa para viajar'],['SOMBRERO','Prenda para cubrir la cabeza'],['PARAGUAS','Te protege de la lluvia']
+  ]},
+  medicina: { n: 'Medicina', e: '🩺', w: [
+    ['CORAZON','Órgano que bombea la sangre'],['PULMON','Órgano de la respiración'],['HIGADO','Órgano que produce la bilis'],
+    ['RIÑON','Filtra la sangre y forma la orina'],['CEREBRO','Órgano principal del sistema nervioso'],['ESTOMAGO','Donde se digieren los alimentos'],
+    ['ARTERIA','Vaso que lleva la sangre desde el corazón'],['VENA','Vaso que devuelve la sangre al corazón'],['AORTA','La arteria más grande del cuerpo'],
+    ['VALVULA','Impide que la sangre retroceda'],['AURICULA','Cavidad superior del corazón'],['VENTRICULO','Cavidad inferior del corazón'],
+    ['SISTOLE','Contracción del corazón'],['DIASTOLE','Relajación del corazón'],['PULSO','Latido que se nota en las arterias'],
+    ['SANGRE','Líquido rojo que circula por el cuerpo'],['HUESO','Pieza dura del esqueleto'],['FEMUR','Hueso del muslo'],
+    ['CRANEO','Huesos que protegen el cerebro'],['MUSCULO','Tejido que se contrae'],['NEURONA','Célula del sistema nervioso'],
+    ['INSULINA','Hormona que baja la glucosa'],['GLUCOSA','Azúcar de la sangre'],['FIEBRE','Subida de la temperatura del cuerpo'],
+    ['ANEMIA','Falta de hemoglobina'],['ARRITMIA','Ritmo cardiaco irregular'],['INFARTO','Muerte de tejido por falta de riego'],
+    ['VACUNA','Prepara al cuerpo contra una infección'],['ANTIBIOTICO','Fármaco contra las bacterias'],['PLAQUETA','Célula que ayuda a coagular'],
+    ['TENSION','Presión de la sangre en las arterias'],['SINTOMA','Lo que nota el paciente'],['DIAGNOSTICO','Identificación de una enfermedad'],
+    ['ESTETOSCOPIO','Instrumento para auscultar'],['TIROIDES','Glándula del cuello'],['PANCREAS','Glándula que produce insulina']
+  ]},
+  cocina: { n: 'Cocina', e: '🍳', w: [
+    ['OLLA','Recipiente hondo para guisar'],['SARTEN','Recipiente para freír'],['HORNO','Aparato para asar y hornear'],['RECETA','Instrucciones para cocinar un plato'],
+    ['TORTILLA','Plato de huevo, a veces con patata'],['PAELLA','Arroz típico valenciano'],['GAZPACHO','Sopa fría de tomate'],['CROQUETA','Bechamel rebozada y frita'],
+    ['ACEITE','Líquido de oliva para cocinar'],['VINAGRE','Condimento ácido para la ensalada'],['AJO','Bulbo de olor fuerte'],['CEBOLLA','Hace llorar al cortarla'],
+    ['TOMATE','Fruto rojo de la salsa'],['PIMIENTA','Especia que hace estornudar'],['HARINA','Polvo de trigo molido'],['HUEVO','Lo pone la gallina'],
+    ['MANTEQUILLA','Grasa que se saca de la nata'],['CHOCOLATE','Dulce hecho con cacao'],['CANELA','Especia en rama del arroz con leche'],['LIMON','Fruta cítrica y ácida'],
+    ['PATATA','Tubérculo de las tortillas'],['ENSALADA','Plato de lechuga y verduras'],['SOPA','Plato caldoso'],['POSTRE','Se toma al final de la comida']
+  ]},
+  viajes: { n: 'Viajes', e: '✈️', w: [
+    ['PASAPORTE','Documento para viajar al extranjero'],['MALETA','Se llena de ropa para viajar'],['BILLETE','Te deja subir al tren o al avión'],
+    ['HOTEL','Alojamiento con habitaciones'],['PLAYA','Orilla de arena junto al mar'],['MUSEO','Lugar donde se exponen obras de arte'],
+    ['MAPA','Dibujo de un territorio'],['BRUJULA','Siempre señala el norte'],['AEROPUERTO','Lugar donde despegan los aviones'],
+    ['ESTACION','Donde paran los trenes'],['FOTO','Recuerdo en imagen'],['POSTAL','Tarjeta que se envía desde un viaje'],
+    ['TURISTA','Persona que viaja por placer'],['RECUERDO','Objeto que se compra para acordarse'],['CRUCERO','Viaje en un gran barco'],
+    ['MOCHILA','Bolsa que se lleva a la espalda'],['FRONTERA','Línea que separa dos países'],['MONEDA','Dinero de metal'],['GUIA','Libro o persona que te orienta']
+  ]}
+};
+
+const BANCO_JP = {
+  animales: { n: 'Animales', j: '動物', w: [
+    ['ねこ','猫','gato'],['いぬ','犬','perro'],['とり','鳥','pájaro'],['さかな','魚','pez'],['うま','馬','caballo'],['うし','牛','vaca'],
+    ['くま','熊','oso'],['さる','猿','mono'],['うさぎ','兎','conejo'],['ぶた','豚','cerdo'],['ねずみ','鼠','ratón'],['かめ','亀','tortuga']]},
+  comida: { n: 'Comida', j: '食べ物', w: [
+    ['ごはん','ご飯','arroz / comida'],['みず','水','agua'],['おちゃ','お茶','té'],['にく','肉','carne'],['やさい','野菜','verdura'],
+    ['くだもの','果物','fruta'],['たまご','卵','huevo'],['すし','寿司','sushi'],['りんご','林檎','manzana'],['みかん','蜜柑','mandarina'],
+    ['パン','パン','pan'],['コーヒー','コーヒー','café'],['ミルク','ミルク','leche'],['ケーキ','ケーキ','pastel'],['アイス','アイス','helado']]},
+  familia: { n: 'Familia', j: '家族', w: [
+    ['ちち','父','padre'],['はは','母','madre'],['あに','兄','hermano mayor'],['あね','姉','hermana mayor'],['おとうと','弟','hermano menor'],
+    ['いもうと','妹','hermana menor'],['かぞく','家族','familia'],['ともだち','友達','amigo'],['こども','子供','niño'],['おとこ','男','hombre'],['おんな','女','mujer']]},
+  tiempo: { n: 'Tiempo', j: '時間', w: [
+    ['あさ','朝','mañana (temprano)'],['ひる','昼','mediodía'],['よる','夜','noche'],['きょう','今日','hoy'],['あした','明日','mañana (día)'],
+    ['きのう','昨日','ayer'],['はる','春','primavera'],['なつ','夏','verano'],['あき','秋','otoño'],['ふゆ','冬','invierno'],
+    ['あめ','雨','lluvia'],['ゆき','雪','nieve'],['そら','空','cielo'],['てんき','天気','tiempo (clima)']]},
+  lugares: { n: 'Lugares', j: '場所', w: [
+    ['いえ','家','casa'],['へや','部屋','habitación'],['がっこう','学校','escuela'],['えき','駅','estación'],['みせ','店','tienda'],
+    ['やま','山','montaña'],['かわ','川','río'],['うみ','海','mar'],['まち','町','ciudad'],['にわ','庭','jardín'],
+    ['でんしゃ','電車','tren'],['くるま','車','coche'],['ホテル','ホテル','hotel'],['レストラン','レストラン','restaurante'],['バス','バス','autobús'],['タクシー','タクシー','taxi']]},
+  cosas: { n: 'Cosas', j: '物', w: [
+    ['ほん','本','libro'],['かさ','傘','paraguas'],['とけい','時計','reloj'],['つくえ','机','escritorio'],['いす','椅子','silla'],
+    ['かばん','鞄','bolso'],['しんぶん','新聞','periódico'],['てがみ','手紙','carta'],['えんぴつ','鉛筆','lápiz'],['テレビ','テレビ','televisión'],
+    ['カメラ','カメラ','cámara'],['ノート','ノート','cuaderno'],['ペン','ペン','bolígrafo'],['ピアノ','ピアノ','piano'],['ギター','ギター','guitarra']]},
+  cuerpo: { n: 'Cuerpo', j: '体', w: [
+    ['あたま','頭','cabeza'],['くち','口','boca'],['みみ','耳','oreja'],['あし','足','pie / pierna'],['かお','顔','cara'],['はな','鼻','nariz'],['からだ','体','cuerpo']]},
+  verbos: { n: 'Verbos', j: '動詞', w: [
+    ['たべる','食べる','comer'],['のむ','飲む','beber'],['みる','見る','ver'],['いく','行く','ir'],['くる','来る','venir'],['かく','書く','escribir'],
+    ['よむ','読む','leer'],['はなす','話す','hablar'],['きく','聞く','escuchar'],['ねる','寝る','dormir'],['かう','買う','comprar'],['あるく','歩く','caminar']]},
+  adjetivos: { n: 'Adjetivos y colores', j: '形容詞', w: [
+    ['おおきい','大きい','grande'],['ちいさい','小さい','pequeño'],['あたらしい','新しい','nuevo'],['ふるい','古い','viejo'],
+    ['たかい','高い','caro / alto'],['やすい','安い','barato'],['あつい','暑い','caluroso'],['さむい','寒い','frío'],
+    ['あか','赤','rojo'],['あお','青','azul'],['しろ','白','blanco'],['くろ','黒','negro']]}
+};
+
+const HIRA = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ';
+const KATA = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ';
+const LETRAS_ES = 'AAAAAAAAAAAABBCCCCDDDDDEEEEEEEEEEEEEFGGHIIIIIIJLLLLLMMMNNNNNNÑOOOOOOOOOPPQRRRRRRRSSSSSSSTTTTUUUUVYZ';
+
+/* ============ MURDOKU ============ */
+const MUR = {
+  es: {
+    nombres: ['Ana', 'Bruno', 'Carmen', 'Diego', 'Elena'],
+    victima: 'La víctima',
+    salas: [['Cocina','#f3d9c4'],['Salón','#d9e4cf'],['Dormitorio','#e3d5ea'],['Baño','#cfe3ea'],['Jardín','#dfeac4'],['Despacho','#ecdcc0'],['Entrada','#e9d3d0']],
+    obj: { planta: 'una planta', estanteria: 'una estantería', mesa: 'una mesa', silla: 'una silla', cama: 'una cama', alfombra: 'una alfombra' },
+  },
+  jp: {
+    nombres: [['さくら','Sakura'], ['はると','Haruto'], ['ゆい','Yui'], ['そうた','Sōta'], ['あおい','Aoi']],
+    victima: ['ひがいしゃ','la víctima'],
+    salas: [['台所','だいどころ','cocina'],['居間','いま','salón'],['寝室','しんしつ','dormitorio'],['お風呂','おふろ','baño'],['庭','にわ','jardín'],['書斎','しょさい','despacho'],['玄関','げんかん','entrada']],
+    obj: { planta: ['植物','しょくぶつ','planta'], estanteria: ['本棚','ほんだな','estantería'], mesa: ['テーブル','','mesa'], silla: ['いす','','silla'], cama: ['ベッド','','cama'], alfombra: ['カーペット','','alfombra'] }
+  },
+  emoji: { planta: '🪴', estanteria: '📚', mesa: '🍽️', silla: '🪑', cama: '🛏️', alfombra: '' },
+  bloquea: { planta: 1, estanteria: 1, mesa: 1 },
+  avatar: ['#c9786a', '#6f8068', '#8d6fa8', '#c99a4b', '#4f86a6'],
+};
+
+/* ============ GENERADORES (deterministas con semilla) ============ */
+function RNG(seed) {
+  let a = (typeof seed === 'number' ? seed : hashStr(String(seed))) >>> 0;
+  const r = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  r.int = n => Math.floor(r() * n);
+  r.pick = arr => arr[Math.floor(r() * arr.length)];
+  r.shuffle = arr => { const b = arr.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+  return r;
+}
+function hashStr(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+/* ---------------- SUDOKU ---------------- */
+const SUDO_CFG = { 9: { br: 3, bc: 3 }, 6: { br: 2, bc: 3 } };
+const SUDO_CLUES = { 9: { facil: 40, medio: 33, dificil: 28, diabolico: 24 }, 6: { facil: 20, medio: 16, dificil: 13, diabolico: 11 } };
+
+function sudoPeers(N) {
+  const { br, bc } = SUDO_CFG[N]; const P = [];
+  for (let i = 0; i < N * N; i++) {
+    const r = Math.floor(i / N), c = i % N, s = new Set();
+    for (let k = 0; k < N; k++) { s.add(r * N + k); s.add(k * N + c); }
+    const r0 = r - r % br, c0 = c - c % bc;
+    for (let a = 0; a < br; a++) for (let b = 0; b < bc; b++) s.add((r0 + a) * N + c0 + b);
+    s.delete(i); P.push([...s]);
+  }
+  return P;
+}
+const _peers = {};
+const peersOf = N => _peers[N] || (_peers[N] = sudoPeers(N));
+
+/* cuenta soluciones (hasta lim). cages opcional para killer: [{cells:[...], sum}] */
+function sudoCount(grid, N, lim = 2, cages = null, budget = 400000) {
+  const P = peersOf(N), g = grid.slice(), FULL = (1 << (N + 1)) - 2;
+  let cnt = 0, steps = 0, cageOf = null;
+  if (cages) { cageOf = new Array(N * N); cages.forEach(cg => cg.cells.forEach(i => cageOf[i] = cg)); }
+  function cand(i) {
+    let m = FULL;
+    for (const p of P[i]) if (g[p]) m &= ~(1 << g[p]);
+    if (cageOf) {
+      const cg = cageOf[i]; let s = 0, empty = 0;
+      for (const j of cg.cells) { if (g[j]) { s += g[j]; m &= ~(1 << g[j]); } else empty++; }
+      const rest = cg.sum - s;
+      if (empty === 1) m &= (rest >= 1 && rest <= N) ? (1 << rest) : 0;
+      else { for (let d = 1; d <= N; d++) if ((m >> d) & 1) { if (d > rest - (empty - 1)) m &= ~(1 << d); } }
+    }
+    return m;
+  }
+  function rec() {
+    if (++steps > budget) { cnt = lim; return; }
+    let best = -1, bm = 0, bc = 99;
+    for (let i = 0; i < N * N; i++) if (!g[i]) {
+      const m = cand(i); const c = popc(m);
+      if (c === 0) return; if (c < bc) { bc = c; best = i; bm = m; if (c === 1) break; }
+    }
+    if (best < 0) { cnt++; return; }
+    for (let d = 1; d <= N; d++) if ((bm >> d) & 1) { g[best] = d; rec(); g[best] = 0; if (cnt >= lim) return; }
+  }
+  rec(); return cnt;
+}
+function popc(m) { let c = 0; while (m) { m &= m - 1; c++; } return c; }
+
+function sudoFull(N, rnd) {
+  const P = peersOf(N), g = new Array(N * N).fill(0);
+  function rec(i) {
+    if (i === N * N) return true;
+    const used = new Set(P[i].map(p => g[p]));
+    for (const d of rnd.shuffle([...Array(N)].map((_, k) => k + 1))) if (!used.has(d)) { g[i] = d; if (rec(i + 1)) return true; g[i] = 0; }
+    return false;
+  }
+  rec(0); return g;
+}
+
+function genSudoku({ N = 9, nivel = 'medio', seed, killer = false }) {
+  const rnd = RNG('sudo' + N + nivel + killer + seed);
+  const sol = sudoFull(N, rnd);
+  let cages = null, puzzle;
+  if (killer) {
+    cages = genCages(sol, N, rnd);
+    puzzle = sol.slice();
+    const target = { facil: Math.round(N * N * .35), medio: Math.round(N * N * .2), dificil: Math.round(N * N * .08), diabolico: 0 }[nivel];
+    let filled = N * N;
+    for (const i of rnd.shuffle([...Array(N * N).keys()])) {
+      if (filled <= target) break;
+      const v = puzzle[i]; puzzle[i] = 0;
+      if (sudoCount(puzzle, N, 2, cages, 60000) !== 1) puzzle[i] = v; else filled--;
+    }
+  } else {
+    puzzle = sol.slice();
+    const target = SUDO_CLUES[N][nivel]; let filled = N * N;
+    for (const i of rnd.shuffle([...Array(N * N).keys()])) {
+      if (filled <= target) break;
+      const v = puzzle[i]; puzzle[i] = 0;
+      if (sudoCount(puzzle, N, 2) !== 1) puzzle[i] = v; else filled--;
+    }
+  }
+  return { N, sol, puzzle, cages };
+}
+function genCages(sol, N, rnd) {
+  const id = new Array(N * N).fill(-1), cages = [];
+  const nb = i => { const r = Math.floor(i / N), c = i % N, o = []; if (r) o.push(i - N); if (r < N - 1) o.push(i + N); if (c) o.push(i - 1); if (c < N - 1) o.push(i + 1); return o; };
+  for (const start of rnd.shuffle([...Array(N * N).keys()])) {
+    if (id[start] >= 0) continue;
+    const size = 1 + Math.min(rnd.int(4), rnd.int(5)) + (rnd() < .5 ? 1 : 0);
+    const cells = [start], vals = new Set([sol[start]]); id[start] = cages.length;
+    while (cells.length < size) {
+      const opts = [];
+      for (const c of cells) for (const n of nb(c)) if (id[n] < 0 && !vals.has(sol[n])) opts.push(n);
+      if (!opts.length) break;
+      const n = rnd.pick(opts); id[n] = cages.length; cells.push(n); vals.add(sol[n]);
+    }
+    cages.push({ cells, sum: cells.reduce((a, i) => a + sol[i], 0) });
+  }
+  return cages;
+}
+
+/* ---------------- MURDOKU ---------------- */
+const MUR_N = { facil: 4, medio: 5, dificil: 6 };
+function genMurdoku({ nivel = 'medio', seed }) {
+  const N = MUR_N[nivel] || 5;
+  for (let intento = 0; intento < 200; intento++) {
+    const rnd = RNG('mur' + nivel + seed + '#' + intento);
+    const res = tryMurdoku(N, rnd);
+    if (res) return res;
+  }
+  return null;
+}
+function tryMurdoku(N, rnd) {
+  /* habitaciones por crecimiento de regiones */
+  const nR = N === 4 ? 3 : N === 5 ? 4 : 5;
+  const room = new Array(N * N).fill(-1);
+  const seeds = rnd.shuffle([...Array(N * N).keys()]).slice(0, nR);
+  seeds.forEach((s, k) => room[s] = k);
+  const nb = i => { const r = Math.floor(i / N), c = i % N, o = []; if (r) o.push(i - N); if (r < N - 1) o.push(i + N); if (c) o.push(i - 1); if (c < N - 1) o.push(i + 1); return o; };
+  let left = N * N - nR, guard = 0;
+  while (left > 0 && guard++ < 5000) {
+    const front = [];
+    for (let i = 0; i < N * N; i++) if (room[i] < 0) for (const n of nb(i)) if (room[n] >= 0) front.push([i, room[n]]);
+    const [i, k] = rnd.pick(front); if (room[i] < 0) { room[i] = k; left--; }
+  }
+  const sizes = Array(nR).fill(0); room.forEach(k => sizes[k]++);
+  if (sizes.some(s => s < 2)) return null;
+  /* objetos */
+  const obj = new Array(N * N).fill(null);
+  const TIPOS_B = ['planta', 'estanteria', 'mesa'], TIPOS_S = ['silla', 'cama', 'alfombra'];
+  const nObj = Math.round(N * N * (N === 4 ? .3 : .32));
+  for (const i of rnd.shuffle([...Array(N * N).keys()]).slice(0, nObj)) obj[i] = rnd() < .45 ? rnd.pick(TIPOS_B) : rnd.pick(TIPOS_S);
+  const libre = i => !(obj[i] && MUR.bloquea[obj[i]]);
+  /* solución: permutación de columnas por fila, evitando bloqueos */
+  const colOf = new Array(N).fill(-1), usedC = new Set();
+  const rows = rnd.shuffle([...Array(N).keys()]);
+  function place(k) {
+    if (k === N) return true; const r = rows[k];
+    for (const c of rnd.shuffle([...Array(N).keys()])) if (!usedC.has(c) && libre(r * N + c)) { usedC.add(c); colOf[r] = c; if (place(k + 1)) return true; usedC.delete(c); }
+    return false;
+  }
+  if (!place(0)) return null;
+  const cellsSol = [...Array(N).keys()].map(r => r * N + colOf[r]);
+  const perPersona = rnd.shuffle(cellsSol); // persona p -> celda
+  /* víctima: persona cuya sala tenga exactamente otra persona */
+  const cand = [];
+  for (let p = 0; p < N; p++) { const rm = room[perPersona[p]]; const others = perPersona.filter((c, q) => q !== p && room[c] === rm); if (others.length === 1) cand.push(p); }
+  if (!cand.length) return null;
+  const V = rnd.pick(cand);
+  // reordenar: la víctima es la última persona
+  const people = perPersona.filter((_, p) => p !== V).concat([perPersona[V]]);
+  const asesino = people.findIndex((c, q) => q !== N - 1 && room[c] === room[people[N - 1]]);
+  /* pistas verdaderas */
+  const R = i => Math.floor(i / N), C = i => i % N;
+  const adjTipo = (i, t) => nb(i).some(n => obj[n] === t);
+  const pool = [];
+  for (let p = 0; p < N; p++) {
+    const i = people[p];
+    pool.push({ t: 'sala', p, k: room[i] });
+    const otra = rnd.pick([...Array(nR).keys()].filter(k => k !== room[i])); pool.push({ t: 'nosala', p, k: otra });
+    pool.push({ t: 'fila', p, k: R(i) }); pool.push({ t: 'col', p, k: C(i) });
+    if (obj[i]) pool.push({ t: 'sobre', p, k: obj[i] });
+    for (const t of [...TIPOS_B, ...TIPOS_S]) if (adjTipo(i, t) && obj[i] !== t) pool.push({ t: 'junto', p, k: t });
+    for (let q = 0; q < N; q++) if (q !== p) {
+      const j = people[q];
+      if (q > p && room[i] === room[j]) pool.push({ t: 'misma', p, q });
+      if (R(i) < R(j)) pool.push({ t: 'norte', p, q });
+      if (C(i) < C(j)) pool.push({ t: 'oeste', p, q });
+    }
+  }
+  for (let k = 0; k < nR; k++) if (!people.some(c => room[c] === k)) pool.push({ t: 'vacia', k });
+  const puzzle = { N, room, obj, nR };
+  /* añadir pistas hasta que la solución sea única */
+  const ordered = rnd.shuffle(pool).sort((a, b) => prio(a) - prio(b) + (rnd() - .5) * 2.2);
+  function prio(c) { return { sala: 1, sobre: 1, junto: 1.2, misma: 1.4, vacia: 1, norte: 1.6, oeste: 1.6, nosala: 1.8, fila: 2.2, col: 2.2 }[c.t]; }
+  let clues = [];
+  for (const c of ordered) { clues.push(c); if (murCount(puzzle, clues, 2) === 1) break; }
+  if (murCount(puzzle, clues, 2) !== 1) return null;
+  // quitar pistas sobrantes
+  for (let k = clues.length - 1; k >= 0; k--) { const t = clues.slice(0, k).concat(clues.slice(k + 1)); if (murCount(puzzle, t, 2) === 1) clues = t; }
+  if (clues.length > N * 2 + 2) return null;
+  return { N, room, obj, nR, clues: rnd.shuffle(clues), sol: people, asesino, salasIdx: rnd.shuffle([...Array(7).keys()]).slice(0, nR) };
+}
+function murCount({ N, room, obj }, clues, lim = 2) {
+  const nb = i => { const r = Math.floor(i / N), c = i % N, o = []; if (r) o.push(i - N); if (r < N - 1) o.push(i + N); if (c) o.push(i - 1); if (c < N - 1) o.push(i + 1); return o; };
+  const unary = [...Array(N)].map(() => []), binary = [], glob = [];
+  for (const c of clues) { if (c.q !== undefined) binary.push(c); else if (c.p !== undefined) unary[c.p].push(c); else glob.push(c); }
+  const R = i => Math.floor(i / N), Cc = i => i % N;
+  const ok1 = (c, i) => c.t === 'sala' ? room[i] === c.k : c.t === 'nosala' ? room[i] !== c.k : c.t === 'fila' ? R(i) === c.k : c.t === 'col' ? Cc(i) === c.k : c.t === 'sobre' ? obj[i] === c.k : c.t === 'junto' ? (nb(i).some(n => obj[n] === c.k) && obj[i] !== c.k) : true;
+  const cand = [...Array(N)].map((_, p) => { const o = []; for (let i = 0; i < N * N; i++) { if (obj[i] && MUR.bloquea[obj[i]]) continue; if (glob.some(g => g.t === 'vacia' && room[i] === g.k)) continue; if (unary[p].every(c => ok1(c, i))) o.push(i); } return o; });
+  const order = [...Array(N).keys()].sort((a, b) => cand[a].length - cand[b].length);
+  const pos = new Array(N).fill(-1), uR = new Set(), uC = new Set(); let cnt = 0;
+  const ok2 = c => { const a = pos[c.p], b = pos[c.q]; if (a < 0 || b < 0) return true; return c.t === 'misma' ? room[a] === room[b] : c.t === 'norte' ? R(a) < R(b) : c.t === 'oeste' ? Cc(a) < Cc(b) : true; };
+  function rec(k) {
+    if (cnt >= lim) return;
+    if (k === N) { cnt++; return; }
+    const p = order[k];
+    for (const i of cand[p]) {
+      if (uR.has(R(i)) || uC.has(Cc(i))) continue;
+      pos[p] = i; uR.add(R(i)); uC.add(Cc(i));
+      if (binary.every(ok2)) rec(k + 1);
+      pos[p] = -1; uR.delete(R(i)); uC.delete(Cc(i));
+      if (cnt >= lim) return;
+    }
+  }
+  rec(0); return cnt;
+}
+
+/* ---------------- CRUCIGRAMA / AUTODEFINIDO ---------------- */
+/* words: [{w:[letras...], d:'pista', extra}] ; devuelve {W,H,places:[{x,y,dir,word,idx}], clueCells(Set)} */
+function genCruci(words, { seed, max = 12, maxSize = 13, auto = false }) {
+  const rnd = RNG('cru' + seed + auto + max);
+  let best = null;
+  for (let t = 0; t < 40; t++) {
+    const list = rnd.shuffle(words).slice(0, Math.min(words.length, max * 3)).sort((a, b) => b.w.length - a.w.length + (rnd() - .5) * 3);
+    const res = layout(list, rnd, max, maxSize, auto);
+    if (res && (!best || res.places.length > best.places.length || (res.places.length === best.places.length && res.cross > best.cross))) best = res;
+    if (best && best.places.length >= max && best.cross >= max - 1) break;
+  }
+  return best;
+}
+function layout(list, rnd, max, maxSize, auto) {
+  const G = new Map(); const key = (x, y) => x + ',' + y; const clue = new Map(); // key -> {a:bool,d:bool}
+  const places = []; let cross = 0;
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+  const get = (x, y) => G.get(key(x, y));
+  function canPlace(w, x, y, dir) {
+    const dx = dir === 'a' ? 1 : 0, dy = dir === 'a' ? 0 : 1; let inter = 0;
+    const nx0 = Math.min(minX, x - (auto && dir === 'a' ? 1 : 0)), ny0 = Math.min(minY, y - (auto && dir === 'd' ? 1 : 0));
+    const nx1 = Math.max(maxX, x + dx * (w.length - 1)), ny1 = Math.max(maxY, y + dy * (w.length - 1));
+    if (nx1 - nx0 + 1 > maxSize || ny1 - ny0 + 1 > maxSize) return -1;
+    // antes y después
+    const bx = x - dx, by = y - dy, ax = x + dx * w.length, ay = y + dy * w.length;
+    if (get(bx, by) || get(ax, ay)) return -1;
+    if (clue.has(key(ax, ay)) && false) return -1;
+    if (auto) { const ck = clue.get(key(bx, by)); if (ck && ck[dir]) return -1; }
+    for (let k = 0; k < w.length; k++) {
+      const cx = x + dx * k, cy = y + dy * k, cur = get(cx, cy);
+      if (clue.has(key(cx, cy))) return -1;
+      if (cur) { if (cur.ch !== w[k] || cur[dir]) return -1; inter++; }
+      else {
+        // vecinos laterales vacíos
+        const s1 = get(cx + dy, cy + dx), s2 = get(cx - dy, cy - dx);
+        if (s1 || s2) return -1;
+      }
+    }
+    return inter;
+  }
+  function put(item, x, y, dir) {
+    const w = item.w, dx = dir === 'a' ? 1 : 0, dy = dir === 'a' ? 0 : 1;
+    for (let k = 0; k < w.length; k++) {
+      const cx = x + dx * k, cy = y + dy * k, kk = key(cx, cy);
+      const cur = G.get(kk) || { ch: w[k] }; cur[dir] = true; G.set(kk, cur);
+      minX = Math.min(minX, cx); maxX = Math.max(maxX, cx); minY = Math.min(minY, cy); maxY = Math.max(maxY, cy);
+    }
+    if (auto) { const bk = key(x - dx, y - dy); const c = clue.get(bk) || {}; c[dir] = places.length; clue.set(bk, c); minX = Math.min(minX, x - dx); minY = Math.min(minY, y - dy); }
+    places.push({ x, y, dir, item });
+  }
+  const first = list[0]; put(first, 0, 0, rnd() < .5 || auto ? 'a' : 'd');
+  const used = new Set([first]);
+  for (let pass = 0; pass < 3 && places.length < max; pass++) {
+    for (const item of list) {
+      if (used.has(item) || places.length >= max) continue;
+      if (places.some(p => p.item.w.join('') === item.w.join(''))) { used.add(item); continue; }
+      const opts = [];
+      for (const [kk, cell] of G) {
+        const [cx, cy] = kk.split(',').map(Number);
+        for (let k = 0; k < item.w.length; k++) if (item.w[k] === cell.ch) for (const dir of ['a', 'd']) {
+          if (cell[dir]) continue;
+          const x = dir === 'a' ? cx - k : cx, y = dir === 'a' ? cy : cy - k;
+          const s = canPlace(item.w, x, y, dir); if (s > 0) opts.push([s + rnd() * .8, x, y, dir]);
+        }
+      }
+      if (opts.length) { opts.sort((a, b) => b[0] - a[0]); const o = opts[0]; put(item, o[1], o[2], o[3]); cross += Math.floor(o[0]); used.add(item); }
+    }
+  }
+  if (places.length < 3) return null;
+  // normalizar
+  const W = maxX - minX + 1, H = maxY - minY + 1;
+  const cells = []; for (const [kk, c] of G) { const [x, y] = kk.split(',').map(Number); cells.push({ x: x - minX, y: y - minY, ch: c.ch }); }
+  const P = places.map(p => ({ x: p.x - minX, y: p.y - minY, dir: p.dir, w: p.item.w, d: p.item.d, extra: p.item.extra }));
+  const clues = []; for (const [kk, c] of clue) { const [x, y] = kk.split(',').map(Number); clues.push({ x: x - minX, y: y - minY, a: c.a, d: c.d }); }
+  return { W, H, cells, places: P, clueCells: clues, cross };
+}
+
+/* ---------------- SOPA DE LETRAS ---------------- */
+const DIRS = { facil: [[1, 0], [0, 1]], medio: [[1, 0], [0, 1], [1, 1], [1, -1]], dificil: [[1, 0], [0, 1], [1, 1], [1, -1], [-1, 0], [0, -1], [-1, -1], [-1, 1]] };
+function genSopa(words, { seed, size = 11, nivel = 'medio', relleno }) {
+  const rnd = RNG('sopa' + seed + size + nivel);
+  const G = [...Array(size)].map(() => Array(size).fill(null));
+  const placed = [];
+  const dirs = DIRS[nivel] || DIRS.medio;
+  const list = rnd.shuffle(words.filter(w => w.w.length <= size && w.w.length >= 2)).sort((a, b) => b.w.length - a.w.length);
+  const target = { facil: 7, medio: 10, dificil: 13 }[nivel] || 10;
+  for (const item of list) {
+    if (placed.length >= target) break;
+    if (placed.some(p => p.w.join('') === item.w.join(''))) continue;
+    let ok = false;
+    for (let t = 0; t < 120 && !ok; t++) {
+      const [dx, dy] = rnd.pick(dirs), L = item.w.length;
+      const x = rnd.int(size), y = rnd.int(size), ex = x + dx * (L - 1), ey = y + dy * (L - 1);
+      if (ex < 0 || ey < 0 || ex >= size || ey >= size) continue;
+      let good = true;
+      for (let k = 0; k < L; k++) { const c = G[y + dy * k][x + dx * k]; if (c && c !== item.w[k]) { good = false; break; } }
+      if (!good) continue;
+      for (let k = 0; k < L; k++) G[y + dy * k][x + dx * k] = item.w[k];
+      placed.push({ ...item, x, y, dx, dy }); ok = true;
+    }
+  }
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!G[y][x]) G[y][x] = relleno[rnd.int(relleno.length)];
+  return { size, G, words: placed };
+}
+
+/* ============ NÚCLEO ============ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const addDays = (ds, n) => { const [y, m, d] = ds.split('-').map(Number); const t = new Date(y, m - 1, d + n); return dayKey(t); };
+const dayNum = ds => { const [y, m, d] = ds.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); };
+const fmtT = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return h ? `${h}:${pad(m)}:${pad(ss)}` : `${m}:${pad(ss)}`; };
+const fmtMin = s => { const m = Math.round(s / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60 ? pad(m % 60) : ''); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const isPhone = () => Math.min(innerWidth, innerHeight) < 560;
+const norm = s => String(s).toUpperCase().normalize('NFD').replace(/(?<!N)[̀-ͯ]/g, '').replace(/Ñ/g, 'Ñ').replace(/[^A-ZÑ]/g, '');
+
+/* ---------- datos ---------- */
+const KEY = 'pasatiempos';
+const DEF = { v: 1, modo: 'normal', tema: 'auto', tranquilo: false, errores: true, verTrad: true, nivel: {}, listas: [], webs: [], partidas: {} };
+let S = load();
+function load() { try { return Object.assign(structuredClone(DEF), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return structuredClone(DEF); } }
+let _saveT = 0;
+function save(now) { clearTimeout(_saveT); const f = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('No se ha podido guardar (memoria llena)'); } }; if (now) f(); else _saveT = setTimeout(f, 300); }
+addEventListener('storage', e => { if (e.key === KEY) { S = load(); } });
+
+/* IndexedDB para fotos, PDF y diferencias */
+const DB = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => { const r = indexedDB.open('pasatiempos', 1); r.onupgradeneeded = () => r.result.createObjectStore('items', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }));
+  const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('items', mode), st = t.objectStore('items'); const q = fn(st); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+  return { get: id => tx('readonly', s => s.get(id)), put: o => tx('readwrite', s => s.put(o)), del: id => tx('readwrite', s => s.delete(id)), all: () => tx('readonly', s => s.getAll()) };
+})();
+
+/* ---------- estadísticas por aparato (se suman en el Dashboard) ---------- */
+let DEV = null, ST = null;
+const stKey = () => 'pasatiempos-stats-' + DEV;
+function devId() {
+  return new Promise(res => {
+    try {
+      const r = indexedDB.open('__pasatiempos', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('meta');
+      r.onsuccess = () => { const db = r.result, t = db.transaction('meta', 'readwrite'), s = t.objectStore('meta'), q = s.get('dev'); q.onsuccess = () => { let v = q.result; if (!v) { v = (isPhone() ? 'iphone-' : 'ipad-') + uid(); s.put(v, 'dev'); } t.oncomplete = () => res(v); }; t.onerror = () => res('aparato'); };
+      r.onerror = () => res('aparato');
+    } catch (e) { res('aparato'); }
+  });
+}
+function stLoad() { try { ST = JSON.parse(localStorage.getItem(stKey()) || 'null'); } catch (e) { } if (!ST || !ST.d) ST = { v: 1, d: {}, best: {} }; }
+function stSave() { if (DEV) try { localStorage.setItem(stKey(), JSON.stringify(ST)); } catch (e) { } }
+function stDay(ds = dayKey()) { return ST.d[ds] || (ST.d[ds] = { s: 0, n: {} }); }
+/* todos los aparatos juntos */
+function allStats() {
+  const d = {}, best = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i) || ''; if (!k.startsWith('pasatiempos-stats-')) continue;
+    let o; try { o = k === stKey() ? ST : JSON.parse(localStorage.getItem(k)); } catch (e) { continue; } if (!o) continue;
+    for (const [ds, v] of Object.entries(o.d || {})) {
+      const t = d[ds] || (d[ds] = { s: 0, n: {}, jp: 0, reto: 0, dif: {} });
+      t.s += +v.s || 0; t.jp += +v.jp || 0; if (v.reto) t.reto = 1;
+      for (const [g, x] of Object.entries(v.n || {})) t.n[g] = (t.n[g] || 0) + x;
+      for (const [g, x] of Object.entries(v.dif || {})) t.dif[g] = (t.dif[g] || 0) + x;
+    }
+    for (const [k2, v] of Object.entries(o.best || {})) if (!best[k2] || v < best[k2]) best[k2] = v;
+  }
+  return { d, best };
+}
+const doneOn = (A, ds) => { const v = A.d[ds]; return v ? Object.values(v.n).reduce((a, b) => a + b, 0) : 0; };
+function racha(A) { let ds = dayKey(); if (!doneOn(A, ds)) ds = addDays(ds, -1); let n = 0; while (doneOn(A, ds) && n < 5000) { n++; ds = addDays(ds, -1); } return n; }
+function mejorRacha(A) { const days = Object.keys(A.d).filter(ds => doneOn(A, ds)).sort(); let b = 0, c = 0, prev = null; for (const ds of days) { c = prev && addDays(prev, 1) === ds ? c + 1 : 1; b = Math.max(b, c); prev = ds; } return b; }
+
+/* contador de tiempo (solo mientras usas la app) */
+let lastAct = Date.now();
+['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(e => document.addEventListener(e, () => lastAct = Date.now(), { passive: true, capture: true }));
+setInterval(() => { if (!ST || document.hidden || Date.now() - lastAct > 120000) return; stDay().s += 15; if ((stDay().s / 15) % 4 === 0) stSave(); }, 15000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) { stSave(); save(true); GAME && GAME.persist && GAME.persist(); } else lastAct = Date.now(); });
+addEventListener('pagehide', () => { stSave(); save(true); GAME && GAME.persist && GAME.persist(); });
+
+/* ---------- utilidades de interfaz ---------- */
+function toast(msg, ms = 2200) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
+function modal(html, { onclose, wide } = {}) {
+  const m = document.createElement('div'); m.className = 'modal'; m.innerHTML = `<div class="box"${wide ? ' style="max-width:720px"' : ''}>${html}</div>`;
+  const close = () => { m.remove(); onclose && onclose(); };
+  m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) close(); });
+  document.body.appendChild(m); m.close = close; return m;
+}
+function ask(title, fields, { ok = 'Guardar', del } = {}) {
+  return new Promise(res => {
+    const m = modal(`<h2>${title}</h2>${fields.map(f => `<div class="field"><label>${esc(f.l)}</label>${f.type === 'area' ? `<textarea class="f" rows="${f.rows || 6}" data-k="${f.k}" placeholder="${esc(f.ph || '')}">${esc(f.v || '')}</textarea>` : f.type === 'select' ? `<select class="f" style="width:100%" data-k="${f.k}">${f.opts.map(([v, n]) => `<option value="${esc(v)}"${v === f.v ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>` : `<input class="f" data-k="${f.k}" value="${esc(f.v || '')}" placeholder="${esc(f.ph || '')}" ${f.type ? `type="${f.type}"` : ''}>`}${f.help ? `<div class="tiny muted" style="margin-top:4px">${f.help}</div>` : ''}</div>`).join('')}
+      <div class="row" style="margin-top:14px">${del ? '<button class="btn" data-a="del" style="color:var(--warn)">Borrar</button>' : ''}<span class="sp"></span><button class="btn" data-close>Cancelar</button><button class="btn primary" data-a="ok">${ok}</button></div>`, { onclose: () => res(null) });
+    m.querySelector('[data-a=ok]').onclick = () => { const o = {}; $$('[data-k]', m).forEach(i => o[i.dataset.k] = i.value); m.remove(); res(o); };
+    const d = m.querySelector('[data-a=del]'); if (d) d.onclick = () => { if (confirm('¿Seguro que quieres borrarlo?')) { m.remove(); res('__del'); } };
+    setTimeout(() => { const i = m.querySelector('input,textarea'); i && i.focus(); }, 60);
+  });
+}
+function pickFile(accept, multiple = false) {
+  return new Promise(res => { const i = $('#filePick'); i.value = ''; i.accept = accept; i.multiple = multiple; i.onchange = () => res([...i.files]); i.click(); });
+}
+const readURL = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
+const readText = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsText(f); });
+function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function shrink(src, max = 1400, q = .86) { const im = await loadImg(src); const k = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight)); const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', q); }
+function confetti() {
+  const c = document.createElement('canvas'); c.className = 'confetti'; c.width = innerWidth; c.height = innerHeight; document.body.appendChild(c);
+  const x = c.getContext('2d'), cols = ['#B98A82', '#6F8068', '#C99A4B', '#D9B5AE', '#A3B19B', '#4F86A6'];
+  const P = [...Array(90)].map(() => ({ x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .35, vx: (Math.random() - .5) * 9, vy: -Math.random() * 9 - 3, r: Math.random() * 6 + 3, c: cols[Math.random() * cols.length | 0], a: Math.random() * 6 }));
+  let f = 0; (function step() { x.clearRect(0, 0, c.width, c.height); for (const p of P) { p.x += p.vx; p.y += p.vy; p.vy += .25; p.a += .1; x.save(); x.translate(p.x, p.y); x.rotate(p.a); x.fillStyle = p.c; x.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); x.restore(); } if (++f < 120) requestAnimationFrame(step); else c.remove(); })();
+}
+const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64d = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return decodeURIComponent(escape(atob(s))); };
+
+/* ---------- tema ---------- */
+const mq = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() { const dark = S.tema === 'dark' || (S.tema === 'auto' && mq.matches); document.documentElement.dataset.theme = dark ? 'dark' : 'light'; }
+mq.addEventListener && mq.addEventListener('change', applyTheme);
+
+/* ---------- modo normal / japonés ---------- */
+const JP = () => S.modo === 'jp';
+function paintModo() { $$('#modoSeg button').forEach(b => b.classList.toggle('on', b.dataset.m === S.modo)); }
+$('#modoSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.m === S.modo) return; S.modo = b.dataset.m; save(); paintModo(); if (GAME && GAME.onModo) GAME.onModo(); else render(); });
+
+/* ---------- navegación ---------- */
+let GAME = null, CUR = 'home', PARAMS = {};
+const SCREENS = {};
+function go(name, params = {}, push = true) {
+  if (GAME && GAME.persist) GAME.persist();
+  if (GAME && GAME.stop) GAME.stop();
+  GAME = null; CUR = name; PARAMS = params;
+  if (push) history.pushState({ s: name, p: params }, '');
+  render(); scrollTo(0, 0);
+}
+addEventListener('popstate', e => { const st = e.state || { s: 'home', p: {} }; go(st.s, st.p, false); });
+function render() {
+  const sc = SCREENS[CUR] || SCREENS.home;
+  const back = $('#back');
+  if (CUR === 'home') { back.textContent = '‹ Mi Agenda'; back.href = 'index.html'; back.onclick = null; }
+  else { back.textContent = '‹ Pasatiempos'; back.href = '#'; back.onclick = e => { e.preventDefault(); history.length > 1 && history.state ? history.back() : go('home'); }; }
+  $('#ttl').innerHTML = sc.title ? sc.title() : '<span class="jp">遊び</span>Mis Pasatiempos';
+  paintModo();
+  const old = $('#view'), nv = old.cloneNode(false); old.replaceWith(nv);
+  sc.render(nv, PARAMS);
+}
+
+/* ---------- catálogo de juegos ---------- */
+const JUEGOS = {
+  sudoku: { n: 'Sudoku', jp: '数独', e: '数', d: 'Números del 1 al 9. Clásico, mini 6×6 y Killer.' },
+  murdoku: { n: 'Murdoku', jp: '推理', e: '🔍', d: 'Un misterio lógico: coloca a cada sospechoso y descubre quién fue.' },
+  crucigrama: { n: 'Crucigrama', jp: 'クロスワード', e: '✏️', d: 'Con definiciones, de temas o de tus listas.' },
+  autodefinido: { n: 'Autodefinido', jp: '自己定義', e: '➡️', d: 'Las definiciones van dentro de la cuadrícula.' },
+  sopa: { n: 'Sopa de letras', jp: '文字探し', e: 'あ', d: 'Encuentra las palabras. En kana en modo japonés.' },
+  diferencias: { n: 'Diferencias', jp: '間違い探し', e: '👀', d: 'Con tus fotos o con escenas dibujadas.' }
+};
+const NIVELES = [['facil', 'Fácil'], ['medio', 'Medio'], ['dificil', 'Difícil'], ['diabolico', 'Diabólico']];
+const nivelDe = g => S.nivel[g] || 'medio';
+const RETO_ROT = ['sudoku', 'sopa', 'murdoku', 'crucigrama', 'diferencias', 'autodefinido', 'sudoku'];
+function retoHoy() { const ds = dayKey(); const g = RETO_ROT[dayNum(ds) % RETO_ROT.length]; return { g, seed: 'reto-' + ds, nivel: 'medio', reto: ds, variante: '9', tema: JP() ? 'jp:todo' : 'es:todo', script: 'hira' }; }
+function retoHecho(A, ds = dayKey()) { return !!(A.d[ds] && A.d[ds].reto); }
+
+/* ---------- reloj de partida ---------- */
+function Clock(el, start = 0) {
+  let acc = start, t0 = performance.now(), run = true, iv;
+  const now = () => acc + (run && !document.hidden ? (performance.now() - t0) / 1000 : 0);
+  const paint = () => { if (el) { el.textContent = '⏱ ' + fmtT(now()); el.classList.toggle('hidden', !!S.tranquilo); } };
+  const vis = () => { if (document.hidden) { acc += (performance.now() - t0) / 1000; } t0 = performance.now(); };
+  document.addEventListener('visibilitychange', vis);
+  iv = setInterval(paint, 1000); paint();
+  return { get: now, stop() { if (run) { acc = now(); run = false; } clearInterval(iv); document.removeEventListener('visibilitychange', vis); paint(); } };
+}
+
+/* ---------- fin de partida ---------- */
+function finish(g, { secs, variante = '', extra = '', params = {} }) {
+  const JN = (JUEGOS[g] || { n: 'Pasatiempo' }).n;
+  const ds = dayKey(), d = stDay(ds);
+  d.n[g] = (d.n[g] || 0) + 1;
+  if (JP()) d.jp = (d.jp || 0) + 1;
+  const nv = params.nivel || nivelDe(g); d.dif = d.dif || {}; d.dif[g + '-' + nv] = (d.dif[g + '-' + nv] || 0) + 1;
+  if (params.reto === ds) d.reto = 1;
+  const before = sellosGanados(); let record = false;
+  const bk = g + (variante ? '-' + variante : '') + '-' + nv;
+  if (!S.tranquilo && secs > 3) { const A = allStats(); if (!A.best[bk] || secs < A.best[bk]) { record = !!A.best[bk]; ST.best[bk] = Math.round(secs); } }
+  stSave();
+  if (S.partidas[params.slot || g]) { delete S.partidas[params.slot || g]; save(); }
+  const nuevos = sellosGanados().filter(s => !before.includes(s));
+  confetti();
+  const A = allStats();
+  const m = modal(`<div style="text-align:center"><div style="font-size:44px">${JP() ? '🎉' : '🎉'}</div><h2>${JP() ? 'よくできました！' : '¡Conseguido!'}</h2>
+    ${JP() ? '<div class="muted small">¡Muy bien hecho!</div>' : ''}
+    <p style="font-size:17px">${extra}${!S.tranquilo ? `⏱ <b>${fmtT(secs)}</b>${record ? ' · <span class="pill o">🏆 ¡Nuevo récord!</span>' : ''}` : ''}</p>
+    <p class="small muted">🔥 Racha: ${racha(A)} día${racha(A) === 1 ? '' : 's'} · Hoy: ${doneOn(A, ds)} pasatiempo${doneOn(A, ds) === 1 ? '' : 's'}${params.reto === ds ? ' · ⭐ Reto del día hecho' : ''}</p>
+    ${nuevos.length ? `<div style="margin:12px 0"><div class="small" style="font-weight:700;margin-bottom:8px">Nuevo sello 判子</div><div class="sellos" style="justify-content:center;grid-template-columns:repeat(${nuevos.length},96px)">${nuevos.map(id => selloHTML(SELLOS.find(s => s.id === id), true)).join('')}</div></div>` : ''}
+    <div class="row" style="justify-content:center;margin-top:14px;gap:10px"><button class="btn" data-a="home">Volver</button><button class="btn primary" data-a="otro">${g === 'importado' ? 'Mis importados' : 'Otro ' + esc(JN.toLowerCase())}</button></div></div>`);
+  m.querySelector('[data-a=home]').onclick = () => { m.remove(); go('home'); };
+  m.querySelector('[data-a=otro]').onclick = () => { m.remove(); if (g === 'importado') return go('importados'); go(g, { nivel: nv, variante: params.variante, tema: params.tema, n: params.n }, false); };
+}
+
+/* ---------- sellos (logros) ---------- */
+const SELLOS = [
+  { id: 'primero', k: '初', n: 'Primer pasatiempo', f: A => tot(A) >= 1 },
+  { id: 'diez', k: '十', n: '10 pasatiempos', f: A => tot(A) >= 10 },
+  { id: 'cien', k: '百', n: '100 pasatiempos', f: A => tot(A) >= 100 },
+  { id: 'sudo10', k: '数', n: '10 sudokus', f: A => tot(A, 'sudoku') >= 10 },
+  { id: 'diab', k: '鬼', n: 'Un sudoku diabólico', f: A => totDif(A, 'sudoku-diabolico') >= 1 },
+  { id: 'detect', k: '探', n: '5 casos de Murdoku', f: A => tot(A, 'murdoku') >= 5 },
+  { id: 'letras', k: '字', n: '10 crucigramas o autodefinidos', f: A => tot(A, 'crucigrama') + tot(A, 'autodefinido') >= 10 },
+  { id: 'sopa', k: '文', n: '10 sopas de letras', f: A => tot(A, 'sopa') >= 10 },
+  { id: 'ojo', k: '目', n: '10 de diferencias', f: A => tot(A, 'diferencias') >= 10 },
+  { id: 'jp10', k: '日', n: '10 en modo japonés', f: A => Object.values(A.d).reduce((a, v) => a + (v.jp || 0), 0) >= 10 },
+  { id: 'reto7', k: '毎', n: '7 retos del día', f: A => Object.values(A.d).filter(v => v.reto).length >= 7 },
+  { id: 'racha7', k: '火', n: 'Racha de 7 días', f: A => mejorRacha(A) >= 7 },
+  { id: 'racha30', k: '炎', n: 'Racha de 30 días', f: A => mejorRacha(A) >= 30 },
+  { id: 'rapida', k: '速', n: 'Sudoku fácil en menos de 5 min', f: A => (A.best['sudoku-9-facil'] || 1e9) < 300 },
+  { id: 'todos', k: '全', n: 'Probar los 6 pasatiempos', f: A => Object.keys(JUEGOS).every(g => tot(A, g) > 0) },
+  { id: 'import', k: '紙', n: 'Terminar un pasatiempo importado', f: A => tot(A, 'importado') >= 1 }
+];
+function tot(A, g) { let n = 0; for (const v of Object.values(A.d)) { if (g) n += v.n[g] || 0; else n += Object.values(v.n).reduce((a, b) => a + b, 0); } return n; }
+function totDif(A, k) { let n = 0; for (const v of Object.values(A.d)) n += (v.dif && v.dif[k]) || 0; return n; }
+function sellosGanados() { const A = allStats(); return SELLOS.filter(s => s.f(A)).map(s => s.id); }
+const selloHTML = (s, on) => `<div class="sello${on ? ' on' : ''}"><div class="h">${s.k}</div>${esc(s.n)}</div>`;
+
+/* ---------- compartir un reto por enlace ---------- */
+async function compartir(params, texto) {
+  const url = location.origin + location.pathname + '#r=' + b64e(JSON.stringify(params));
+  const t = texto || '¡Te reto a este pasatiempo!';
+  try { if (navigator.share) { await navigator.share({ title: 'Mis Pasatiempos', text: t, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(url); toast('Enlace copiado: pégalo en un mensaje'); } catch (e) { prompt('Copia este enlace:', url); }
+}
+function leerEnlace() {
+  const m = location.hash.match(/#r=([\w-]+)/); if (!m) return null;
+  try { const p = JSON.parse(b64d(m[1])); history.replaceState(null, '', location.pathname); return p; } catch (e) { return null; }
+}
+
+/* ---------- barra común de juego ---------- */
+function descartar(slot) {
+  if (GAME && GAME.dirty && GAME.dirty() && !confirm('¿Empezar uno nuevo? Se perderá esta partida.')) return false;
+  if (GAME) GAME.persist = null; delete S.partidas[slot]; save(); return true;
+}
+function gameBar(g, p, extraBtns = '') {
+  return `<div class="gbar">
+    ${p.reto ? '<span class="pill o">⭐ Reto del día</span>' : ''}${p.amiga ? '<span class="pill r">💌 Reto compartido</span>' : ''}
+    <span class="timer" id="tm"></span><span class="sp"></span>${extraBtns}
+    <button class="ibtn" data-a="share" title="Compartir este reto">📤</button>
+    <button class="ibtn" data-a="nuevo" title="Nuevo">＋ Nuevo</button></div>`;
+}
+function nivelSel(g, levels = NIVELES, cur) {
+  return `<select class="f" data-a="nivel">${levels.map(([v, n]) => `<option value="${v}"${v === (cur || nivelDe(g)) ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
+}
+function bindBar(root, g, p, rebuild) {
+  root.addEventListener('change', e => { if (e.target.dataset.a === 'nivel') { if (!descartar(p.slot || g)) { e.target.value = p.nivel; return; } S.nivel[g] = e.target.value; save(); rebuild({ nivel: e.target.value }); } });
+  root.addEventListener('click', e => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    if (a.dataset.a === 'nuevo') { if (!descartar(p.slot || g)) return; rebuild({}); }
+    if (a.dataset.a === 'share') GAME && GAME.share && GAME.share();
+  });
+}
+
+/* ============ INICIO ============ */
+SCREENS.home = {
+  render(v) {
+    const A = allStats(), ds = dayKey(), R = retoHoy(), J = JUEGOS[R.g], hecho = retoHecho(A, ds);
+    const hoyS = (A.d[ds] && A.d[ds].s) || 0, hoyN = doneOn(A, ds), ra = racha(A);
+    const enCurso = Object.entries(S.partidas).filter(([k, p]) => p && JUEGOS[p.g || k]);
+    v.innerHTML = `<div class="grid">
+      <section class="card c8 reto"><div class="hero">
+        <div style="font-size:54px;line-height:1;font-family:var(--jp)">${J.e}</div>
+        <div style="flex:1;min-width:220px"><div class="small" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--rose-d)">⭐ Reto del día · <span class="jpf">今日の挑戦</span></div>
+          <div class="big">${esc(J.n)} <span class="jpf" style="font-size:18px;color:var(--rose-d)">${J.jp}</span></div>
+          <div class="small muted" style="margin-top:2px">Nivel medio · ${JP() ? 'modo japonés 日本語' : 'modo normal'} · el mismo en el iPad y en el iPhone</div></div>
+        <button class="btn ${hecho ? 'sage' : 'primary'}" data-a="reto">${hecho ? '✓ Hecho · repetir' : 'Jugar ›'}</button></div>
+        <div class="row wrap" style="margin-top:14px;gap:6px"><span class="pill o">🔥 ${ra} día${ra === 1 ? '' : 's'} de racha</span><span class="pill">⏱ ${fmtMin(hoyS)} hoy</span><span class="pill g">✓ ${hoyN} hoy</span></div></section>
+      <section class="card c4"><h3>Seguir jugando <span class="jp">続き</span></h3>
+        ${enCurso.length ? `<div class="list">${enCurso.map(([k, p]) => { const g = p.g || k; return `<div class="it" data-a="seguir" data-k="${k}" style="cursor:pointer"><span style="font-size:24px;font-family:var(--jp);width:30px;text-align:center">${JUEGOS[g].e}</span><div class="tx"><div class="t">${esc(JUEGOS[g].n)}${p.label ? ' · ' + esc(p.label) : ''}</div><div class="m">${p.secs ? '⏱ ' + fmtT(p.secs) + ' · ' : ''}${p.fecha ? esc(relDia(p.fecha)) : ''}</div></div><span class="muted">›</span></div>`; }).join('')}</div>` : '<p class="empty">Cuando dejes un pasatiempo a medias, lo verás aquí para seguir donde lo dejaste.</p>'}</section>
+      <section class="card c12"><h3>Pasatiempos <span class="jp">パズル</span></h3><div class="games">
+        ${Object.entries(JUEGOS).map(([k, j]) => `<button class="game" data-a="juego" data-g="${k}"><span class="ico">${j.e}</span><b>${j.n}</b><span class="d">${j.d}</span>${S.partidas[k] ? '<span class="badge">a medias</span>' : ''}</button>`).join('')}
+      </div></section>
+      <section class="card c12"><h3>Más <span class="jp">その他</span></h3><div class="tools">
+        <button class="tool" data-a="go" data-s="importados"><span class="e">📂</span><span><b>Desde archivos</b><small>PDF y fotos de revistas o webs, para resolver con el lápiz</small></span></button>
+        <button class="tool" data-a="go" data-s="webs"><span class="e">🔗</span><span><b>Mis webs</b><small>Tus páginas de pasatiempos favoritas</small></span></button>
+        <button class="tool" data-a="go" data-s="listas"><span class="e">📝</span><span><b>Mis listas</b><small>Tus palabras para crucigramas y sopas</small></span></button>
+        <button class="tool" data-a="go" data-s="stats"><span class="e">📊</span><span><b>Estadísticas</b><small>Rachas, récords y sellos 判子</small></span></button>
+        <button class="tool" data-a="abrirReto"><span class="e">💌</span><span><b>Abrir un reto</b><small>Un archivo de diferencias que te han enviado</small></span></button>
+        <button class="tool" data-a="ajustes"><span class="e">⚙️</span><span><b>Ajustes</b><small>Tema, modo tranquilo, errores…</small></span></button>
+      </div></section></div>`;
+    v.onclick = async e => {
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      const k = a.dataset.a;
+      if (k === 'reto') go(R.g, retoHoy());
+      if (k === 'juego') go(a.dataset.g, S.partidas[a.dataset.g] ? { seguir: a.dataset.g } : {});
+      if (k === 'seguir') { const p = S.partidas[a.dataset.k]; go(p.g || a.dataset.k, { seguir: a.dataset.k }); }
+      if (k === 'go') go(a.dataset.s);
+      if (k === 'ajustes') ajustes();
+      if (k === 'abrirReto') importarRetoDif();
+    };
+  }
+};
+function relDia(ds) { const t = dayKey(); if (ds === t) return 'hoy'; if (ds === addDays(t, -1)) return 'ayer'; const [y, m, d] = ds.split('-'); return `${+d}/${+m}`; }
+
+function ajustes() {
+  const m = modal(`<h2>Ajustes <span class="jpf" style="font-size:16px;color:var(--rose-d)">設定</span></h2>
+    <div class="field"><label>Tema</label><div class="chips" data-g="tema">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Oscuro']].map(([v, n]) => `<button data-v="${v}" class="${S.tema === v ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+    <div class="field"><label><input type="checkbox" data-k="tranquilo" ${S.tranquilo ? 'checked' : ''}> Modo tranquilo · sin cronómetro</label><div class="tiny muted">El tiempo no se ve ni cuenta para récords; tu tiempo de juego sí se suma en las estadísticas.</div></div>
+    <div class="field"><label><input type="checkbox" data-k="errores" ${S.errores ? 'checked' : ''}> Marcar los errores en rojo al momento</label></div>
+    <div class="field"><label><input type="checkbox" data-k="verTrad" ${S.verTrad ? 'checked' : ''}> En modo japonés, ver la traducción al español</label></div>
+    <div class="row" style="margin-top:14px"><span class="sp"></span><button class="btn primary" data-close>Hecho</button></div>`, { onclose: () => render() });
+  m.addEventListener('click', e => { const b = e.target.closest('.chips button'); if (!b) return; S.tema = b.dataset.v; save(); applyTheme(); $$('.chips button', m).forEach(x => x.classList.toggle('on', x === b)); });
+  m.addEventListener('change', e => { const k = e.target.dataset.k; if (k) { S[k] = e.target.checked; save(); } });
+}
+
+/* ============ ESTADÍSTICAS ============ */
+SCREENS.stats = {
+  title: () => '<span class="jp">記録</span>Estadísticas',
+  render(v) {
+    const A = allStats(), ds = dayKey();
+    const days = n => [...Array(n)].map((_, i) => addDays(ds, -i));
+    const sum = (list, f) => list.reduce((a, d) => a + (A.d[d] ? f(A.d[d]) : 0), 0);
+    const w = days(7), mo = days(30);
+    const g = Object.keys(JUEGOS).concat(['importado']);
+    const nm = k => k === 'importado' ? ['📂', 'Importados'] : [JUEGOS[k].e, JUEGOS[k].n];
+    const ganados = sellosGanados();
+    // calendario 16 semanas
+    const start = addDays(ds, -7 * 16 + 1); let cal = '';
+    const first = new Date(start); const off = (first.getDay() + 6) % 7;
+    for (let i = 0; i < off; i++) cal += '<i style="visibility:hidden"></i>';
+    for (let i = 0; i < 7 * 16; i++) { const d = addDays(start, i); if (d > ds) break; const n = doneOn(A, d); cal += `<i class="${n >= 4 ? 'l3' : n >= 2 ? 'l2' : n ? 'l1' : ''}" title="${d}: ${n}"></i>`; }
+    const NV = { facil: 'Fácil', medio: 'Medio', dificil: 'Difícil', diabolico: 'Diabólico' };
+    const recs = Object.entries(A.best).sort().map(([k, s]) => { const p = k.split('-'); const j = JUEGOS[p[0]]; if (!j) return ''; const nv = NV[p[p.length - 1]] || ''; const vr = p.slice(1, -1).join(' ').replace('9', '9×9').replace(/^6$/, '6×6').replace('k9', 'Killer'); return `<tr><td>${j.e} ${esc(j.n)} ${vr ? '<span class="muted">' + esc(vr) + '</span>' : ''}</td><td>${nv}</td><td class="n"><b>${fmtT(s)}</b></td></tr>`; }).join('');
+    v.innerHTML = `<div class="grid">
+      <section class="card c12"><div class="stats">
+        <div class="stat"><b>🔥 ${racha(A)}</b><span>días de racha (mejor: ${mejorRacha(A)})</span></div>
+        <div class="stat"><b>${doneOn(A, ds)}</b><span>terminados hoy · ${fmtMin((A.d[ds] || {}).s || 0)}</span></div>
+        <div class="stat"><b>${sum(w, x => Object.values(x.n).reduce((a, b) => a + b, 0))}</b><span>esta semana · ${fmtMin(sum(w, x => x.s))}</span></div>
+        <div class="stat"><b>${sum(mo, x => Object.values(x.n).reduce((a, b) => a + b, 0))}</b><span>últimos 30 días · ${fmtMin(sum(mo, x => x.s))}</span></div>
+        <div class="stat"><b>${tot(A)}</b><span>en total</span></div>
+        <div class="stat"><b>${Object.values(A.d).filter(x => x.reto).length}</b><span>retos del día</span></div>
+      </div></section>
+      <section class="card c6"><h3>Por pasatiempo <span class="jp">種類</span></h3>${(() => { const L = g.map(k => [k, tot(A, k)]); const mx = Math.max(1, ...L.map(x => x[1])); return L.map(([k, n]) => `<div style="margin:9px 0"><div class="row small"><span>${nm(k)[0]} ${esc(nm(k)[1])}</span><span class="sp"></span><b>${n}</b></div><div class="bar" style="margin-top:4px"><i style="width:${n / mx * 100}%"></i></div></div>`).join(''); })()}</section>
+      <section class="card c6"><h3>Calendario <span class="jp">暦</span></h3><div class="heat">${cal}</div><p class="tiny muted">Cada cuadrito es un día: cuanto más oscuro, más pasatiempos terminaste.</p>
+        <h3 style="margin-top:14px;font-size:19px">Modo japonés 日本語</h3><p class="small">${Object.values(A.d).reduce((a, x) => a + (x.jp || 0), 0)} pasatiempos terminados en modo japonés.</p></section>
+      <section class="card c12"><h3>Récords <span class="jp">最高記録</span></h3>${recs ? `<table class="tbl"><tr><th>Pasatiempo</th><th>Nivel</th><th class="n">Mejor tiempo</th></tr>${recs}</table>` : '<p class="empty">Termina un pasatiempo con el cronómetro para ver tus récords.</p>'}</section>
+      <section class="card c12"><h3>Sellos <span class="jp">判子</span> <span class="small muted" style="font-family:var(--ui)">${ganados.length}/${SELLOS.length}</span></h3><div class="sellos">${SELLOS.map(s => selloHTML(s, ganados.includes(s.id))).join('')}</div></section>
+    </div>`;
+  }
+};
+
+/* ============ MIS WEBS ============ */
+SCREENS.webs = {
+  title: () => '<span class="jp">リンク</span>Mis webs',
+  render(v) {
+    const cats = [...new Set(S.webs.map(w => w.cat || 'Otras'))].sort();
+    v.innerHTML = `<div class="row wrap" style="margin-bottom:12px"><p class="small muted" style="margin:0;flex:1;min-width:220px">Guarda aquí las páginas donde juegas: periódicos, webs de sudokus, de crucigramas…</p><button class="btn primary" data-a="add">＋ Añadir web</button></div>
+      ${S.webs.length ? cats.map(c => `<section class="card" style="margin-bottom:12px"><h3>${esc(c)}</h3><div class="list">${S.webs.filter(w => (w.cat || 'Otras') === c).map(w => `<div class="it"><span style="font-size:22px">${esc(w.e || '🔗')}</span><div class="tx"><a class="t" href="${esc(w.u)}" target="_blank" rel="noopener" style="text-decoration:none">${esc(w.t)}</a><div class="m" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(w.u)}</div>${w.nota ? `<div class="m">${esc(w.nota)}</div>` : ''}</div><a class="btn small sage" href="${esc(w.u)}" target="_blank" rel="noopener" style="text-decoration:none">Abrir</a><button class="ibtn" data-a="edit" data-id="${w.id}">✎</button></div>`).join('')}</div></section>`).join('') : '<section class="card"><p class="empty">Aún no tienes webs guardadas. Pulsa «＋ Añadir web».</p></section>'}`;
+    v.onclick = async e => {
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      const w = a.dataset.id ? S.webs.find(x => x.id === a.dataset.id) : null;
+      if (a.dataset.a === 'add' || a.dataset.a === 'edit') {
+        const r = await ask(w ? 'Editar web' : 'Nueva web', [
+          { k: 't', l: 'Nombre', v: w && w.t, ph: 'Sudokus de El País' },
+          { k: 'u', l: 'Enlace', v: w && w.u, ph: 'https://…', type: 'url' },
+          { k: 'cat', l: 'Carpeta', v: (w && w.cat) || '', ph: 'Sudokus, Crucigramas, Periódicos…', help: cats.length ? 'Tus carpetas: ' + cats.map(esc).join(', ') : '' },
+          { k: 'e', l: 'Emoji', v: (w && w.e) || '🔗' }, { k: 'nota', l: 'Nota', v: w && w.nota }], { del: !!w });
+        if (r === '__del') { S.webs = S.webs.filter(x => x !== w); }
+        else if (r && r.u) { let u = r.u.trim(); if (!/^https?:\/\//i.test(u)) u = 'https://' + u; const o = { id: w ? w.id : uid(), t: r.t.trim() || u.replace(/^https?:\/\//, ''), u, cat: r.cat.trim() || 'Otras', e: r.e.trim() || '🔗', nota: r.nota.trim() }; if (w) Object.assign(w, o); else S.webs.push(o); }
+        save(); render();
+      }
+    };
+  }
+};
+
+/* ============ MIS LISTAS DE PALABRAS ============ */
+function parseLista(txt, jp) {
+  const out = [];
+  for (let line of String(txt).split(/\r?\n/)) {
+    line = line.trim(); if (!line || line.startsWith('#')) continue;
+    const m = line.split(/\s*(?:=|;|\t|:| - )\s*/);
+    let w = m[0], d = m.slice(1).join(' ').trim();
+    if (jp) { let k = w, kan = ''; const p = w.split(/[|／/]/); if (p.length > 1) { kan = p[0]; k = p[1]; } else if (/[一-龯]/.test(w)) continue; k = k.replace(/\s/g, ''); if (!/^[぀-ヿー]+$/.test(k)) continue; out.push({ k, j: kan || k, m: d }); }
+    else { const n = norm(w); if (n.length < 2) continue; out.push({ w: n, d: d || '—', o: w }); }
+  }
+  return out;
+}
+SCREENS.listas = {
+  title: () => '<span class="jp">単語</span>Mis listas',
+  render(v) {
+    v.innerHTML = `<div class="row wrap" style="margin-bottom:12px"><p class="small muted" style="margin:0;flex:1;min-width:220px">Tus listas salen como tema en el crucigrama, el autodefinido y la sopa de letras.</p>
+      <button class="btn" data-a="file">📄 Desde archivo</button><button class="btn primary" data-a="add">＋ Nueva lista</button></div>
+      ${S.listas.length ? `<section class="card"><div class="list">${S.listas.map(l => `<div class="it"><span style="font-size:22px;font-family:var(--jp)">${l.jp ? 'あ' : '📝'}</span><div class="tx"><div class="t">${esc(l.n)}</div><div class="m">${l.items.length} palabras · ${l.jp ? 'japonés' : 'normal'} · ${esc(l.items.slice(0, 6).map(i => l.jp ? i.k : (i.o || i.w)).join(', '))}${l.items.length > 6 ? '…' : ''}</div></div><button class="ibtn" data-a="edit" data-id="${l.id}">✎</button></div>`).join('')}</div></section>` : '<section class="card"><p class="empty">Aún no tienes listas. Crea una con tus palabras: vocabulario de japonés, de medicina, nombres de tus series…</p></section>'}
+      <section class="card" style="margin-top:12px"><h3 style="font-size:18px">¿Cómo se escriben?</h3><p class="small">Una palabra por línea, con su definición después de <b>=</b><br><span class="muted">Normal:</span> <code>Corazón = Órgano que bombea la sangre</code><br><span class="muted">Japonés:</span> <code>猫|ねこ = gato</code> o <code>ねこ = gato</code> (la palabra en kana)</p><p class="small muted">Desde archivo: un .txt o .csv con el mismo formato (también vale <code>palabra;definición</code>).</p></section>`;
+    v.onclick = async e => {
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      let l = a.dataset.id ? S.listas.find(x => x.id === a.dataset.id) : null, txt = '';
+      if (a.dataset.a === 'file') { const [f] = await pickFile('.txt,.csv,text/plain,text/csv'); if (!f) return; txt = await readText(f); l = { id: uid(), n: f.name.replace(/\.\w+$/, ''), jp: /[぀-ヿ]/.test(txt), items: [], nuevo: true }; }
+      if (a.dataset.a === 'add') l = { id: uid(), n: '', jp: JP(), items: [], nuevo: true };
+      if (!l) return;
+      const cur = txt || l.items.map(i => l.jp ? (i.j && i.j !== i.k ? i.j + '|' : '') + i.k + ' = ' + i.m : (i.o || i.w) + ' = ' + i.d).join('\n');
+      const r = await ask(l.nuevo ? 'Nueva lista' : 'Editar lista', [
+        { k: 'n', l: 'Nombre', v: l.n, ph: 'Vocabulario N5, Cardiología…' },
+        { k: 'jp', l: 'Tipo', type: 'select', v: l.jp ? '1' : '0', opts: [['0', 'Normal (letras)'], ['1', 'Japonés (kana)']] },
+        { k: 'txt', l: 'Palabras (una por línea: palabra = definición)', type: 'area', rows: 10, v: cur }], { del: !l.nuevo });
+      if (r === '__del') S.listas = S.listas.filter(x => x.id !== l.id);
+      else if (r) {
+        const jp = r.jp === '1', items = parseLista(r.txt, jp);
+        if (items.length < 3) { toast('Pon al menos 3 palabras válidas' + (jp ? ' en kana' : '')); return; }
+        const o = { id: l.id, n: r.n.trim() || 'Mi lista', jp, items };
+        const i = S.listas.findIndex(x => x.id === l.id); if (i >= 0) S.listas[i] = o; else S.listas.push(o);
+        toast(`${items.length} palabras guardadas`);
+      }
+      save(); render();
+    };
+  }
+};
+
+/* temas para juegos de palabras */
+function temas(jp) {
+  const T = [];
+  if (jp) { T.push(['jp:todo', '🎌 Todo N5']); for (const [k, t] of Object.entries(BANCO_JP)) T.push(['jp:' + k, t.j + ' ' + t.n]); }
+  else { T.push(['es:todo', '🌈 Variado']); for (const [k, t] of Object.entries(BANCO_ES)) T.push(['es:' + k, t.e + ' ' + t.n]); }
+  for (const l of S.listas) if (!!l.jp === !!jp) T.push(['l:' + l.id, '📝 ' + l.n]);
+  return T;
+}
+/* devuelve [{w:[celdas], d:pista, extra:{k,j,m}}] */
+function palabras(tema, jp) {
+  const [src, k] = String(tema || '').split(':');
+  if (src === 'l') { const l = S.listas.find(x => x.id === k); if (l) return l.items.map(i => jp ? { w: [...i.k], d: i.m || i.j, extra: { k: i.k, j: i.j, m: i.m } } : { w: [...i.w], d: i.d, extra: { o: i.o } }); }
+  if (jp) { const banks = k && BANCO_JP[k] ? [BANCO_JP[k]] : Object.values(BANCO_JP); return banks.flatMap(b => b.w.map(([kk, j, m]) => ({ w: [...kk], d: m, extra: { k: kk, j, m } }))); }
+  const banks = k && BANCO_ES[k] ? [BANCO_ES[k]] : [BANCO_ES.general, BANCO_ES.cocina, BANCO_ES.viajes];
+  const seen = new Set(); return banks.flatMap(b => b.w).filter(([w]) => !seen.has(w) && seen.add(w)).map(([w, d]) => ({ w: [...w], d }));
+}
+function nombreTema(tema, jp) { const t = temas(jp).find(x => x[0] === tema); return t ? t[1] : ''; }
+
+/* ============ SUDOKU ============ */
+const KANJI_NUM = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+const VARIANTES_SUDO = [['9', 'Clásico 9×9'], ['6', 'Mini 6×6'], ['k9', 'Killer 9×9']];
+SCREENS.sudoku = {
+  title: () => `<span class="jp">数独</span>Sudoku`,
+  render(v, p) {
+    let st;
+    const saved = p.seguir ? S.partidas[p.seguir] : null;
+    if (saved) { st = structuredClone(saved); p = st.params; }
+    else {
+      const variante = p.variante || S.nivel.sudokuVar || '9', nivel = p.nivel || nivelDe('sudoku'), seed = p.seed || uid();
+      const N = variante === '6' ? 6 : 9, killer = variante === 'k9';
+      v.innerHTML = '<p class="empty" style="text-align:center;padding:40px">Preparando tu sudoku…</p>';
+      const gz = genSudoku({ N, nivel, seed, killer });
+      p = Object.assign({}, p, { variante, nivel, seed });
+      st = { g: 'sudoku', params: p, N, puzzle: gz.puzzle, sol: gz.sol, cages: gz.cages, val: gz.puzzle.slice(), notes: Array(N * N).fill(0), hints: [], secs: 0, fecha: dayKey() };
+    }
+    const N = st.N, { br, bc } = SUDO_CFG[N];
+    let sel = -1, notas = false, hist = [];
+    const sym = d => d ? (JP() ? KANJI_NUM[d] : String(d)) : '';
+    st.label = (VARIANTES_SUDO.find(x => x[0] === p.variante) || [, ''])[1] + ' · ' + (NIVELES.find(x => x[0] === p.nivel) || [, ''])[1];
+    v.innerHTML = gameBar('sudoku', p, `<select class="f" data-a="var">${VARIANTES_SUDO.map(([k, n]) => `<option value="${k}"${k === p.variante ? ' selected' : ''}>${n}</option>`).join('')}</select>${nivelSel('sudoku', NIVELES, p.nivel)}`) +
+      `<div class="gwrap"><div class="sudo${JP() ? ' jpnum' : ''}" id="sb" style="grid-template-columns:repeat(${N},1fr)"></div>
+      <div class="gside"><div class="row wrap">
+        <button class="ibtn" data-a="undo">↶ Deshacer</button><button class="ibtn" data-a="borrar">⌫ Borrar</button>
+        <button class="ibtn" data-a="notas" id="bn">✎ Notas</button><button class="ibtn" data-a="pista">💡 Pista</button></div>
+        <div class="keypad${JP() ? ' jpnum' : ''}" id="kp" style="grid-template-columns:repeat(${N === 6 ? 3 : 5},1fr)"></div>
+        <div class="card small" style="padding:12px">${p.variante === 'k9' ? '<b>Killer:</b> los números de cada recuadro punteado suman la cifra de su esquina y no se repiten dentro del recuadro.<br>' : ''}Toca una casilla y después un número. Con <b>✎ Notas</b> apuntas posibles números pequeñitos.${JP() ? '<br><span class="jpf">一 いち · 二 に · 三 さん · 四 よん · 五 ご · 六 ろく · 七 なな · 八 はち · 九 きゅう</span>' : ''}</div>
+      </div></div>`;
+    const sb = $('#sb', v), kp = $('#kp', v);
+    const cageOf = {}; if (st.cages) st.cages.forEach((cg, k) => cg.cells.forEach(i => cageOf[i] = k));
+    const peers = peersOf(N);
+    function paint() {
+      const sv = sel >= 0 ? st.val[sel] : 0;
+      let h = '';
+      for (let i = 0; i < N * N; i++) {
+        const r = Math.floor(i / N), c = i % N, g = !!st.puzzle[i] || st.hints.includes(i);
+        const cl = ['c'];
+        if (g) cl.push('g');
+        if ((c + 1) % bc === 0 && c < N - 1) cl.push('br'); if ((r + 1) % br === 0 && r < N - 1) cl.push('bb');
+        if (sel >= 0) { if (i === sel) cl.push('sel'); else if (sv && st.val[i] === sv) cl.push('same'); else if (peers[sel].includes(i)) cl.push('hl'); }
+        if (S.errores && st.val[i] && st.val[i] !== st.sol[i]) cl.push('err');
+        let inner = st.val[i] ? sym(st.val[i]) : '';
+        if (!st.val[i] && st.notes[i]) { inner = `<div class="notes" style="grid-template-columns:repeat(${N === 6 ? 3 : 3},1fr)">${[...Array(N)].map((_, k) => `<span>${(st.notes[i] >> (k + 1)) & 1 ? sym(k + 1) : ''}</span>`).join('')}</div>`; }
+        if (st.cages) {
+          const k = cageOf[i], cg = st.cages[k]; const same = j => j >= 0 && j < N * N && cageOf[j] === k;
+          const bt = !(r > 0 && same(i - N)), bb = !(r < N - 1 && same(i + N)), bl = !(c > 0 && same(i - 1)), brr = !(c < N - 1 && same(i + 1));
+          inner += `<div class="cage" style="${bt ? '' : 'border-top-color:transparent;top:-1px;'}${bb ? '' : 'border-bottom-color:transparent;bottom:-1px;'}${bl ? '' : 'border-left-color:transparent;left:-1px;'}${brr ? '' : 'border-right-color:transparent;right:-1px;'}"></div>`;
+          if (Math.min(...cg.cells) === i) inner += `<span class="csum">${cg.sum}</span>`;
+        }
+        h += `<div class="${cl.join(' ')}" data-i="${i}">${inner}</div>`;
+      }
+      sb.innerHTML = h;
+      const cnt = Array(N + 1).fill(0); st.val.forEach(x => cnt[x]++);
+      kp.innerHTML = [...Array(N)].map((_, k) => `<button data-n="${k + 1}" class="${cnt[k + 1] >= N ? 'done' : ''}">${sym(k + 1)}${JP() ? `<small>${k + 1}</small>` : ''}</button>`).join('');
+      $('#bn', v).classList.toggle('on', notas);
+    }
+    function setVal(n) {
+      if (sel < 0 || st.puzzle[sel] || st.hints.includes(sel)) return;
+      hist.push([sel, st.val[sel], st.notes[sel], peers[sel].map(j => st.notes[j])]);
+      if (notas && n) { st.val[sel] = 0; st.notes[sel] ^= (1 << n); }
+      else { st.val[sel] = st.val[sel] === n ? 0 : n; if (n) { st.notes[sel] = 0; for (const j of peers[sel]) st.notes[j] &= ~(1 << n); } }
+      paint(); check();
+    }
+    function check() { if (st.val.every((x, i) => x === st.sol[i])) { clock.stop(); st.secs = clock.get(); GAME = null; setTimeout(() => finish('sudoku', { secs: st.secs, variante: p.variante === '6' ? '6' : p.variante === 'k9' ? 'k9' : '9', params: p }), 350); } }
+    sb.onclick = e => { const c = e.target.closest('[data-i]'); if (!c) return; sel = +c.dataset.i; paint(); };
+    kp.onclick = e => { const b = e.target.closest('[data-n]'); if (b) setVal(+b.dataset.n); };
+    v.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      if (a.dataset.a === 'notas') { notas = !notas; paint(); }
+      if (a.dataset.a === 'borrar' && sel >= 0 && !st.puzzle[sel] && !st.hints.includes(sel)) { hist.push([sel, st.val[sel], st.notes[sel], peers[sel].map(j => st.notes[j])]); st.val[sel] = 0; st.notes[sel] = 0; paint(); }
+      if (a.dataset.a === 'undo') { const hh = hist.pop(); if (hh) { st.val[hh[0]] = hh[1]; st.notes[hh[0]] = hh[2]; peers[hh[0]].forEach((j, k) => st.notes[j] = hh[3][k]); sel = hh[0]; paint(); } }
+      if (a.dataset.a === 'pista') {
+        let i = sel >= 0 && st.val[sel] !== st.sol[sel] ? sel : -1;
+        if (i < 0) { const wrong = st.val.map((x, k) => x && x !== st.sol[k] ? k : -1).filter(k => k >= 0); const empty = st.val.map((x, k) => !x ? k : -1).filter(k => k >= 0); i = wrong[0] ?? empty[Math.floor(Math.random() * empty.length)]; }
+        if (i === undefined || i < 0) return; st.val[i] = st.sol[i]; st.notes[i] = 0; st.hints.push(i); sel = i; paint(); check();
+      }
+    });
+    v.addEventListener('change', e => { if (e.target.dataset.a === 'var') { if (!descartar('sudoku')) { e.target.value = p.variante; return; } S.nivel.sudokuVar = e.target.value; save(); go('sudoku', { variante: e.target.value }, false); } });
+    const onKey = e => {
+      if (!GAME || GAME.id !== st) return;
+      if (/^[1-9]$/.test(e.key) && +e.key <= N) setVal(+e.key);
+      else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { if (sel >= 0) { setVal(st.val[sel] || 0); } }
+      else if (e.key.startsWith('Arrow') && sel >= 0) { const d = { ArrowUp: -N, ArrowDown: N, ArrowLeft: -1, ArrowRight: 1 }[e.key]; sel = (sel + d + N * N) % (N * N); paint(); e.preventDefault(); }
+      else if (e.key === 'n') { notas = !notas; paint(); }
+    };
+    document.addEventListener('keydown', onKey);
+    const clock = Clock($('#tm', v), st.secs);
+    bindBar(v, 'sudoku', p, o => go('sudoku', Object.assign({ variante: p.variante, nivel: p.nivel }, o), false));
+    GAME = {
+      id: st, dirty: () => st.val.some((x, i) => x !== st.puzzle[i]),
+      persist() { if (!GAME) return; st.secs = clock.get(); if (GAME.dirty()) { S.partidas.sudoku = st; save(); } },
+      stop() { clock.stop(); document.removeEventListener('keydown', onKey); },
+      onModo() { st.secs = clock.get(); S.partidas.sudoku = st; save(true); go('sudoku', { seguir: 'sudoku' }, false); },
+      share() { compartir({ g: 'sudoku', seed: p.seed, nivel: p.nivel, variante: p.variante }, '¡Te reto a este sudoku! 数独'); }
+    };
+    paint();
+  }
+};
+
+/* ============ MURDOKU ============ */
+const SALA_ART = { 'Cocina': 'la cocina', 'Salón': 'el salón', 'Dormitorio': 'el dormitorio', 'Baño': 'el baño', 'Jardín': 'el jardín', 'Despacho': 'el despacho', 'Entrada': 'la entrada' };
+const LET = 'ABCDEF';
+const NIV_MUR = [['facil', 'Fácil · 4×4'], ['medio', 'Medio · 5×5'], ['dificil', 'Difícil · 6×6']];
+function murNames(m, jp) {
+  const N = m.N;
+  const ppl = [...Array(N)].map((_, p) => {
+    if (p === N - 1) return jp ? { n: MUR.jp.victima[0], r: MUR.jp.victima[1], ini: '被', col: '#38332E', v: true } : { n: MUR.es.victima, ini: '✝', col: '#38332E', v: true };
+    return jp ? { n: MUR.jp.nombres[p][0], r: MUR.jp.nombres[p][1], ini: MUR.jp.nombres[p][0][0], col: MUR.avatar[p] } : { n: MUR.es.nombres[p], ini: MUR.es.nombres[p][0], col: MUR.avatar[p] };
+  });
+  const salas = m.salasIdx.map(i => jp ? { n: MUR.jp.salas[i][0], k: MUR.jp.salas[i][1], es: MUR.jp.salas[i][2], col: MUR.es.salas[i][1] } : { n: MUR.es.salas[i][0], a: SALA_ART[MUR.es.salas[i][0]], col: MUR.es.salas[i][1] });
+  return { ppl, salas };
+}
+function clueText(c, m, jp, trad) {
+  let { ppl, salas } = murNames(m, jp);
+  if (trad) ppl = murNames(m, true).ppl.map(x => Object.assign({}, x, { n: x.v ? MUR.es.victima : x.r }));
+  if (!jp) {
+    const P = i => ppl[i].v ? (i === c.p && c.t !== 'vacia' ? 'La víctima' : 'la víctima') : ppl[i].n;
+    const sa = k => salas[k].a, ob = k => MUR.es.obj[k];
+    switch (c.t) {
+      case 'sala': return `${P(c.p)} estaba en ${sa(c.k)}.`;
+      case 'nosala': return `${P(c.p)} no estaba en ${sa(c.k)}.`;
+      case 'fila': return `${P(c.p)} estaba en la fila ${c.k + 1}.`;
+      case 'col': return `${P(c.p)} estaba en la columna ${LET[c.k]}.`;
+      case 'sobre': return c.k === 'alfombra' ? `${P(c.p)} estaba sobre una alfombra.` : `${P(c.p)} estaba en ${ob(c.k)}.`;
+      case 'junto': return `${P(c.p)} estaba junto a ${ob(c.k)}.`;
+      case 'misma': return `${P(c.p)} y ${ppl[c.q].v ? 'la víctima' : ppl[c.q].n} estaban en la misma habitación.`;
+      case 'norte': return `${P(c.p)} estaba más al norte (más arriba) que ${ppl[c.q].v ? 'la víctima' : ppl[c.q].n}.`;
+      case 'oeste': return `${P(c.p)} estaba más al oeste (más a la izquierda) que ${ppl[c.q].v ? 'la víctima' : ppl[c.q].n}.`;
+      case 'vacia': { const s = sa(c.k); return `No había nadie en ${s}.`; }
+    }
+  }
+  const P = i => ppl[i].n, sa = k => `${salas[k].n}（${salas[k].k}）`, ob = k => { const o = MUR.jp.obj[k]; return o[1] ? `${o[0]}（${o[1]}）` : o[0]; };
+  switch (c.t) {
+    case 'sala': return `${P(c.p)}は${sa(c.k)}にいました。`;
+    case 'nosala': return `${P(c.p)}は${sa(c.k)}にいませんでした。`;
+    case 'fila': return `${P(c.p)}は${c.k + 1}行目（ぎょうめ）にいました。`;
+    case 'col': return `${P(c.p)}は${LET[c.k]}列（れつ）にいました。`;
+    case 'sobre': return c.k === 'silla' ? `${P(c.p)}はいすにすわっていました。` : c.k === 'cama' ? `${P(c.p)}はベッドの上（うえ）にいました。` : `${P(c.p)}はカーペットの上（うえ）にいました。`;
+    case 'junto': return `${P(c.p)}は${ob(c.k)}のとなりにいました。`;
+    case 'misma': return `${P(c.p)}と${P(c.q)}は同（おな）じ部屋（へや）にいました。`;
+    case 'norte': return `${P(c.p)}は${P(c.q)}より北（きた）にいました。`;
+    case 'oeste': return `${P(c.p)}は${P(c.q)}より西（にし）にいました。`;
+    case 'vacia': return `${sa(c.k)}にはだれもいませんでした。`;
+  }
+}
+SCREENS.murdoku = {
+  title: () => `<span class="jp">推理</span>Murdoku`,
+  render(v, p) {
+    let st;
+    const saved = p.seguir ? S.partidas[p.seguir] : null;
+    if (saved) { st = structuredClone(saved); p = st.params; }
+    else {
+      const nivel = MUR_N[p.nivel] ? p.nivel : (MUR_N[nivelDe('murdoku')] ? nivelDe('murdoku') : 'medio'), seed = p.seed || uid();
+      p = Object.assign({}, p, { nivel, seed });
+      const m = genMurdoku({ nivel, seed });
+      st = { g: 'murdoku', params: p, m, pos: {}, x: [], tick: [], secs: 0, fecha: dayKey(), fase: 1 };
+    }
+    const m = st.m, N = m.N;
+    st.label = (NIV_MUR.find(x => x[0] === p.nivel) || [, ''])[1];
+    let sel = -1;
+    const nb = i => { const r = Math.floor(i / N), c = i % N, o = []; if (r) o.push(i - N); if (r < N - 1) o.push(i + N); if (c) o.push(i - 1); if (c < N - 1) o.push(i + 1); return o; };
+    v.innerHTML = gameBar('murdoku', p, nivelSel('murdoku', NIV_MUR, p.nivel)) +
+      `<div class="gwrap"><div><div id="mb"></div></div>
+       <div class="gside"><div class="card" style="padding:14px"><h3 style="font-size:19px">${JP() ? '事件 · ' : ''}El caso</h3>
+         <p class="small" style="margin:0 0 6px">Hay <b>${N - 1} sospechosos</b> y <b>la víctima</b>. Cada fila y cada columna tiene <b>exactamente una persona</b>. Nadie puede estar encima de 🪴 📚 🍽️ (sí en 🪑 🛏️ y en la alfombra).</p>
+         <p class="small" style="margin:0">El culpable es <b>quien estaba a solas con la víctima</b> en una habitación.</p></div>
+       <div class="card" style="padding:14px"><div class="small muted" style="margin-bottom:8px" id="mhelp">Toca una casilla y elige a quién pones ahí.</div><div class="people" id="pp"></div>
+         <div class="row" style="margin-top:10px"><button class="ibtn" data-a="x">✕ Descartar casilla</button><button class="ibtn" data-a="del">⌫ Quitar</button></div></div>
+       <div class="card" style="padding:14px"><h3 style="font-size:19px">Pistas <span class="jp">手がかり</span></h3><div id="cl"></div></div></div></div>`;
+    const mb = $('#mb', v), pp = $('#pp', v), cl = $('#cl', v);
+    function paint() {
+      const { ppl, salas } = murNames(m, JP());
+      const who = {}; for (const [q, c] of Object.entries(st.pos)) who[c] = +q;
+      let h = `<div style="display:grid;grid-template-columns:20px 1fr;gap:4px"><div></div><div style="display:grid;grid-template-columns:repeat(${N},1fr)">${[...Array(N)].map((_, c) => `<div class="small muted" style="text-align:center;font-weight:700">${LET[c]}</div>`).join('')}</div>
+        <div style="display:grid;grid-template-rows:repeat(${N},1fr)">${[...Array(N)].map((_, r) => `<div class="small muted" style="display:flex;align-items:center;font-weight:700">${r + 1}</div>`).join('')}</div>
+        <div class="mur" style="grid-template-columns:repeat(${N},1fr)">`;
+      const firstOf = {}; m.room.forEach((k, i) => { if (firstOf[k] === undefined) firstOf[k] = i; });
+      for (let i = 0; i < N * N; i++) {
+        const r = Math.floor(i / N), c = i % N, k = m.room[i], o = m.obj[i];
+        const bd = (j, side) => (j < 0 || m.room[j] !== k) ? `border-${side}:3px solid var(--ink);` : '';
+        const style = `background:${salas[k].col};${r > 0 ? bd(i - N, 'top') : ''}${c > 0 ? bd(i - 1, 'left') : ''}`;
+        let inner = '';
+        if (firstOf[k] === i) inner += `<span class="rl">${esc(salas[k].n)}${JP() ? ' ' + esc(salas[k].k) : ''}</span>`;
+        if (o && MUR.emoji[o]) inner += `<span class="o">${MUR.emoji[o]}</span>`;
+        if (who[i] !== undefined) { const P = ppl[who[i]]; inner += `<span class="av" style="background:${P.col}">${esc(P.ini)}</span>`; }
+        else if (st.x.includes(i)) inner += '<span class="x">✕</span>';
+        h += `<div class="c${o === 'alfombra' ? ' alf' : ''}${i === sel ? ' sel' : ''}" data-i="${i}" style="${style};color:#38332E">${inner}</div>`;
+      }
+      h += '</div></div>';
+      mb.innerHTML = h;
+      pp.innerHTML = ppl.map((P, q) => `<button data-p="${q}" class="${st.pos[q] !== undefined ? 'used' : ''}"><span class="av" style="background:${P.col}">${esc(P.ini)}</span>${esc(P.n)}${P.r && S.verTrad ? ` <small class="muted">${esc(P.r)}</small>` : ''}</button>`).join('');
+      cl.innerHTML = m.clues.map((c, k) => `<label class="clue${st.tick.includes(k) ? ' tick' : ''}"><input type="checkbox" data-k="${k}" ${st.tick.includes(k) ? 'checked' : ''}><span>${esc(clueText(c, m, JP()))}${JP() && S.verTrad ? `<span class="tr">${esc(clueText(c, m, false, true))}</span>` : ''}</span></label>`).join('');
+      $('#mhelp', v).textContent = sel >= 0 ? `Casilla ${LET[sel % N]}${Math.floor(sel / N) + 1}: elige a una persona.` : 'Toca una casilla y elige a quién pones ahí.';
+    }
+    function placeP(q) {
+      if (sel < 0) { toast('Primero toca una casilla'); return; }
+      if (m.obj[sel] && MUR.bloquea[m.obj[sel]]) { toast('Ahí no cabe nadie (hay un mueble)'); return; }
+      for (const [k, c] of Object.entries(st.pos)) if (c === sel) delete st.pos[k];
+      st.pos[q] = sel; st.x = st.x.filter(i => i !== sel); paint(); check();
+    }
+    function check() {
+      if (Object.keys(st.pos).length < N) return;
+      const ok = [...Array(N)].every((_, q) => st.pos[q] === m.sol[q]);
+      if (!ok) {
+        const rows = new Set(Object.values(st.pos).map(i => Math.floor(i / N))), cols = new Set(Object.values(st.pos).map(i => i % N));
+        toast(rows.size < N || cols.size < N ? 'Recuerda: una sola persona por fila y por columna' : 'Algo no cuadra… revisa las pistas 🔍', 2800); return;
+      }
+      acusar();
+    }
+    function acusar() {
+      const { ppl, salas } = murNames(m, JP());
+      const md = modal(`<h2>${JP() ? '犯人はだれ？ ' : ''}¿Quién fue?</h2><p class="small">¡Todos en su sitio! Ahora piensa: ¿quién estaba a solas con la víctima?</p><div class="people" style="margin-top:10px">${ppl.slice(0, N - 1).map((P, q) => `<button data-q="${q}"><span class="av" style="background:${P.col}">${esc(P.ini)}</span>${esc(P.n)}</button>`).join('')}</div>`);
+      md.addEventListener('click', e => {
+        const b = e.target.closest('[data-q]'); if (!b) return;
+        if (+b.dataset.q === m.asesino) {
+          md.remove(); clock.stop(); st.secs = clock.get(); GAME = null;
+          const sala = salas[m.room[m.sol[N - 1]]];
+          finish('murdoku', { secs: st.secs, params: p, extra: `🔍 ${JP() ? '犯人は' + esc(ppl[m.asesino].n) + 'でした！<br>' : ''}Fue <b>${esc(ppl[m.asesino].n)}</b>, a solas con la víctima en ${JP() ? esc(sala.n) + ' (' + esc(sala.es) + ')' : esc(sala.a)}.<br>` });
+        } else { b.style.opacity = .35; toast('No… mira bien en qué habitación está la víctima'); }
+      });
+    }
+    mb.onclick = e => { const c = e.target.closest('[data-i]'); if (!c) return; const i = +c.dataset.i; sel = sel === i ? -1 : i; paint(); };
+    pp.onclick = e => { const b = e.target.closest('[data-p]'); if (b) placeP(+b.dataset.p); };
+    cl.onchange = e => { const k = +e.target.dataset.k; st.tick = e.target.checked ? [...st.tick, k] : st.tick.filter(x => x !== k); paint(); };
+    v.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]'); if (!a || sel < 0) return;
+      if (a.dataset.a === 'x') { for (const [k, c] of Object.entries(st.pos)) if (c === sel) delete st.pos[k]; st.x = st.x.includes(sel) ? st.x.filter(i => i !== sel) : [...st.x, sel]; paint(); }
+      if (a.dataset.a === 'del') { for (const [k, c] of Object.entries(st.pos)) if (c === sel) delete st.pos[k]; st.x = st.x.filter(i => i !== sel); paint(); }
+    });
+    const clock = Clock($('#tm', v), st.secs);
+    bindBar(v, 'murdoku', p, o => go('murdoku', Object.assign({ nivel: p.nivel }, o), false));
+    GAME = {
+      id: st, dirty: () => Object.keys(st.pos).length > 0 || st.x.length > 0 || st.tick.length > 0,
+      persist() { if (!GAME) return; st.secs = clock.get(); if (GAME.dirty()) { S.partidas.murdoku = st; save(); } },
+      stop() { clock.stop(); },
+      onModo() { st.secs = clock.get(); S.partidas.murdoku = st; save(true); go('murdoku', { seguir: 'murdoku' }, false); },
+      share() { compartir({ g: 'murdoku', seed: p.seed, nivel: p.nivel }, '🔍 ¿Resuelves este misterio? Murdoku'); }
+    };
+    paint();
+  }
+};
+
+/* ============ CRUCIGRAMA y AUTODEFINIDO ============ */
+const NIV3 = [['facil', 'Fácil'], ['medio', 'Medio'], ['dificil', 'Difícil']];
+const DAKU = { か: 'が', き: 'ぎ', く: 'ぐ', け: 'げ', こ: 'ご', さ: 'ざ', し: 'じ', す: 'ず', せ: 'ぜ', そ: 'ぞ', た: 'だ', ち: 'ぢ', つ: 'づ', て: 'で', と: 'ど', は: 'ば', ひ: 'び', ふ: 'ぶ', へ: 'べ', ほ: 'ぼ', う: 'ゔ' };
+const HANDA = { は: 'ぱ', ひ: 'ぴ', ふ: 'ぷ', へ: 'ぺ', ほ: 'ぽ' };
+const SMALL = { や: 'ゃ', ゆ: 'ゅ', よ: 'ょ', つ: 'っ', あ: 'ぁ', い: 'ぃ', う: 'ぅ', え: 'ぇ', お: 'ぉ' };
+const toKata = s => s.replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+const toHira = s => s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+function cycleKana(ch, map) { const h = toHira(ch), isK = h !== ch; const inv = Object.fromEntries(Object.entries(map).map(([a, b]) => [b, a])); let r = map[h] || inv[h] || h; return isK ? toKata(r) : r; }
+const KANA_ROWS = ['あかさたなはまやらわ', 'いきしちにひみ　り　', 'うくすつぬふむゆるを', 'えけせてねへめ　れ　', 'おこそとのほもよろん'];
+
+function keyboardHTML(jp, kata) {
+  if (!jp) return `<div class="kb" id="kb">${['QWERTYUIOP', 'ASDFGHJKLÑ', 'ZXCVBNM'].map((r, i) => `<div class="r">${[...r].map(c => `<button data-k="${c}">${c}</button>`).join('')}${i === 2 ? '<button class="w" data-k="⌫">⌫</button>' : ''}</div>`).join('')}</div>`;
+  return `<div class="kb kana" id="kb">${KANA_ROWS.map(r => `<div class="r">${[...r].map(c => c === '　' ? '<button disabled style="visibility:hidden"></button>' : `<button data-k="${kata ? toKata(c) : c}">${kata ? toKata(c) : c}</button>`).join('')}</div>`).join('')}
+    <div class="r"><button class="w" data-k="゛">゛ ゜</button><button class="w" data-k="小">小 ゃ</button><button data-k="ー">ー</button><button class="w" data-k="カナ">${kata ? 'あ' : 'ア'}</button><button class="w" data-k="⌫">⌫</button></div></div>`;
+}
+
+function wordGame(kind) {
+  const auto = kind === 'autodefinido';
+  return {
+    title: () => auto ? '<span class="jp">自己定義</span>Autodefinido' : '<span class="jp">クロスワード</span>Crucigrama',
+    render(v, p) {
+      let st;
+      const saved = p.seguir ? S.partidas[p.seguir] : null;
+      if (saved) { st = structuredClone(saved); p = st.params; }
+      else {
+        const jp = p.modo ? p.modo === 'jp' : JP();
+        const nivel = ['facil', 'medio', 'dificil'].includes(p.nivel) ? p.nivel : (['facil', 'medio', 'dificil'].includes(nivelDe(kind)) ? nivelDe(kind) : 'medio');
+        const tema = p.tema || S.nivel[kind + 'Tema' + (jp ? 'J' : '')] || (jp ? 'jp:todo' : 'es:todo');
+        const seed = p.seed || uid();
+        p = Object.assign({}, p, { nivel, tema, seed, modo: jp ? 'jp' : 'normal' });
+        let words = p.pal ? p.pal.map(x => ({ w: [...x[0]], d: x[1] })) : palabras(tema, jp);
+        if (!jp) words = words.filter(w => w.w.length >= 3);
+        const cfg = { facil: [7, 9], medio: [11, 11], dificil: [15, 13] }[nivel];
+        const L = genCruci(words, { seed, max: cfg[0], maxSize: cfg[1] + (auto ? 1 : 0), auto });
+        if (!L) { v.innerHTML = '<section class="card"><p class="empty">No he podido montar el pasatiempo con estas palabras. Prueba con otro tema o añade más palabras a tu lista.</p></section>'; return; }
+        st = { g: kind, params: p, L, ans: {}, rev: [], secs: 0, fecha: dayKey(), kata: false };
+      }
+      const L = st.L, jp = p.modo === 'jp';
+      st.label = nombreTema(p.tema, jp) || '';
+      const K = (x, y) => x + ',' + y;
+      const sol = {}; L.cells.forEach(c => sol[K(c.x, c.y)] = c.ch);
+      // numeración
+      const starts = {}; let n = 0;
+      L.places.slice().sort((a, b) => a.y - b.y || a.x - b.x).forEach(pl => { const k = K(pl.x, pl.y); if (!starts[k]) starts[k] = ++n; pl.n = starts[k]; });
+      const clueAt = {}; (L.clueCells || []).forEach(c => clueAt[K(c.x, c.y)] = c);
+      let cur = L.places[0], pos = 0;
+      const cellsOf = pl => [...Array(pl.w.length)].map((_, k) => pl.dir === 'a' ? K(pl.x + k, pl.y) : K(pl.x, pl.y + k));
+      const solved = pl => cellsOf(pl).every(k => st.ans[k] === sol[k]);
+      v.innerHTML = gameBar(kind, p, `<select class="f" data-a="tema">${temas(jp).map(([k, nn]) => `<option value="${k}"${k === p.tema ? ' selected' : ''}>${esc(nn)}</option>`).join('')}${p.pal ? '<option selected>💌 Compartido</option>' : ''}</select>${nivelSel(kind, NIV3, p.nivel)}`) +
+        `<div class="gwrap"><div style="flex:1 1 420px;max-width:640px;display:flex;flex-direction:column;gap:10px"><div class="cluebar" id="cb"></div><div id="cwBox"></div><div id="kbBox"></div></div>
+         <div class="gside"><div class="row wrap"><button class="ibtn" data-a="letra">💡 Letra</button><button class="ibtn" data-a="palabra">🔤 Palabra</button><button class="ibtn" data-a="comprobar">✓ Comprobar</button></div>
+         <div class="card" style="padding:12px"><div class="clist" id="clist"></div></div></div></div>`;
+      const box = $('#cwBox', v);
+      function size() { const w = Math.min(box.clientWidth || 600, 640), h = Math.max(260, innerHeight - (isPhone() ? 360 : 300)); return Math.max(18, Math.floor(Math.min(w / L.W, h / L.H))); }
+      function paint() {
+        const cs = size(), act = new Set(cellsOf(cur)), curK = cellsOf(cur)[pos];
+        let h = `<div class="cw${jp ? ' jpw' : ''}" style="grid-template-columns:repeat(${L.W},${cs}px);font-size:${Math.round(cs * .58)}px;width:${cs * L.W}px">`;
+        for (let y = 0; y < L.H; y++) for (let x = 0; x < L.W; x++) {
+          const k = K(x, y);
+          if (sol[k]) {
+            const a = st.ans[k] || '', cl = ['c', 'l'];
+            if (act.has(k)) cl.push('inw'); if (k === curK) cl.push('sel');
+            if (st.rev.includes(k)) cl.push('rev'); else if (a && S.errores && a !== sol[k]) cl.push('err'); else if (st.chk && a && a === sol[k]) cl.push('ok');
+            h += `<div class="${cl.join(' ')}" data-k="${k}">${!auto && starts[k] ? `<span class="num">${starts[k]}</span>` : ''}${esc(a)}</div>`;
+          } else if (auto && clueAt[k]) {
+            const c = clueAt[k], parts = [];
+            if (c.a !== undefined) parts.push(`<div data-p="${c.a}">${esc(L.places[c.a].d)} →</div>`);
+            if (c.d !== undefined) parts.push(`<div data-p="${c.d}">${esc(L.places[c.d].d)} ↓</div>`);
+            h += `<div class="c k${(c.a !== undefined && L.places[c.a] === cur) || (c.d !== undefined && L.places[c.d] === cur) ? ' on' : ''}" style="font-size:${Math.max(6.5, cs * .17)}px" data-ck="${k}">${parts.join('')}</div>`;
+          } else h += `<div class="c${auto ? ' blk' : ''}"></div>`;
+        }
+        box.innerHTML = h + '</div>';
+        const ex = cur.extra || {};
+        $('#cb', v).innerHTML = `<b>${auto ? (cur.dir === 'a' ? '→' : '↓') : cur.n + (cur.dir === 'a' ? ' →' : ' ↓')}</b> ${esc(cur.d)} <span class="sp"></span><span class="small" style="opacity:.7">${cur.w.length} ${jp ? 'kana' : 'letras'}</span>${solved(cur) && jp && ex.j && ex.j !== ex.k ? ` <span class="jpf" style="color:var(--gold)">${esc(ex.j)}</span>` : ''}`;
+        const list = (dir, t) => `<h3 style="font-size:17px;margin:6px 0">${t}</h3>` + L.places.map((pl, i) => [pl, i]).filter(([pl]) => pl.dir === dir).sort((a, b) => auto ? a[0].y - b[0].y || a[0].x - b[0].x : a[0].n - b[0].n).map(([pl, i]) => `<div data-p="${i}" class="${pl === cur ? 'on' : ''}${solved(pl) ? ' done' : ''}">${auto ? '' : '<b>' + pl.n + '.</b> '}${esc(pl.d)}${solved(pl) && jp && pl.extra && pl.extra.j !== pl.extra.k ? ` <span class="jpf">· ${esc(pl.extra.j)}</span>` : ''}</div>`).join('');
+        $('#clist', v).innerHTML = list('a', 'Horizontales →') + list('d', 'Verticales ↓');
+      }
+      function paintKb() { $('#kbBox', v).innerHTML = keyboardHTML(jp, st.kata); }
+      function choose(pl, k) { cur = pl; pos = k === undefined ? Math.max(0, cellsOf(pl).findIndex(c => !st.ans[c])) : k; if (pos < 0) pos = 0; paint(); }
+      function type(ch) {
+        const ks = cellsOf(cur), k = ks[pos];
+        if (ch === '⌫') { if (st.rev.includes(k)) { pos = Math.max(0, pos - 1); paint(); return; } if (st.ans[k]) delete st.ans[k]; else if (pos > 0) { pos--; if (!st.rev.includes(ks[pos])) delete st.ans[ks[pos]]; } paint(); return; }
+        if (ch === '゛' || ch === '小') { const t = pos > 0 && !st.ans[k] ? ks[pos - 1] : k; if (st.ans[t] && !st.rev.includes(t)) { st.ans[t] = ch === '小' ? cycleKana(st.ans[t], SMALL) : cycleDaku(st.ans[t]); paint(); check(); } return; }
+        if (ch === 'カナ') { st.kata = !st.kata; paintKb(); return; }
+        if (st.rev.includes(k)) { pos = Math.min(ks.length - 1, pos + 1); }
+        else { st.ans[k] = ch; let np = pos + 1; while (np < ks.length && st.rev.includes(ks[np])) np++; pos = Math.min(ks.length - 1, np); }
+        st.chk = false; paint(); check();
+        if (solved(cur)) { const nx = L.places.find(pl => !solved(pl)); if (nx && nx !== cur) setTimeout(() => choose(nx), 250); }
+      }
+      function cycleDaku(c) { const h = toHira(c), kk = h !== c, base = toHiraBase(h), seq = [base]; if (DAKU[base]) seq.push(DAKU[base]); if (HANDA[base]) seq.push(HANDA[base]); const r = seq[(seq.indexOf(h) + 1) % seq.length]; return kk ? toKata(r) : r; }
+      function toHiraBase(h) { for (const [a, b] of Object.entries(DAKU)) if (b === h) return a; for (const [a, b] of Object.entries(HANDA)) if (b === h) return a; return h; }
+      function check() { if (L.cells.every(c => st.ans[K(c.x, c.y)] === c.ch)) { clock.stop(); st.secs = clock.get(); GAME = null; paint(); setTimeout(() => finish(kind, { secs: st.secs, params: p }), 400); } }
+      box.onclick = e => {
+        const ck = e.target.closest('[data-ck]'); if (ck) { const pd = e.target.closest('[data-p]'); const c = clueAt[ck.dataset.ck]; const i = pd ? +pd.dataset.p : (c.a ?? c.d); choose(L.places[i], 0); return; }
+        const c = e.target.closest('[data-k]'); if (!c) return; const k = c.dataset.k;
+        const here = L.places.filter(pl => cellsOf(pl).includes(k));
+        let pl = here.find(x => x === cur) && here.length > 1 && cellsOf(cur)[pos] === k ? here.find(x => x !== cur) : (here.find(x => x === cur) || here[0]);
+        choose(pl, cellsOf(pl).indexOf(k));
+      };
+      $('#clist', v).onclick = e => { const d = e.target.closest('[data-p]'); if (d) choose(L.places[+d.dataset.p]); };
+      $('#kbBox', v).onclick = e => { const b = e.target.closest('[data-k]'); if (b) type(b.dataset.k); };
+      v.addEventListener('click', e => {
+        const a = e.target.closest('[data-a]'); if (!a) return;
+        if (a.dataset.a === 'letra') { const ks = cellsOf(cur); let k = ks[pos]; if (st.ans[k] === sol[k]) k = ks.find(x => st.ans[x] !== sol[x]); if (!k) return; st.ans[k] = sol[k]; if (!st.rev.includes(k)) st.rev.push(k); paint(); check(); }
+        if (a.dataset.a === 'palabra') { for (const k of cellsOf(cur)) { if (st.ans[k] !== sol[k]) { st.ans[k] = sol[k]; if (!st.rev.includes(k)) st.rev.push(k); } } paint(); check(); }
+        if (a.dataset.a === 'comprobar') { const bad = L.cells.filter(c => st.ans[K(c.x, c.y)] && st.ans[K(c.x, c.y)] !== c.ch).length; const empty = L.cells.filter(c => !st.ans[K(c.x, c.y)]).length; st.chk = true; const se = S.errores; S.errores = true; paint(); S.errores = se; toast(bad ? `${bad} ${jp ? 'kana' : 'letra' + (bad > 1 ? 's' : '')} mal (en rojo)` : empty ? `¡Todo bien! Faltan ${empty}` : '¡Perfecto!'); }
+      });
+      v.addEventListener('change', e => { if (e.target.dataset.a === 'tema') { if (!descartar(kind)) { e.target.value = p.tema; return; } S.nivel[kind + 'Tema' + (jp ? 'J' : '')] = e.target.value; save(); go(kind, { tema: e.target.value, nivel: p.nivel }, false); } });
+      const onKey = e => {
+        if (!GAME || GAME.id !== st || e.target.matches('input,textarea,select')) return;
+        if (e.key === 'Backspace') { type('⌫'); e.preventDefault(); }
+        else if (!jp && /^[a-zñ]$/i.test(e.key)) type(e.key.toUpperCase());
+        else if (jp && /^[぀-ヿー]$/.test(e.key)) type(e.key);
+        else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { pos = Math.min(cur.w.length - 1, pos + 1); paint(); e.preventDefault(); }
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { pos = Math.max(0, pos - 1); paint(); e.preventDefault(); }
+        else if (e.key === 'Tab') { const i = L.places.indexOf(cur); choose(L.places[(i + 1) % L.places.length]); e.preventDefault(); }
+      };
+      document.addEventListener('keydown', onKey);
+      const onRs = () => GAME && GAME.id === st && paint(); addEventListener('resize', onRs);
+      const clock = Clock($('#tm', v), st.secs);
+      bindBar(v, kind, p, o => go(kind, Object.assign({ tema: p.tema, nivel: p.nivel }, o), false));
+      GAME = {
+        id: st, dirty: () => Object.keys(st.ans).length > 0,
+        persist() { if (!GAME) return; st.secs = clock.get(); if (GAME.dirty()) { S.partidas[kind] = st; save(); } },
+        stop() { clock.stop(); document.removeEventListener('keydown', onKey); removeEventListener('resize', onRs); },
+        onModo() { GAME.persist(); GAME.persist = null; toast(JP() ? 'Nuevo pasatiempo en japonés 日本語' : 'Nuevo pasatiempo en modo normal'); go(kind, {}, false); },
+        share() { const own = p.tema.startsWith('l:') || p.pal; compartir(Object.assign({ g: kind, seed: p.seed, nivel: p.nivel, modo: p.modo, tema: own ? undefined : p.tema }, own ? { pal: L.places.map(pl => [pl.w.join(''), pl.d]) } : {}), auto ? '¡Te reto a este autodefinido!' : '¡Te reto a este crucigrama!'); }
+      };
+      paintKb(); paint();
+    }
+  };
+}
+SCREENS.crucigrama = wordGame('crucigrama');
+SCREENS.autodefinido = wordGame('autodefinido');
+
+/* ============ SOPA DE LETRAS ============ */
+const SOPA_SIZE = { facil: 9, medio: 11, dificil: 13 };
+const SOPA_COL = ['#B98A82', '#6F8068', '#C99A4B', '#4F86A6', '#8D6FA8', '#C9786A', '#2B8A82', '#A65E55'];
+SCREENS.sopa = {
+  title: () => '<span class="jp">文字探し</span>Sopa de letras',
+  render(v, p) {
+    let st;
+    const saved = p.seguir ? S.partidas[p.seguir] : null;
+    if (saved) { st = structuredClone(saved); p = st.params; }
+    else {
+      const jp = p.modo ? p.modo === 'jp' : JP();
+      const nivel = SOPA_SIZE[p.nivel] ? p.nivel : (SOPA_SIZE[nivelDe('sopa')] ? nivelDe('sopa') : 'medio');
+      const tema = p.tema || S.nivel['sopaTema' + (jp ? 'J' : '')] || (jp ? 'jp:todo' : 'es:todo');
+      const script = p.script || S.nivel.sopaScript || 'hira', seed = p.seed || uid();
+      p = Object.assign({}, p, { nivel, tema, seed, modo: jp ? 'jp' : 'normal', script: jp ? script : undefined });
+      let words = p.pal ? p.pal.map(x => ({ w: [...x[0]], d: x[1] })) : palabras(tema, jp);
+      if (jp) {
+        words = script === 'kata' ? words.map(w => Object.assign({}, w, { w: [...toKata(w.w.join(''))] })) : words.filter(w => /^[\u3040-\u309f]+$/.test(w.w.join('')));
+        // sin kana pequeños sueltos: se dejan tal cual
+      }
+      const g = genSopa(words, { seed, size: SOPA_SIZE[nivel], nivel, relleno: jp ? (script === 'kata' ? KATA : HIRA) : LETRAS_ES });
+      st = { g: 'sopa', params: p, G: g.G, size: g.size, words: g.words.map(w => ({ s: w.w.join(''), d: w.d, x: w.x, y: w.y, dx: w.dx, dy: w.dy, L: w.w.length, extra: w.extra })), found: [], secs: 0, fecha: dayKey() };
+    }
+    const jp = p.modo === 'jp', N = st.size;
+    st.label = nombreTema(p.tema, jp) || '';
+    const verPal = S.nivel.sopaVer || 'pal';
+    v.innerHTML = gameBar('sopa', p, `<select class="f" data-a="tema">${temas(jp).map(([k, nn]) => `<option value="${k}"${k === p.tema ? ' selected' : ''}>${esc(nn)}</option>`).join('')}${p.pal ? '<option selected>💌 Compartido</option>' : ''}</select>${nivelSel('sopa', NIV3, p.nivel)}${jp ? `<div class="seg" id="scr"><button data-s="hira" class="jpf ${p.script !== 'kata' ? 'on' : ''}">ひらがな</button><button data-s="kata" class="jpf ${p.script === 'kata' ? 'on' : ''}">カタカナ</button></div>` : ''}`) +
+      `<div class="gwrap"><div class="sopa${jp ? ' jpw' : ''}" id="sg" style="grid-template-columns:repeat(${N},1fr);grid-template-rows:repeat(${N},1fr)"></div>
+       <div class="gside"><div class="card" style="padding:14px"><div class="row" style="margin-bottom:8px"><h3 style="font-size:19px;margin:0">Palabras <span class="small muted" id="cnt"></span></h3><span class="sp"></span>${jp ? `<div class="seg" id="ver"><button data-v="pal" class="${verPal === 'pal' ? 'on' : ''}">Ver kana</button><button data-v="sig" class="${verPal === 'sig' ? 'on' : ''}">Solo significado</button></div>` : ''}</div><div class="wlist" id="wl"></div></div>
+       <div class="card small muted" style="padding:12px">Arrastra el dedo o el lápiz desde la primera letra hasta la última. También puedes tocar la primera y luego la última.${p.nivel === 'dificil' ? ' En difícil hay palabras al revés y en diagonal.' : p.nivel === 'medio' ? ' Hay palabras en diagonal.' : ''}</div>
+       <div class="row"><button class="ibtn" data-a="pista">💡 Pista</button></div></div></div>`;
+    const sg = $('#sg', v);
+    let a0 = null, a1 = null, pend = null;
+    function lineFor(x0, y0, x1, y1, col, dash) { const c = (k) => ((k + .5) / N * 100); return `<line x1="${c(x0)}%" y1="${c(y0)}%" x2="${c(x1)}%" y2="${c(y1)}%" stroke="${col}" stroke-width="${78 / N}%" stroke-linecap="round" opacity="${dash ? .35 : .38}"/>`; }
+    function paint() {
+      let h = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" id="sv"></svg>`;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) h += `<div class="c" data-x="${x}" data-y="${y}">${esc(st.G[y][x])}</div>`;
+      sg.innerHTML = h; paintLines();
+      $('#cnt', v).textContent = `${st.found.length}/${st.words.length}`;
+      const sig = jp && (S.nivel.sopaVer || 'pal') === 'sig';
+      $('#wl', v).innerHTML = st.words.map((w, i) => { const f = st.found.includes(i); return `<span class="${f ? 'f' : ''}">${sig && !f ? esc(w.d) : `<span class="${jp ? 'jpf' : ''}">${esc(jp ? w.s : (w.extra && w.extra.o) || w.s)}</span>${jp && w.d ? `<small>${esc(w.d)}</small>` : ''}`}</span>`; }).join('');
+    }
+    function paintLines() {
+      const sv = $('#sv', sg); let h = '';
+      st.found.forEach((i, k) => { const w = st.words[i]; h += lineFor(w.x, w.y, w.x + w.dx * (w.L - 1), w.y + w.dy * (w.L - 1), SOPA_COL[k % SOPA_COL.length]); });
+      if (a0 && a1) h += lineFor(a0[0], a0[1], a1[0], a1[1], '#38332E', 1);
+      else if (pend) h += lineFor(pend[0], pend[1], pend[0], pend[1], '#C99A4B', 1);
+      sv.innerHTML = h;
+    }
+    function cellAt(e) { const r = sg.getBoundingClientRect(), pd = 6; const x = Math.floor((e.clientX - r.left - pd) / ((r.width - 2 * pd) / N)), y = Math.floor((e.clientY - r.top - pd) / ((r.height - 2 * pd) / N)); return x >= 0 && y >= 0 && x < N && y < N ? [x, y] : null; }
+    function snap(s, c) { const dx = c[0] - s[0], dy = c[1] - s[1]; if (!dx && !dy) return c; const ang = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)), len = Math.max(Math.abs(dx), Math.abs(dy)); const ux = Math.round(Math.cos(ang * Math.PI / 4)), uy = Math.round(Math.sin(ang * Math.PI / 4)); let ex = s[0] + ux * len, ey = s[1] + uy * len; ex = Math.max(0, Math.min(N - 1, ex)); ey = Math.max(0, Math.min(N - 1, ey)); return [ex, ey]; }
+    function tryWord(s, e) {
+      const dx = Math.sign(e[0] - s[0]), dy = Math.sign(e[1] - s[1]), L = Math.max(Math.abs(e[0] - s[0]), Math.abs(e[1] - s[1])) + 1;
+      if (L < 2) return false;
+      for (let i = 0; i < st.words.length; i++) {
+        if (st.found.includes(i)) continue; const w = st.words[i]; if (w.L !== L) continue;
+        const ex = w.x + w.dx * (L - 1), ey = w.y + w.dy * (L - 1);
+        if ((w.x === s[0] && w.y === s[1] && ex === e[0] && ey === e[1]) || (w.x === e[0] && w.y === e[1] && ex === s[0] && ey === s[1])) { st.found.push(i); return true; }
+      }
+      // palabra igual en otro sitio (por si coincide)
+      let str = ''; for (let k = 0; k < L; k++) str += st.G[s[1] + dy * k][s[0] + dx * k];
+      const i = st.words.findIndex((w, j) => !st.found.includes(j) && (w.s === str || [...w.s].reverse().join('') === str));
+      if (i >= 0) { const w = st.words[i]; Object.assign(w, { x: s[0], y: s[1], dx, dy }); st.found.push(i); return true; }
+      return false;
+    }
+    function done() { paint(); if (st.found.length === st.words.length) { clock.stop(); st.secs = clock.get(); GAME = null; setTimeout(() => finish('sopa', { secs: st.secs, params: p }), 400); } }
+    sg.addEventListener('pointerdown', e => { const c = cellAt(e); if (!c) return; e.preventDefault(); sg.setPointerCapture(e.pointerId); a0 = c; a1 = c; paintLines(); });
+    sg.addEventListener('pointermove', e => { if (!a0) return; const c = cellAt(e); if (c) { a1 = snap(a0, c); paintLines(); } });
+    sg.addEventListener('pointerup', e => {
+      if (!a0) return; const s = a0, en = a1; a0 = a1 = null;
+      if (s[0] === en[0] && s[1] === en[1]) { if (pend && (pend[0] !== s[0] || pend[1] !== s[1])) { const e2 = snap(pend, s); const ok = tryWord(pend, e2); pend = null; if (ok) done(); else { paintLines(); } } else { pend = pend ? null : s; paintLines(); } return; }
+      pend = null; if (tryWord(s, en)) done(); else paintLines();
+    });
+    sg.addEventListener('pointercancel', () => { a0 = a1 = null; paintLines(); });
+    v.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]'); if (a && a.dataset.a === 'pista') { const i = st.words.findIndex((_, j) => !st.found.includes(j)); if (i < 0) return; const w = st.words[i]; pend = [w.x, w.y]; paintLines(); toast(jp ? `«${w.s}» empieza en la casilla marcada` : `«${w.s}» empieza en la casilla marcada`); }
+      const sc = e.target.closest('#scr button'); if (sc && sc.dataset.s !== p.script) { if (!descartar('sopa')) return; S.nivel.sopaScript = sc.dataset.s; save(); go('sopa', { tema: p.tema, nivel: p.nivel, script: sc.dataset.s }, false); }
+      const vv = e.target.closest('#ver button'); if (vv) { S.nivel.sopaVer = vv.dataset.v; save(); $$('#ver button', v).forEach(b => b.classList.toggle('on', b === vv)); paint(); }
+    });
+    v.addEventListener('change', e => { if (e.target.dataset.a === 'tema') { if (!descartar('sopa')) { e.target.value = p.tema; return; } S.nivel['sopaTema' + (jp ? 'J' : '')] = e.target.value; save(); go('sopa', { tema: e.target.value, nivel: p.nivel }, false); } });
+    const clock = Clock($('#tm', v), st.secs);
+    bindBar(v, 'sopa', p, o => go('sopa', Object.assign({ tema: p.tema, nivel: p.nivel }, o), false));
+    GAME = {
+      id: st, dirty: () => st.found.length > 0,
+      persist() { if (!GAME) return; st.secs = clock.get(); if (GAME.dirty()) { S.partidas.sopa = st; save(); } },
+      stop() { clock.stop(); },
+      onModo() { if (GAME.dirty()) { GAME.persist(); } GAME.persist = null; go('sopa', {}, false); },
+      share() { const own = (p.tema || '').startsWith('l:') || p.pal; compartir(Object.assign({ g: 'sopa', seed: p.seed, nivel: p.nivel, modo: p.modo, script: p.script, tema: own ? undefined : p.tema }, own ? { pal: st.words.map(w => [w.s, w.d]) } : {}), '¡Te reto a esta sopa de letras!'); }
+    };
+    paint();
+  }
+};
+
+/* ============ BUSCA LAS DIFERENCIAS ============ */
+const DIF_N = { facil: 5, medio: 7, dificil: 10 };
+const DIF_R = { facil: .085, medio: .065, dificil: .05 };
+
+/* ---------- escenas dibujadas ---------- */
+function escena(seed) {
+  const r = RNG('esc' + seed), W = 900, H = 640;
+  const pal = ['#E07A5F', '#F2CC8F', '#81B29A', '#3D405B', '#E9A6A6', '#9C89B8', '#F0A202', '#4F86A6', '#C9786A', '#6F8068'];
+  const tarde = r() < .3;
+  const it = [];
+  it.push({ t: 'sun', x: 120 + r.int(640), y: 80 + r.int(60), s: 46 + r.int(16), c: tarde ? '#F4A259' : '#F6D365', bg: 1 });
+  for (let i = 0; i < 4; i++) it.push({ t: 'cloud', x: 60 + r.int(780), y: 50 + r.int(130), s: 26 + r.int(22) });
+  for (let i = 0; i < 3; i++) it.push({ t: 'bird', x: 100 + r.int(700), y: 60 + r.int(150), s: 12 + r.int(8) });
+  const hx = 240 + r.int(300), hw = 230, hy = 330;
+  it.push({ t: 'house', x: hx, y: hy, w: hw, h: 170, c: r.pick(['#F2E3C9', '#EBD4CB', '#DDE5D0']), roof: r.pick(['#B5523B', '#8E5A4F', '#5E6B8A']), bg: 1 });
+  it.push({ t: 'chimney', x: hx + hw * .68, y: hy - 70, c: '#7d5a50' });
+  it.push({ t: 'door', x: hx + hw / 2 - 25, y: hy + 85, w: 50, h: 85, c: r.pick(pal) });
+  it.push({ t: 'window', x: hx + 22, y: hy + 30, w: 52, h: 48, c: '#BFE3F2' });
+  it.push({ t: 'window', x: hx + hw - 74, y: hy + 30, w: 52, h: 48, c: '#BFE3F2' });
+  it.push({ t: 'window', x: hx + hw / 2 - 18, y: hy - 48, w: 36, h: 34, c: '#BFE3F2', round: 1 });
+  const trees = [];
+  for (let i = 0; i < 4; i++) { let x; do { x = 40 + r.int(820); } while (Math.abs(x - (hx + hw / 2)) < hw / 2 + 50 || trees.some(t => Math.abs(t - x) < 110)); trees.push(x); it.push({ t: 'tree', x, y: 470 + r.int(20), s: 60 + r.int(25), c: r.pick(['#6F8068', '#81B29A', '#5C8A5A', '#90A955']) }); }
+  for (const tx of trees.slice(0, 2)) it.push({ t: 'apple', x: tx - 20 + r.int(40), y: 380 + r.int(40), s: 9, c: '#D64545' });
+  for (let i = 0; i < 9; i++) it.push({ t: 'flower', x: 30 + r.int(840), y: 540 + r.int(80), s: 11 + r.int(6), c: r.pick(pal) });
+  it.push({ t: 'cat', x: 80 + r.int(740), y: 560, s: 30, c: r.pick(['#3D405B', '#E07A5F', '#8F8A83']) });
+  it.push({ t: 'balloon', x: 80 + r.int(740), y: 190 + r.int(90), s: 22, c: r.pick(pal) });
+  it.push({ t: 'mailbox', x: hx - 50, y: 470, c: r.pick(pal) });
+  return { W, H, tarde, items: it };
+}
+function drawEscena(ctx, sc) {
+  const { W, H } = sc;
+  const g = ctx.createLinearGradient(0, 0, 0, H * .7); g.addColorStop(0, sc.tarde ? '#F7B69B' : '#9FD3EA'); g.addColorStop(1, sc.tarde ? '#FCE2C7' : '#E6F4F8'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#B7CFA6'; ctx.beginPath(); ctx.moveTo(0, 420); ctx.bezierCurveTo(200, 330, 380, 410, 520, 360); ctx.bezierCurveTo(680, 300, 800, 380, W, 340); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+  ctx.fillStyle = '#9DBF8A'; ctx.fillRect(0, 490, W, H - 490); ctx.fillStyle = '#E8D9B5'; ctx.beginPath(); ctx.moveTo(380, H); ctx.quadraticCurveTo(450, 560, 470, 500); ctx.lineTo(500, 500); ctx.quadraticCurveTo(520, 570, 560, H); ctx.fill();
+  for (const o of sc.items) if (!o.off) drawItem(ctx, o);
+}
+function drawItem(c, o) {
+  const s = o.s || 1; c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+  switch (o.t) {
+    case 'sun': c.fillStyle = o.c; c.beginPath(); c.arc(o.x, o.y, s, 0, 7); c.fill(); c.strokeStyle = o.c; c.lineWidth = 5; for (let k = 0; k < (o.rays || 10); k++) { const a = k / (o.rays || 10) * Math.PI * 2; c.beginPath(); c.moveTo(o.x + Math.cos(a) * (s + 10), o.y + Math.sin(a) * (s + 10)); c.lineTo(o.x + Math.cos(a) * (s + 24), o.y + Math.sin(a) * (s + 24)); c.stroke(); } break;
+    case 'cloud': c.fillStyle = o.c || '#fff'; for (const [dx, dy, k] of [[0, 0, 1], [s * .9, -s * .4, .9], [s * 1.8, 0, .85], [s * .9, s * .2, .95]]) { c.beginPath(); c.arc(o.x + dx, o.y + dy, s * k, 0, 7); c.fill(); } break;
+    case 'bird': c.strokeStyle = o.c || '#3D405B'; c.lineWidth = 3; c.beginPath(); c.moveTo(o.x - s, o.y); c.quadraticCurveTo(o.x - s / 2, o.y - s * .7, o.x, o.y); c.quadraticCurveTo(o.x + s / 2, o.y - s * .7, o.x + s, o.y); c.stroke(); break;
+    case 'house': c.fillStyle = o.c; c.fillRect(o.x, o.y, o.w, o.h); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2; c.strokeRect(o.x, o.y, o.w, o.h); c.fillStyle = o.roof; c.beginPath(); c.moveTo(o.x - 22, o.y + 2); c.lineTo(o.x + o.w / 2, o.y - 95); c.lineTo(o.x + o.w + 22, o.y + 2); c.closePath(); c.fill(); break;
+    case 'chimney': c.fillStyle = o.c; c.fillRect(o.x, o.y, 26, 48); if (!o.nosmoke) { c.fillStyle = 'rgba(255,255,255,.8)'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(o.x + 13 + k * 9, o.y - 14 - k * 18, 9 + k * 3, 0, 7); c.fill(); } } break;
+    case 'door': c.fillStyle = o.c; c.beginPath(); c.roundRect ? c.roundRect(o.x, o.y, o.w, o.h, [o.w / 2, o.w / 2, 0, 0]) : c.rect(o.x, o.y, o.w, o.h); c.fill(); c.fillStyle = '#F6D365'; c.beginPath(); c.arc(o.x + o.w - 10, o.y + o.h * .55, 4, 0, 7); c.fill(); break;
+    case 'window': c.fillStyle = o.c; c.strokeStyle = '#fff'; c.lineWidth = 5; if (o.round) { c.beginPath(); c.arc(o.x + o.w / 2, o.y + o.h / 2, o.w / 2, 0, 7); c.fill(); c.stroke(); } else { c.fillRect(o.x, o.y, o.w, o.h); c.strokeRect(o.x, o.y, o.w, o.h); if (!o.nocross) { c.beginPath(); c.moveTo(o.x + o.w / 2, o.y); c.lineTo(o.x + o.w / 2, o.y + o.h); c.moveTo(o.x, o.y + o.h / 2); c.lineTo(o.x + o.w, o.y + o.h / 2); c.stroke(); } } break;
+    case 'tree': c.fillStyle = '#8B5E3C'; c.fillRect(o.x - s * .12, o.y - s * 1.2, s * .24, s * 1.25); c.fillStyle = o.c; for (const [dx, dy, k] of [[0, -s * 1.7, .75], [-s * .45, -s * 1.3, .55], [s * .45, -s * 1.3, .55]]) { c.beginPath(); c.arc(o.x + dx, o.y + dy, s * k, 0, 7); c.fill(); } break;
+    case 'apple': c.fillStyle = o.c; c.beginPath(); c.arc(o.x, o.y, s, 0, 7); c.fill(); break;
+    case 'flower': c.strokeStyle = '#4E7A3F'; c.lineWidth = 3; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(o.x, o.y + s * 2.2); c.stroke(); c.fillStyle = o.c; for (let k = 0; k < (o.pet || 5); k++) { const a = k / (o.pet || 5) * Math.PI * 2; c.beginPath(); c.arc(o.x + Math.cos(a) * s * .7, o.y + Math.sin(a) * s * .7, s * .55, 0, 7); c.fill(); } c.fillStyle = '#F6D365'; c.beginPath(); c.arc(o.x, o.y, s * .4, 0, 7); c.fill(); break;
+    case 'cat': { c.fillStyle = o.c; c.beginPath(); c.ellipse(o.x, o.y, s, s * .65, 0, 0, 7); c.fill(); c.beginPath(); c.arc(o.x + s * .85, o.y - s * .55, s * .45, 0, 7); c.fill(); c.beginPath(); c.moveTo(o.x + s * .55, o.y - s * .85); c.lineTo(o.x + s * .65, o.y - s * 1.25); c.lineTo(o.x + s * .85, o.y - s * .95); c.moveTo(o.x + s * .9, o.y - s * .95); c.lineTo(o.x + s * 1.1, o.y - s * 1.25); c.lineTo(o.x + s * 1.2, o.y - s * .8); c.fill(); if (!o.notail) { c.strokeStyle = o.c; c.lineWidth = 6; c.beginPath(); c.moveTo(o.x - s * .9, o.y); c.quadraticCurveTo(o.x - s * 1.6, o.y - s * .3, o.x - s * 1.3, o.y - s); c.stroke(); } break; }
+    case 'balloon': c.strokeStyle = '#555'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(o.x, o.y + s * 1.2); c.lineTo(o.x - 6, o.y + s * 3.4); c.stroke(); c.fillStyle = o.c; c.beginPath(); c.ellipse(o.x, o.y, s * .85, s * 1.1, 0, 0, 7); c.fill(); break;
+    case 'mailbox': c.fillStyle = '#8B5E3C'; c.fillRect(o.x - 4, o.y - 45, 8, 50); c.fillStyle = o.c; c.fillRect(o.x - 18, o.y - 66, 36, 24); if (!o.noflag) { c.fillStyle = '#D64545'; c.fillRect(o.x + 16, o.y - 76, 4, 18); c.fillRect(o.x + 20, o.y - 76, 10, 7); } break;
+    case 'star': c.fillStyle = o.c; c.beginPath(); for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5 - Math.PI / 2, rr = k % 2 ? s * .45 : s; c.lineTo(o.x + Math.cos(a) * rr, o.y + Math.sin(a) * rr); } c.fill(); break;
+    case 'butterfly': c.fillStyle = o.c; c.beginPath(); c.ellipse(o.x - s * .5, o.y, s * .5, s * .7, -.4, 0, 7); c.ellipse(o.x + s * .5, o.y, s * .5, s * .7, .4, 0, 7); c.fill(); c.fillStyle = '#333'; c.fillRect(o.x - 1.5, o.y - s * .6, 3, s * 1.2); break;
+  }
+  c.restore();
+}
+function bbox(o) {
+  const s = o.s || 1;
+  switch (o.t) {
+    case 'sun': return [o.x, o.y, s + 22]; case 'cloud': return [o.x + s * .9, o.y, s * 1.9]; case 'bird': return [o.x, o.y - s * .3, s * 1.2];
+    case 'chimney': return [o.x + 13, o.y, 40]; case 'door': return [o.x + o.w / 2, o.y + o.h / 2, o.h / 2 + 6]; case 'window': return [o.x + o.w / 2, o.y + o.h / 2, Math.max(o.w, o.h) / 2 + 8];
+    case 'tree': return [o.x, o.y - s * 1.4, s * 1.05]; case 'apple': return [o.x, o.y, 26]; case 'flower': return [o.x, o.y + s * .5, s * 2];
+    case 'cat': return [o.x, o.y - s * .3, s * 1.6]; case 'balloon': return [o.x, o.y + s, s * 2.2]; case 'mailbox': return [o.x, o.y - 45, 44];
+    case 'star': case 'butterfly': return [o.x, o.y, s * 1.6];
+  }
+  return [o.x, o.y, 30];
+}
+function difEscena(seed, nivel) {
+  const sc = escena(seed), r = RNG('escdif' + seed + nivel), n = DIF_N[nivel] || 7;
+  const B = structuredClone(sc), diffs = [];
+  const pal = ['#E07A5F', '#81B29A', '#9C89B8', '#4F86A6', '#F0A202', '#E9A6A6', '#3D405B', '#90A955'];
+  const cand = r.shuffle(B.items.map((o, i) => i).filter(i => !B.items[i].bg));
+  const overl = (b) => diffs.some(d => Math.hypot(d.x - b[0], d.y - b[1]) < d.r + b[2] - 10);
+  for (const i of cand) {
+    if (diffs.length >= n) break;
+    const o = B.items[i], b = bbox(o); if (overl(b)) continue;
+    const ops = [];
+    if (o.c && !['window'].includes(o.t)) ops.push('color');
+    if (['bird', 'apple', 'flower', 'cloud', 'balloon', 'cat'].includes(o.t)) ops.push('off');
+    if (o.t === 'window') ops.push('nocross', 'color'); if (o.t === 'chimney') ops.push('nosmoke'); if (o.t === 'cat') ops.push('notail'); if (o.t === 'mailbox') ops.push('noflag'); if (o.t === 'flower') ops.push('pet'); if (o.t === 'sun') ops.push('rays');
+    if (['tree', 'cloud', 'flower', 'balloon', 'bird'].includes(o.t)) ops.push('size');
+    const op = r.pick(ops);
+    if (op === 'color') { let c; do { c = r.pick(pal); } while (c === o.c); o.c = o.t === 'window' ? '#F6D365' : c; }
+    else if (op === 'off') o.off = 1; else if (op === 'size') o.s = (o.s || 1) * (nivel === 'dificil' ? 1.3 : 1.45);
+    else if (op === 'pet') o.pet = 8; else if (op === 'rays') o.rays = 6; else o[op] = 1;
+    diffs.push({ x: b[0], y: b[1], r: Math.max(b[2], 26) });
+  }
+  // añadir objetos nuevos en sitios libres
+  let guard = 0;
+  while (diffs.length < n && guard++ < 200) {
+    const t = r.pick(['star', 'butterfly', 'flower', 'bird']), x = 50 + r.int(800), y = t === 'star' ? 40 + r.int(200) : t === 'flower' ? 540 + r.int(70) : 150 + r.int(350);
+    const o = { t, x, y, s: t === 'star' ? 16 : t === 'flower' ? 13 : 14, c: r.pick(pal) }, b = bbox(o);
+    if (overl(b) || B.items.some(it => !it.bg && Math.hypot(bbox(it)[0] - b[0], bbox(it)[1] - b[1]) < bbox(it)[2] + b[2])) continue;
+    B.items.push(o); diffs.push({ x: b[0], y: b[1], r: Math.max(b[2], 26) });
+  }
+  const mk = s => { const c = document.createElement('canvas'); c.width = sc.W; c.height = sc.H; drawEscena(c.getContext('2d'), s); return c.toDataURL('image/jpeg', .9); };
+  return { a: mk(sc), b: mk(B), W: sc.W, H: sc.H, diffs: diffs.map(d => ({ x: d.x / sc.W, y: d.y / sc.H, r: d.r / sc.W })) };
+}
+
+/* ---------- diferencias automáticas en una foto ---------- */
+async function difFoto(src, nivel, seed) {
+  const im = await loadImg(src), r = RNG('foto' + seed + nivel);
+  const k = Math.min(1, 1100 / Math.max(im.naturalWidth, im.naturalHeight)), W = Math.round(im.naturalWidth * k), H = Math.round(im.naturalHeight * k);
+  const A = document.createElement('canvas'); A.width = W; A.height = H; const ax = A.getContext('2d'); ax.drawImage(im, 0, 0, W, H);
+  const B = document.createElement('canvas'); B.width = W; B.height = H; const bx = B.getContext('2d'); bx.drawImage(A, 0, 0);
+  const md = Math.min(W, H), R = Math.round(md * (DIF_R[nivel] || .065) * 1.15), n = DIF_N[nivel] || 7;
+  // mapa de detalle
+  const d = ax.getImageData(0, 0, W, H).data, gs = Math.max(8, Math.round(R * .9)), cells = [];
+  for (let y = R; y < H - R; y += gs) for (let x = R; x < W - R; x += gs) {
+    let s = 0, cnt = 0; for (let yy = y - gs / 2; yy < y + gs / 2; yy += 3) for (let xx = x - gs / 2; xx < x + gs / 2; xx += 3) { const i = (Math.round(yy) * W + Math.round(xx)) * 4, j = i + 12; if (j >= d.length) continue; s += Math.abs(d[i] - d[j]) + Math.abs(d[i + 1] - d[j + 1]) + Math.abs(d[i + 2] - d[j + 2]); cnt++; }
+    cells.push({ x, y, v: s / (cnt || 1) });
+  }
+  cells.sort((a, b) => b.v - a.v);
+  const top = r.shuffle(cells.slice(0, Math.max(n * 4, Math.round(cells.length * .45))));
+  const diffs = [];
+  for (const c of top) { if (diffs.length >= n) break; if (diffs.some(q => Math.hypot(q.x - c.x, q.y - c.y) < R * 2.6)) continue; diffs.push({ x: c.x, y: c.y, r: R }); }
+  const ops = r.shuffle(['hue', 'mirror', 'clone', 'light', 'gray', 'hue', 'clone', 'mirror', 'flip', 'light']);
+  diffs.forEach((q, i) => {
+    const op = ops[i % ops.length], P = document.createElement('canvas'); P.width = P.height = R * 2; const px = P.getContext('2d');
+    const sx = q.x - R, sy = q.y - R;
+    if (op === 'mirror' || op === 'flip') { px.translate(op === 'mirror' ? R * 2 : 0, op === 'flip' ? R * 2 : 0); px.scale(op === 'mirror' ? -1 : 1, op === 'flip' ? -1 : 1); px.drawImage(A, sx, sy, R * 2, R * 2, 0, 0, R * 2, R * 2); px.setTransform(1, 0, 0, 1, 0, 0); }
+    else if (op === 'clone') { let ox = q.x + (r() < .5 ? -1 : 1) * R * 2.2, oy = q.y + (r() - .5) * R * 2; ox = Math.max(R, Math.min(W - R, ox)); oy = Math.max(R, Math.min(H - R, oy)); px.drawImage(A, ox - R, oy - R, R * 2, R * 2, 0, 0, R * 2, R * 2); }
+    else { px.filter = op === 'hue' ? `hue-rotate(${120 + r.int(120)}deg) saturate(1.6)` : op === 'gray' ? 'grayscale(1) contrast(1.1)' : (r() < .5 ? 'brightness(1.55)' : 'brightness(.5)'); px.drawImage(A, sx, sy, R * 2, R * 2, 0, 0, R * 2, R * 2); if (px.filter === 'none' || !('filter' in px)) manualFilter(px, R * 2, op); }
+    px.filter = 'none'; px.globalCompositeOperation = 'destination-in';
+    const g = px.createRadialGradient(R, R, R * .55, R, R, R); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); px.fillStyle = g; px.fillRect(0, 0, R * 2, R * 2);
+    bx.drawImage(P, sx, sy);
+  });
+  return { a: A.toDataURL('image/jpeg', .88), b: B.toDataURL('image/jpeg', .88), W, H, diffs: diffs.map(q => ({ x: q.x / W, y: q.y / H, r: q.r / W })) };
+}
+function manualFilter(px, S2, op) { // Safari antiguo sin ctx.filter
+  const im = px.getImageData(0, 0, S2, S2), d = im.data;
+  for (let i = 0; i < d.length; i += 4) { const [r, g, b] = [d[i], d[i + 1], d[i + 2]]; if (op === 'hue') { d[i] = b; d[i + 1] = r; d[i + 2] = g; } else if (op === 'gray') { const y = r * .3 + g * .59 + b * .11; d[i] = d[i + 1] = d[i + 2] = y; } else { d[i] = Math.min(255, r * 1.5); d[i + 1] = Math.min(255, g * 1.5); d[i + 2] = Math.min(255, b * 1.5); } }
+  px.putImageData(im, 0, 0);
+}
+
+/* ---------- pantalla principal de diferencias ---------- */
+SCREENS.diferencias = {
+  title: () => '<span class="jp">間違い探し</span>Busca las diferencias',
+  async render(v, p) {
+    if (p.seguir) { const sv = S.partidas[p.seguir]; if (sv) { p = Object.assign({}, sv.params, { cont: sv }); } }
+    if (p.escena || p.reto || p.id || p.cont) return difPlay(v, p);
+    const items = (await DB.all().catch(() => [])).filter(x => x.tipo === 'dif').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    if (CUR !== 'diferencias') return;
+    const nv = DIF_N[nivelDe('diferencias')] ? nivelDe('diferencias') : 'medio';
+    v.innerHTML = `<div class="grid">
+      <section class="card c12"><div class="row wrap"><h3 style="margin:0">Nivel</h3>${nivelSel('diferencias', NIV3, nv)}<span class="small muted">Fácil 5 · Medio 7 · Difícil 10 diferencias</span></div></section>
+      <section class="card c4" style="cursor:pointer" data-a="escena"><div style="font-size:40px">🎨</div><h3>Escena dibujada</h3><p class="small muted">Un paisaje nuevo cada vez, con diferencias claras y bonitas.</p><button class="btn primary">Jugar ›</button></section>
+      <section class="card c4" style="cursor:pointer" data-a="foto"><div style="font-size:40px">📸</div><h3>Con una foto mía</h3><p class="small muted">Elige una foto de tu Fototeca o de Archivos y la app crea las diferencias sola.</p><button class="btn sage">Elegir foto ›</button></section>
+      <section class="card c4" style="cursor:pointer" data-a="crear"><div style="font-size:40px">✋</div><h3>Crear un reto</h3><p class="small muted">Sube dos fotos (la original y la cambiada) y marca tú las diferencias para retar a alguien.</p><button class="btn rose">Crear ›</button></section>
+      <section class="card c12"><div class="row wrap" style="margin-bottom:6px"><h3 style="margin:0">Mis fotos de diferencias <span class="jp">写真</span></h3><span class="sp"></span><button class="btn small" data-a="abrir">💌 Abrir un reto recibido</button></div>
+        ${items.length ? `<div class="list">${items.map(x => `<div class="it"><img class="thumb" src="${x.a}" alt=""><div class="tx"><div class="t">${esc(x.nombre || 'Foto')}${x.hecho ? ' ✓' : ''}</div><div class="m">${x.diffs.length} diferencias · ${x.origen === 'manual' ? 'creado por ti' : x.origen === 'recibido' ? 'recibido 💌' : 'automático'} · ${esc(relDia(x.fecha || dayKey()))}</div></div>
+          <button class="btn small primary" data-a="jugar" data-id="${x.id}">Jugar</button><button class="ibtn" data-a="enviar" data-id="${x.id}" title="Enviar">📤</button><button class="ibtn" data-a="borrar" data-id="${x.id}" title="Borrar">🗑</button></div>`).join('')}</div>` : '<p class="empty">Aquí se guardan los retos hechos con tus fotos y los que te envíen.</p>'}</section></div>`;
+    v.onchange = e => { if (e.target.dataset.a === 'nivel') { S.nivel.diferencias = e.target.value; save(); } };
+    v.onclick = async e => {
+      const a = e.target.closest('[data-a]'); if (!a) return; const nivel = nivelDe('diferencias');
+      if (a.dataset.a === 'escena') go('diferencias', { escena: 1, seed: uid(), nivel });
+      if (a.dataset.a === 'foto') {
+        const [f] = await pickFile('image/*'); if (!f) return;
+        toast('Creando las diferencias…', 1500);
+        const src = await shrink(await readURL(f), 1100, .9), seed = uid();
+        const res = await difFoto(src, nivel, seed);
+        const o = { id: uid(), tipo: 'dif', origen: 'auto', nombre: f.name.replace(/\.\w+$/, '').slice(0, 40) || 'Mi foto', a: res.a, b: res.b, W: res.W, H: res.H, diffs: res.diffs, fecha: dayKey(), nivel };
+        await DB.put(o); go('diferencias', { id: o.id, nivel });
+      }
+      if (a.dataset.a === 'crear') go('difcrear');
+      if (a.dataset.a === 'abrir') importarRetoDif();
+      if (a.dataset.a === 'jugar') go('diferencias', { id: a.dataset.id });
+      if (a.dataset.a === 'enviar') enviarDif(await DB.get(a.dataset.id));
+      if (a.dataset.a === 'borrar' && confirm('¿Borrar esta foto de diferencias?')) { await DB.del(a.dataset.id); render(); }
+    };
+  }
+};
+async function enviarDif(o) {
+  if (!o) return;
+  const data = JSON.stringify({ app: 'pasatiempos', tipo: 'dif', v: 1, nombre: o.nombre, a: o.a, b: o.b, W: o.W, H: o.H, diffs: o.diffs });
+  const name = (o.nombre || 'diferencias').replace(/[^\wáéíóúñ -]/gi, '').trim().replace(/\s+/g, '-') + '.diferencias.json';
+  const file = new File([data], name, { type: 'application/json' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Busca las diferencias', text: '👀 ¡Te reto a encontrar las diferencias! Ábrelo en Mis Pasatiempos › Abrir un reto.' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  const u = URL.createObjectURL(file), l = document.createElement('a'); l.href = u; l.download = name; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000);
+  toast('Archivo guardado: envíalo por WhatsApp, Mail o AirDrop');
+}
+async function importarRetoDif() {
+  const [f] = await pickFile('.json,application/json,text/plain'); if (!f) return;
+  try {
+    const o = JSON.parse(await readText(f));
+    if (o.app !== 'pasatiempos' || o.tipo !== 'dif' || !o.a || !o.b || !Array.isArray(o.diffs)) throw 0;
+    const it = { id: uid(), tipo: 'dif', origen: 'recibido', nombre: o.nombre || 'Reto recibido', a: o.a, b: o.b, W: o.W, H: o.H, diffs: o.diffs, fecha: dayKey() };
+    await DB.put(it); toast('💌 Reto guardado en Diferencias'); go('diferencias', { id: it.id, amiga: 1 });
+  } catch (e) { toast('Este archivo no es un reto de diferencias'); }
+}
+
+/* ---------- jugar ---------- */
+async function difPlay(v, p) {
+  const cont = p.cont; delete p.cont;
+  let pz, item = null;
+  const nivel = DIF_N[p.nivel] ? p.nivel : 'medio';
+  p.nivel = nivel;
+  v.innerHTML = '<p class="empty" style="text-align:center;padding:40px">Preparando las imágenes…</p>';
+  if (p.id) { item = await DB.get(p.id); if (!item) { v.innerHTML = '<section class="card"><p class="empty">No encuentro esta foto. Puede que se haya borrado.</p></section>'; return; } pz = item; }
+  else { if (p.reto && !p.seed) p.seed = p.reto; p.escena = 1; pz = difEscena(p.seed, nivel); }
+  if (CUR !== 'diferencias') return;
+  const st = cont || { g: 'diferencias', params: p, found: [], secs: 0, fecha: dayKey(), fallos: 0 };
+  st.params = p; st.label = item ? item.nombre : 'Escena dibujada';
+  const D = pz.diffs, n = D.length;
+  v.innerHTML = gameBar('diferencias', p, `<button class="ibtn" data-a="pista">💡 Pista</button><button class="ibtn" data-a="lupa">🔍 Lupa</button><span class="pill g" id="dc"></span>`) +
+    `<div class="difw" id="dw"><div class="im" data-s="a"><img src="${pz.a}" style="width:100%;display:block" draggable="false"></div><div class="im" data-s="b"><img src="${pz.b}" style="width:100%;display:block" draggable="false"></div></div>
+     <p class="small muted" style="text-align:center">Toca la diferencia en cualquiera de las dos imágenes. Puedes ampliar con dos dedos.${!item ? '' : ''}</p>
+     <div class="row" style="justify-content:center"><button class="btn small" data-a="rendir">Ver las que faltan</button></div>`;
+  const dw = $('#dw', v);
+  function marks() {
+    $$('.im', dw).forEach(im => {
+      $$('.mk', im).forEach(x => x.remove());
+      st.found.forEach(i => { const d = D[i], m = document.createElement('div'); m.className = 'mk'; const W = im.clientWidth, H = im.clientHeight; const rr = d.r * W * 1.1; Object.assign(m.style, { left: d.x * W - rr + 'px', top: d.y * H - rr + 'px', width: rr * 2 + 'px', height: rr * 2 + 'px' }); im.appendChild(m); });
+    });
+    $('#dc', v).textContent = `${st.found.length}/${n}`;
+  }
+  dw.addEventListener('click', e => {
+    const im = e.target.closest('.im'); if (!im) return;
+    const rc = im.getBoundingClientRect(), x = (e.clientX - rc.left) / rc.width, y = (e.clientY - rc.top) / rc.height;
+    const asp = rc.height / rc.width; let best = -1, bd = 1e9;
+    D.forEach((d, i) => { if (st.found.includes(i)) return; const dist = Math.hypot(x - d.x, (y - d.y) * asp); const tol = Math.max(d.r * 1.25, 26 / rc.width); if (dist < tol && dist < bd) { bd = dist; best = i; } });
+    if (best >= 0) { st.found.push(best); marks(); if (navigator.vibrate) navigator.vibrate(15); if (st.found.length === n) win(); }
+    else { st.fallos++; const m = document.createElement('div'); m.className = 'miss'; m.textContent = '✕'; m.style.left = (x * 100) + '%'; m.style.top = (y * 100) + '%'; im.appendChild(m); setTimeout(() => m.remove(), 1000); }
+  });
+  function win() { clock.stop(); st.secs = clock.get(); GAME = null; if (item) { item.hecho = true; DB.put(item); } setTimeout(() => finish('diferencias', { secs: st.secs, params: p, variante: item ? 'foto' : 'escena', extra: `👀 ${n} diferencias${st.fallos ? ` · ${st.fallos} toques fallidos` : ' · ¡sin fallos!'}<br>` }), 500); }
+  v.addEventListener('click', e => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    if (a.dataset.a === 'lupa') { dw.classList.toggle('zoom'); a.classList.toggle('on'); setTimeout(marks, 50); }
+    if (a.dataset.a === 'pista') { const i = D.findIndex((_, k) => !st.found.includes(k)); if (i < 0) return; const d = D[i]; $$('.im', dw).forEach(im => { const m = document.createElement('div'); m.className = 'mk hint'; const W = im.clientWidth, H = im.clientHeight, rr = d.r * W * 2.2; Object.assign(m.style, { left: d.x * W - rr + 'px', top: d.y * H - rr + 'px', width: rr * 2 + 'px', height: rr * 2 + 'px' }); im.appendChild(m); setTimeout(() => m.remove(), 3200); }); }
+    if (a.dataset.a === 'rendir') { if (!confirm('¿Ver dónde están las que faltan? (No contará como terminado)')) return; $$('.im', dw).forEach(im => D.forEach((d, i) => { if (st.found.includes(i)) return; const m = document.createElement('div'); m.className = 'mk hint'; m.style.animation = 'none'; const W = im.clientWidth, H = im.clientHeight, rr = d.r * W * 1.1; Object.assign(m.style, { left: d.x * W - rr + 'px', top: d.y * H - rr + 'px', width: rr * 2 + 'px', height: rr * 2 + 'px' }); im.appendChild(m); })); clock.stop(); GAME = null; delete S.partidas.diferencias; save(); }
+  });
+  const imgs = $$('img', dw); await Promise.all(imgs.map(i => i.complete ? 0 : new Promise(r => i.onload = r)));
+  marks();
+  const onRs = () => marks(); addEventListener('resize', onRs);
+  const clock = Clock($('#tm', v), st.secs);
+  bindBar(v, 'diferencias', p, o => go('diferencias', item ? {} : { escena: 1, seed: uid(), nivel: o.nivel || p.nivel }, false));
+  GAME = {
+    id: st, dirty: () => st.found.length > 0,
+    persist() { if (!GAME) return; st.secs = clock.get(); if (GAME.dirty()) { S.partidas.diferencias = st; save(); } },
+    stop() { clock.stop(); removeEventListener('resize', onRs); },
+    share() { if (item) enviarDif(item); else compartir({ g: 'diferencias', escena: 1, seed: p.seed, nivel: p.nivel }, '👀 ¡Te reto a encontrar las diferencias!'); }
+  };
+}
+
+/* ---------- crear un reto a mano ---------- */
+SCREENS.difcrear = {
+  title: () => '<span class="jp">作る</span>Crear un reto',
+  render(v) {
+    const st = { a: null, b: null, diffs: [], R: .05 };
+    function paint() {
+      v.innerHTML = `<section class="card" style="max-width:900px;margin:0 auto">
+        <div class="row wrap" style="gap:10px;margin-bottom:12px">
+          <button class="btn ${st.a ? 'sage' : 'primary'}" data-a="pa">1 · ${st.a ? '✓ Foto original' : 'Foto original'}</button>
+          <button class="btn ${st.b ? 'sage' : st.a ? 'primary' : ''}" data-a="pb" ${st.a ? '' : 'disabled'}>2 · ${st.b ? '✓ Foto cambiada' : 'Foto cambiada'}</button>
+          <span class="sp"></span>${st.b ? `<span class="pill o">${st.diffs.length} marcadas</span>` : ''}</div>
+        ${!st.a ? '<p class="small muted">Haz dos fotos de lo mismo (por ejemplo tu mesa) y en la segunda cambia algunas cosas de sitio, o edita una copia de la foto. Elige primero la original.</p>' : ''}
+        ${st.a && !st.b ? `<img src="${st.a}" style="width:100%;border-radius:12px">` : ''}
+        ${st.b ? `<p class="small muted">3 · Toca en la foto cambiada cada sitio donde hay una diferencia. Toca un círculo para quitarlo.</p>
+          <div class="row" style="margin-bottom:8px"><label class="small">Tamaño del círculo</label><input type="range" min="2" max="12" value="${Math.round(st.R * 100)}" data-a="rad" style="flex:1"></div>
+          <div class="difw"><div class="im" id="mkB" style="flex-basis:100%;max-width:100%"><img src="${st.b}" style="width:100%;display:block" draggable="false"></div></div>
+          <div class="field"><label>Nombre del reto</label><input class="f" id="nm" placeholder="Mi escritorio" value="${esc(st.nombre || '')}"></div>
+          <div class="row"><span class="sp"></span><button class="btn primary" data-a="ok" ${st.diffs.length ? '' : 'disabled'}>Guardar reto</button></div>` : ''}</section>`;
+      const mk = $('#mkB', v); if (!mk) return;
+      const draw = () => { $$('.mk', mk).forEach(x => x.remove()); const W = mk.clientWidth, H = mk.clientHeight; st.diffs.forEach((d, i) => { const m = document.createElement('div'); m.className = 'mk'; m.style.pointerEvents = 'auto'; m.dataset.i = i; const rr = d.r * W; Object.assign(m.style, { left: d.x * W - rr + 'px', top: d.y * H - rr + 'px', width: rr * 2 + 'px', height: rr * 2 + 'px' }); mk.appendChild(m); }); };
+      const img = $('img', mk); img.complete ? draw() : img.onload = draw;
+      mk.onclick = e => { const m = e.target.closest('.mk'); if (m) { st.diffs.splice(+m.dataset.i, 1); paint(); return; } const rc = mk.getBoundingClientRect(); st.nombre = ($('#nm', v) || {}).value; st.diffs.push({ x: (e.clientX - rc.left) / rc.width, y: (e.clientY - rc.top) / rc.height, r: st.R }); paint(); };
+    }
+    v.onclick = async e => {
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      if (a.dataset.a === 'pa' || a.dataset.a === 'pb') { const [f] = await pickFile('image/*'); if (!f) return; const src = await shrink(await readURL(f), 1200, .88); if (a.dataset.a === 'pa') { st.a = src; st.b = null; st.diffs = []; st.nombre = f.name.replace(/\.\w+$/, ''); } else { const [ia, ib] = await Promise.all([loadImg(st.a), loadImg(src)]); if (Math.abs(ia.width / ia.height - ib.width / ib.height) > .04) { const c = document.createElement('canvas'); c.width = ia.width; c.height = ia.height; c.getContext('2d').drawImage(ib, 0, 0, c.width, c.height); st.b = c.toDataURL('image/jpeg', .88); toast('Las fotos tenían distinto tamaño: he ajustado la segunda'); } else st.b = src; } paint(); }
+      if (a.dataset.a === 'ok') { const ia = await loadImg(st.a); const o = { id: uid(), tipo: 'dif', origen: 'manual', nombre: ($('#nm', v).value || 'Mi reto').slice(0, 40), a: st.a, b: st.b, W: ia.width, H: ia.height, diffs: st.diffs, fecha: dayKey() }; await DB.put(o); toast('Reto guardado ✓'); const m = modal(`<h2>¡Reto listo!</h2><p>¿Qué quieres hacer?</p><div class="row wrap" style="gap:8px;margin-top:10px"><button class="btn" data-x="lista">Ir a la lista</button><button class="btn rose" data-x="env">📤 Enviarlo</button><button class="btn primary" data-x="jug">Jugarlo</button></div>`); m.onclick = async ev => { const b = ev.target.closest('[data-x]'); if (!b) return; m.remove(); if (b.dataset.x === 'env') { await enviarDif(o); go('diferencias'); } else if (b.dataset.x === 'jug') go('diferencias', { id: o.id }); else go('diferencias'); }; }
+    };
+    v.oninput = e => { if (e.target.dataset.a === 'rad') { st.R = e.target.value / 100; } };
+    paint();
+  }
+};
+
+/* ============ DESDE ARCHIVOS (PDF y fotos) ============ */
+let _pdfjs = null;
+function pdfjs() {
+  return _pdfjs || (_pdfjs = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(window.pdfjsLib); };
+    s.onerror = () => { _pdfjs = null; rej(new Error('pdf')); }; document.head.appendChild(s);
+  }));
+}
+async function pdfPaginas(file, onProg) {
+  const lib = await pdfjs(), doc = await lib.getDocument({ data: await file.arrayBuffer() }).promise, out = [];
+  const n = Math.min(doc.numPages, 40);
+  for (let i = 1; i <= n; i++) {
+    const pg = await doc.getPage(i), vp0 = pg.getViewport({ scale: 1 }), k = 1500 / vp0.width, vp = pg.getViewport({ scale: k });
+    const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    await pg.render({ canvasContext: x, viewport: vp }).promise;
+    out.push({ img: c.toDataURL('image/jpeg', .85), ink: [] }); onProg && onProg(i, n);
+  }
+  return out;
+}
+SCREENS.importados = {
+  title: () => '<span class="jp">紙</span>Desde archivos',
+  async render(v) {
+    const items = (await DB.all().catch(() => [])).filter(x => x.tipo === 'imp').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    if (CUR !== 'importados') return;
+    v.innerHTML = `<div class="row wrap" style="margin-bottom:12px"><p class="small muted" style="margin:0;flex:1;min-width:220px">Importa un pasatiempo en PDF o en foto (de una revista, del periódico o de una web) y resuélvelo encima con el Apple Pencil o con el dedo.</p>
+      <button class="btn primary" data-a="add">＋ Importar PDF o fotos</button></div>
+      <section class="card">${items.length ? `<div class="list">${items.map(x => `<div class="it"><img class="thumb" src="${x.pages[0].img}" alt=""><div class="tx" style="cursor:pointer" data-a="open" data-id="${x.id}"><div class="t">${esc(x.nombre)}${x.hecho ? ' ✓' : ''}</div><div class="m">${x.pages.length} página${x.pages.length > 1 ? 's' : ''} · ${esc(x.cat || 'Sin carpeta')} · ${esc(relDia(x.fecha))}</div></div>
+        <button class="btn small primary" data-a="open" data-id="${x.id}">Abrir</button><button class="ibtn" data-a="edit" data-id="${x.id}">✎</button></div>`).join('')}</div>` : '<p class="empty">Aún no has importado nada. Puedes elegir un PDF de Archivos o de iCloud, o fotos de tu Fototeca (una foto por página).</p>'}</section>`;
+    v.onclick = async e => {
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      if (a.dataset.a === 'add') {
+        const files = await pickFile('image/*,application/pdf,.pdf', true); if (!files.length) return;
+        const t = document.createElement('div'); t.className = 'toast'; t.textContent = 'Importando…'; document.body.appendChild(t);
+        try {
+          let pages = [];
+          for (const f of files) {
+            if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) pages = pages.concat(await pdfPaginas(f, (i, n) => t.textContent = `Importando página ${i} de ${n}…`));
+            else pages.push({ img: await shrink(await readURL(f), 1600, .86), ink: [] });
+          }
+          if (!pages.length) throw 0;
+          const o = { id: uid(), tipo: 'imp', nombre: files[0].name.replace(/\.\w+$/, '').slice(0, 50) || 'Pasatiempo', pages, fecha: dayKey(), cat: '' };
+          await DB.put(o); t.remove(); go('impver', { id: o.id });
+        } catch (err) { t.remove(); toast(err && err.message === 'pdf' ? 'Para abrir PDF hace falta conexión a internet la primera vez' : 'No he podido importar ese archivo'); }
+      }
+      if (a.dataset.a === 'open') go('impver', { id: a.dataset.id });
+      if (a.dataset.a === 'edit') {
+        const o = await DB.get(a.dataset.id); if (!o) return;
+        const r = await ask('Editar', [{ k: 'n', l: 'Nombre', v: o.nombre }, { k: 'c', l: 'Carpeta', v: o.cat, ph: 'Sudokus, Crucigramas, Revista…' }], { del: true });
+        if (r === '__del') await DB.del(o.id); else if (r) { o.nombre = r.n.trim() || o.nombre; o.cat = r.c.trim(); await DB.put(o); }
+        render();
+      }
+    };
+  }
+};
+const TOOLS = { lapiz: { w: 2.2, a: 1, n: '✏️ Lápiz' }, rotu: { w: 5, a: 1, n: '🖊 Rotulador' }, subr: { w: 16, a: .3, n: '🖍 Subrayador' }, goma: { w: 18, n: '🧽 Goma' } };
+const INK = ['#2b2622', '#2F5FA8', '#B5523B', '#3E8E5E', '#F2B705'];
+SCREENS.impver = {
+  title: () => '<span class="jp">紙</span>Pasatiempo',
+  async render(v, p) {
+    const o = await DB.get(p.id); if (CUR !== 'impver') return;
+    if (!o) { v.innerHTML = '<section class="card"><p class="empty">No lo encuentro.</p></section>'; return; }
+    let pg = Math.min(p.pg || 0, o.pages.length - 1), tool = 'lapiz', col = INK[0], finger = isPhone(), undo = [];
+    v.innerHTML = `<div class="gbar" style="position:sticky;top:calc(var(--st) + 58px);z-index:10;background:var(--ivory);padding:6px 0">
+        <div class="seg" id="tl">${Object.entries(TOOLS).map(([k, t]) => `<button data-t="${k}">${t.n}</button>`).join('')}</div>
+        <div class="colors" id="cl">${INK.map(c => `<button data-c="${c}" style="background:${c}"></button>`).join('')}</div>
+        <button class="ibtn" data-a="undo">↶</button><button class="ibtn" data-a="dedo" title="Dibujar con el dedo">✍️ Dedo</button>
+        <span class="sp"></span><span class="timer" id="tm"></span>
+        <button class="ibtn" data-a="prev">‹</button><span class="small" id="pn"></span><button class="ibtn" data-a="next">›</button>
+        <button class="btn small sage" data-a="hecho">✓ Terminado</button></div>
+      <div class="pg" id="pg"><img id="pim" draggable="false"><canvas id="cv"></canvas></div>
+      <div class="row" style="justify-content:center;margin-top:10px"><button class="btn small" data-a="limpiar">Borrar todo lo escrito en esta página</button></div>`;
+    $('#ttl').innerHTML = `<span class="jp">紙</span>${esc(o.nombre)}`;
+    const box = $('#pg', v), img = $('#pim', v), cv = $('#cv', v), cx = cv.getContext('2d');
+    function paintUI() {
+      $$('#tl button', v).forEach(b => b.classList.toggle('on', b.dataset.t === tool));
+      $$('#cl button', v).forEach(b => b.classList.toggle('on', b.dataset.c === col));
+      $('[data-a=dedo]', v).classList.toggle('on', finger); box.classList.toggle('finger', finger);
+      $('#pn', v).textContent = `${pg + 1}/${o.pages.length}`;
+    }
+    function size() { const r = img.getBoundingClientRect(), d = devicePixelRatio || 1; cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); redraw(); }
+    function strokeDraw(s) {
+      const W = cv.width; if (!s.pts.length) return;
+      cx.save(); cx.lineCap = 'round'; cx.lineJoin = 'round'; cx.strokeStyle = s.c; cx.globalAlpha = TOOLS[s.t].a; if (s.t === 'subr') cx.globalCompositeOperation = 'multiply';
+      for (let i = 1; i < s.pts.length; i++) { const [x0, y0, p0] = s.pts[i - 1], [x1, y1, p1] = s.pts[i]; cx.lineWidth = TOOLS[s.t].w * W / 900 * (s.t === 'subr' ? 1 : (.55 + (p1 || .5))); cx.beginPath(); cx.moveTo(x0 * W, y0 * W); cx.lineTo(x1 * W, y1 * W); cx.stroke(); }
+      if (s.pts.length === 1) { const [x, y] = s.pts[0]; cx.fillStyle = s.c; cx.beginPath(); cx.arc(x * W, y * W, TOOLS[s.t].w * W / 1800, 0, 7); cx.fill(); }
+      cx.restore();
+    }
+    function redraw() { cx.clearRect(0, 0, cv.width, cv.height); (o.pages[pg].ink || []).forEach(strokeDraw); }
+    let saveT = 0; const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => DB.put(o), 600); };
+    function showPage() { img.src = o.pages[pg].img; img.onload = size; if (img.complete) size(); undo = []; paintUI(); }
+    let cur = null, penSeen = false;
+    const pt = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.width, e.pressure || .5]; };
+    cv.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'pen') penSeen = true;
+      if (e.pointerType === 'touch' && (!finger || penSeen)) return;
+      e.preventDefault(); cv.setPointerCapture(e.pointerId);
+      if (tool === 'goma') { cur = { goma: true }; erase(pt(e)); return; }
+      cur = { t: tool, c: tool === 'subr' && col === INK[0] ? '#F2B705' : col, pts: [pt(e)] }; (o.pages[pg].ink = o.pages[pg].ink || []).push(cur); undo.push(['add', cur]); redraw();
+    });
+    cv.addEventListener('pointermove', e => { if (!cur) return; e.preventDefault(); const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; if (cur.goma) { evs.forEach(x => erase(pt(x))); return; } evs.forEach(x => cur.pts.push(pt(x))); const s = { t: cur.t, c: cur.c, pts: cur.pts.slice(-evs.length - 1) }; strokeDraw(s); });
+    const end = () => { if (cur) { cur = null; persist(); } };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    function erase(q) { const ink = o.pages[pg].ink || [], rr = 14 / cv.getBoundingClientRect().width; const keep = ink.filter(s => !s.pts.some(([x, y]) => Math.hypot(x - q[0], y - q[1]) < rr)); if (keep.length !== ink.length) { undo.push(['set', ink.slice()]); o.pages[pg].ink = keep; redraw(); } }
+    v.addEventListener('click', e => {
+      const t = e.target.closest('[data-t]'); if (t) { tool = t.dataset.t; paintUI(); }
+      const c = e.target.closest('[data-c]'); if (c) { col = c.dataset.c; if (tool === 'goma') tool = 'lapiz'; paintUI(); }
+      const a = e.target.closest('[data-a]'); if (!a) return;
+      if (a.dataset.a === 'undo') { const u = undo.pop(); if (!u) return; if (u[0] === 'add') o.pages[pg].ink = o.pages[pg].ink.filter(s => s !== u[1]); else o.pages[pg].ink = u[1]; redraw(); persist(); }
+      if (a.dataset.a === 'dedo') { finger = !finger; penSeen = false; paintUI(); toast(finger ? 'Ahora dibujas con el dedo' : 'El dedo vuelve a mover la página; escribe con el lápiz'); }
+      if (a.dataset.a === 'prev' && pg > 0) { pg--; showPage(); }
+      if (a.dataset.a === 'next' && pg < o.pages.length - 1) { pg++; showPage(); }
+      if (a.dataset.a === 'limpiar' && (o.pages[pg].ink || []).length && confirm('¿Borrar todo lo escrito en esta página?')) { undo.push(['set', o.pages[pg].ink.slice()]); o.pages[pg].ink = []; redraw(); persist(); }
+      if (a.dataset.a === 'hecho') { if (o.hecho && !confirm('Ya lo marcaste como terminado. ¿Contarlo otra vez?')) return; o.hecho = true; DB.put(o); clock.stop(); GAME = null; finish('importado', { secs: clock.get(), params: {} }); }
+    });
+    const onRs = () => size(); addEventListener('resize', onRs);
+    const clock = Clock($('#tm', v), 0);
+    GAME = { id: o, persist() { DB.put(o); }, stop() { clock.stop(); removeEventListener('resize', onRs); } };
+    showPage();
+  }
+};
+
+/* ============ ARRANQUE ============ */
+applyTheme();
+(async () => {
+  DEV = await devId(); stLoad();
+  const r = leerEnlace();
+  history.replaceState({ s: 'home', p: {} }, '');
+  if (r && r.g && (JUEGOS[r.g])) {
+    if (r.modo) { S.modo = r.modo; save(); }
+    go(r.g, Object.assign({}, r, { amiga: 1 }));
+    toast('💌 ¡Te han enviado un reto!');
+  } else if (/#reto/.test(location.hash)) { history.replaceState({ s: 'home', p: {} }, '', location.pathname); go(retoHoy().g, retoHoy()); }
+  else if (/#(sudoku|murdoku|crucigrama|autodefinido|sopa|diferencias|stats|importados)$/.test(location.hash)) { const g = location.hash.slice(1); history.replaceState({ s: 'home', p: {} }, '', location.pathname); go(g, S.partidas[g] ? { seguir: g } : {}); }
+  else render();
+})();
+addEventListener('hashchange', () => { const r = leerEnlace(); if (r && r.g && JUEGOS[r.g]) { if (r.modo) { S.modo = r.modo; save(); } go(r.g, Object.assign({}, r, { amiga: 1 })); toast('💌 ¡Te han enviado un reto!'); } });
+
+</script>
+</body>
+</html>

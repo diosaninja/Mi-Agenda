@@ -596,6 +596,38 @@ function lectorInfo(){
   const ok=ds=>d&&(d[ds]||0)>=th;let ds=todayStr();if(!ok(ds))ds=addDays(ds,-1);let st=0;while(ok(ds)&&st<5000){st++;ds=addDays(ds,-1);}
   return{today:lectorMin(todayStr()),goal,streak:st,met:ok(todayStr()),reading:(R&&R.reading)||[],finished:(R&&R.finished)||[],articles:(R&&R.articles)||0};
 }
+/* 遊び Mis Pasatiempos: minutos, terminados y racha (suma de todos tus aparatos) */
+const PASA_ROT=['sudoku','sopa','murdoku','crucigrama','diferencias','autodefinido','sudoku'];
+const PASA_N={sudoku:['数','Sudoku'],murdoku:['🔍','Murdoku'],crucigrama:['✏️','Crucigrama'],autodefinido:['➡️','Autodefinido'],sopa:['あ','Sopa de letras'],diferencias:['👀','Diferencias'],importado:['📂','Importados']};
+let _pasC=null;
+function pasaDays(){
+  if(_pasC&&Date.now()-_pasC.t<3000)return _pasC.d;
+  const d={};let any=false;
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';if(!k.startsWith('pasatiempos-stats-'))continue;any=true;const o=readJSON(k)||{};
+    for(const[ds,v]of Object.entries(o.d||{})){const t=d[ds]||(d[ds]={s:0,n:{},reto:0});t.s+=+v.s||0;if(v.reto)t.reto=1;for(const[g,x]of Object.entries(v.n||{}))t.n[g]=(t.n[g]||0)+(+x||0);}}}catch(e){}
+  _pasC={t:Date.now(),d:any?d:null};return _pasC.d;
+}
+function pasatiemposInfo(){
+  const d=pasaDays()||{},t=todayStr(),cnt=ds=>d[ds]?Object.values(d[ds].n).reduce((a,b)=>a+b,0):0;
+  let ds=t;if(!cnt(ds))ds=addDays(ds,-1);let st=0;while(cnt(ds)&&st<5000){st++;ds=addDays(ds,-1);}
+  const [y,m,dd]=t.split('-').map(Number),g=PASA_ROT[Math.round(Date.UTC(y,m-1,dd)/864e5)%PASA_ROT.length];
+  return{any:!!pasaDays(),min:((d[t]&&d[t].s)||0)/60,n:cnt(t),streak:st,reto:g,retoDone:!!(d[t]&&d[t].reto),days:d};
+}
+function pasaCard(){
+  const pi=pasatiemposInfo(),R=PASA_N[pi.reto];
+  return`<section class="card c12"><div class="row wrap" style="gap:12px"><span style="font-size:28px;font-family:var(--jp)">${R[0]}</span><div style="flex:1;min-width:200px"><h3 style="margin:0">Pasatiempos <span class="jp">遊び</span></h3>
+    <div class="small muted">⭐ Reto del día: <b>${esc(R[1])}</b>${pi.retoDone?' · ✓ hecho':''}</div></div>
+    <div class="row wrap small" style="gap:6px"><span class="pill${pi.n?' g':''}">🧩 ${pi.n} hoy</span><span class="pill">⏱ ${fmtMin(pi.min)}</span><span class="pill">🔥 ${pi.streak}</span></div>
+    <a class="btn small" href="pasatiempos.html${pi.retoDone?'':'#reto'}" style="text-decoration:none">${pi.retoDone?'Jugar ›':'Reto del día ›'}</a></div></section>`;
+}
+function pasaStats(days){
+  const pi=pasatiemposInfo();if(!pi.any)return'';const d=pi.days;let min=0;const tot={};
+  for(const ds of days){const v=d[ds];if(!v)continue;min+=v.s/60;for(const[g,x]of Object.entries(v.n))tot[g]=(tot[g]||0)+x;}
+  const L=Object.entries(tot).sort((a,b)=>b[1]-a[1]),n=L.reduce((a,x)=>a+x[1],0),mx=L.length?L[0][1]:1;
+  return`<section class="card c12"><h3>Pasatiempos · hobby <span class="jp">遊び</span><a class="more" href="pasatiempos.html">Abrir ›</a></h3><p class="small muted" style="margin:0 0 10px">Tiempo de ocio: no se suma al aprendizaje.</p>
+    <div class="stats"><div class="stat"><b>${n}</b><span>terminados</span></div><div class="stat"><b>${fmtMin(min)}</b><span>jugando</span></div><div class="stat"><b>🔥 ${pi.streak}</b><span>días de racha</span></div><div class="stat"><b>${days.filter(ds=>d[ds]&&d[ds].reto).length}</b><span>retos del día</span></div></div>
+    ${L.map(([g,x])=>{const k=PASA_N[g]||['🧩',g];return`<div style="margin:8px 0"><div class="row small"><span>${k[0]} ${esc(k[1])}</span><span class="sp"></span><b>${x}</b></div><div class="bar" style="margin-top:4px"><i style="width:${Math.round(x/mx*100)}%"></i></div></div>`;}).join('')}</section>`;
+}
 function minutesOn(ds){
   const r={japones:0,caligrafia:0,lectura:0,medicina:0,otro:0,plan:0};
   for(const s of D.learn.sessions)if(s.date===ds&&r[s.area]!=null)r[s.area]+=+s.min||0;
@@ -697,7 +729,7 @@ const CALI=['Calentamiento: óvalos y bucles, 3 filas','Trazos básicos: vertica
 'Repasa una ficha del Cuaderno de tinta','Escribe la fecha de hoy en japonés: '+'今日'];
 const dayIndex=(ds,n)=>{const d=fromYmd(ds);const s=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5;return((Math.floor(s)%n)+n)%n;};
 const APPS=[['calendario.html','📅','Calendario'],['kanji.html','漢','Kanji'],['silabarios.html','あ','Silabarios'],['japones.html','日','Plan japonés'],['libreta-japones.html','練','Libreta japonés'],['caligrafia.html','✒️','Caligrafía'],
-['cuaderno.html','📓','Cuaderno de tinta'],['lettering.html','🖌️','Lettering'],['libreta.html','📝','Mi Libreta'],['ocio.html','📚','Estantería'],['lector.html','📖','Mi Lector'],['bujo.html','•','Bullet journal'],['../colorear/?v=13','🎨','Colorear'],['cuentas.html','💶','Cuentas'],['documentos.html','📂','Documentos'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['index.html?biblioteca','🗂️','Biblioteca']];
+['cuaderno.html','📓','Cuaderno de tinta'],['lettering.html','🖌️','Lettering'],['libreta.html','📝','Mi Libreta'],['ocio.html','📚','Estantería'],['lector.html','📖','Mi Lector'],['bujo.html','•','Bullet journal'],['../colorear/?v=13','🎨','Colorear'],['cuentas.html','💶','Cuentas'],['documentos.html','📂','Documentos'],['enlaces.html','🔗','Enlaces'],['viajes.html','✈️','Viajes'],['patologias.html','🩺','Patologías'],['pasatiempos.html','🧩','Pasatiempos'],['index.html?biblioteca','🗂️','Biblioteca']];
 </script>
 <script>
 /* ---------- navegación ---------- */
@@ -822,6 +854,7 @@ VIEWS.hoy=()=>{
     <div class="moods">${MOODS.map(([v,e,l])=>`<button class="mood${j.mood===v?' on':''}" data-a="mood" data-v="${v}" data-d="${t}" title="${l}">${e}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${(j.grat||[]).filter(Boolean).length?`🙏 ${(j.grat||[]).filter(Boolean).length} agradecimientos hoy`:'Apunta 3 cosas por las que estás agradecida.'}</p></section>
 
+  ${pasaCard()}
   <section class="card c12"><div class="row wrap" style="gap:14px"><span style="font-size:26px">🎋</span><div style="flex:1;min-width:200px"><div class="prov">${pv[0]}</div><div class="small muted" style="font-family:var(--jp)">${pv[1]}</div><div style="margin-top:4px">${esc(pv[2])}</div></div></div></section>
   <section class="card c12"><h3>Mis apps</h3><div class="apps">${APPS.map(([h,e,n])=>`<a class="app" href="${h}"><span class="e">${e}</span>${n}</a>`).join('')}</div></section>
   </div>`;
@@ -1314,6 +1347,7 @@ VIEWS.stats=()=>{
     let lec=0;for(const ds of days)lec+=lectorMin(ds);if(lec)tot.__lector=lec;
     const L=Object.entries(tot).filter(([,m])=>m>=1).sort((a,b)=>b[1]-a[1]);if(!L.length)return'';const mx=L[0][1];
     return`<section class="card c12"><h3>Tiempo por app <span class="jp">アプリ</span></h3><p class="small muted" style="margin:0 0 10px">Contado solo mientras usas cada app.</p>${L.map(([n,m])=>{const k=n==='__lector'?['📖','読書 Mi Lector']:(N[n]||['✨',n]);return`<div style="margin:8px 0"><div class="row small"><span>${k[0]} ${esc(k[1])}</span><span class="sp"></span><b>${fmtMin(m)}</b></div><div class="bar" style="margin-top:4px"><i style="width:${Math.round(m/mx*100)}%"></i></div></div>`;}).join('')}</section>`;})()}
+  ${pasaStats(days)}
   ${healthStats(days)}
   <section class="card c6"><h3>Hábitos completados <span class="jp">習慣</span></h3>${C.habits.list.length?`<div class="list">${C.habits.list.map(h=>{const n=days.filter(d=>hDone(h,d)).length;const p=Math.round(n/days.length*100);
     return`<div class="it"><span style="font-size:20px">${esc(h.emoji||'⭐')}</span><div class="tx"><div class="row"><span class="t">${esc(h.name)}</span><span class="sp"></span><span class="small"><b>${n}/${days.length}</b> días</span></div>
